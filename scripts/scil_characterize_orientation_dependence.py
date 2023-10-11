@@ -3,6 +3,7 @@ import nibabel as nib
 import numpy as np
 from pathlib import Path
 
+from modules.io import (save_angle_map)
 from modules.orientation_dependence import (compute_single_fiber_averages)
 
 from scilpy.io.utils import (add_overwrite_arg)
@@ -12,30 +13,28 @@ def _build_arg_parser():
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument('in_peaks',
-                   help='Path of the fODF peaks.')
+                   help='Path of the fODF peaks. The peaks are expected to be '
+                        'given as unit directions.')
     p.add_argument('in_peak_values',
-                   help='Path of the fODF peak values.')
+                   help='Path of the fODF peak values. The peak values must '
+                        'not be max-normalized for \neach voxel, but rather '
+                        'they should keep the actual fODF amplitude of the '
+                        'peaks.')
     p.add_argument('in_fa',
                    help='Path of the FA.')
-    p.add_argument('in_wm_mask',
-                   help='Path of the WM mask.')
     p.add_argument('in_nufo',
                    help='Path to the NuFO.')
+    p.add_argument('in_wm_mask',
+                   help='Path of the WM mask.')
     p.add_argument('out_folder',
                    help='Path of the output folder for txt, png, masks and measures.')
     
+    p.add_argument('--measures', nargs='+', default=[],
+                   action='append', required=True,
+                   help='List of measures to characterize.')
+    
     p.add_argument('--in_e1',
                    help='Path to the principal eigenvector of DTI.')
-    p.add_argument('--in_v1',
-                   help='Path to the principal eigenvalue of DTI.')
-    p.add_argument('--in_mtr',
-                   help='Path to the MTR.')
-    p.add_argument('--in_ihmtr',
-                   help='Path to the ihMTR.')
-    p.add_argument('--in_mtsat',
-                   help='Path to the MTsat.')
-    p.add_argument('--in_ihmtsat',
-                   help='Path to the ihMTsat.')
     p.add_argument('--in_roi',
                    help='Path to the ROI for single fiber analysis.')
 
@@ -78,15 +77,14 @@ def main():
     peaks_img = nib.load(args.in_peaks)
     peak_values_img = nib.load(args.in_peak_values)
     fa_img = nib.load(args.in_fa)
-    wm_mask_img = nib.load(args.in_wm_mask)
     nufo_img = nib.load(args.in_nufo)
-
+    wm_mask_img = nib.load(args.in_wm_mask)
 
     peaks = peaks_img.get_fdata()
     peak_values = peak_values_img.get_fdata()
     fa = fa_img.get_fdata()
-    wm_mask = wm_mask_img.get_fdata()
     nufo = nufo_img.get_fdata()
+    wm_mask = wm_mask_img.get_fdata()
 
     affine = peaks_img.affine
 
@@ -112,3 +110,6 @@ def main():
                                                     bin_width=args.bin_width,
                                                     fa_thr=args.fa_thr,
                                                     min_nb_voxels=args.min_nb_voxels)
+    
+if __name__ == "__main__":
+    main()
