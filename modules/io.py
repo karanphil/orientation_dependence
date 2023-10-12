@@ -7,8 +7,8 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from modules.utils import compute_peaks_fraction
 
 
-def save_angle_map(peaks, fa, wm_mask, affine, output_path, fodf_peaks, peak_values,
-                    nufo, bin_width=1, fa_thr=0.5):
+def save_angle_maps(peaks, fa, wm_mask, affine, output_path, fodf_peaks,
+                    peak_values, nufo, bin_width=1, fa_thr=0.5):
     # Find the direction of the B0 field
     rot = affine[0:3, 0:3]
     z_axis = np.array([0, 0, 1])
@@ -82,17 +82,59 @@ def save_angle_map(peaks, fa, wm_mask, affine, output_path, fodf_peaks, peak_val
         peak_3[mask_f3] = (bins[i] + bins[i + 1]) /2.
 
     map_1_name = "peak_1_sf_angles_map.nii.gz"
-    map_1_path = output_path / "masks" / map_1_name
+    map_1_path = output_path / map_1_name
     nib.save(nib.Nifti1Image(peak_1_sf, affine), map_1_path)
 
     map_1_name = "peak_1_angles_map.nii.gz"
-    map_1_path = output_path / "masks" / map_1_name
+    map_1_path = output_path / map_1_name
     nib.save(nib.Nifti1Image(peak_1, affine), map_1_path)
 
     map_2_name = "peak_2_angles_map.nii.gz"
-    map_2_path = output_path / "masks" / map_2_name
+    map_2_path = output_path / map_2_name
     nib.save(nib.Nifti1Image(peak_2, affine), map_2_path)
 
     map_3_name = "peak_3_angles_map.nii.gz"
-    map_3_path = output_path / "masks" / map_3_name
+    map_3_path = output_path / map_3_name
     nib.save(nib.Nifti1Image(peak_3, affine), map_3_path)
+
+
+def save_masks_by_angle_bins(peaks, fa, wm_mask, affine, output_path,
+                             nufo=None, bin_width=10, fa_thr=0.5):
+    # Find the direction of the B0 field
+    rot = affine[0:3, 0:3]
+    z_axis = np.array([0, 0, 1])
+    b0_field = np.dot(rot.T, z_axis)
+
+    # Define the bins
+    bins = np.arange(0, 90 + bin_width, bin_width)
+
+    # Calculate the angle between e1 and B0 field
+    cos_theta = np.dot(peaks[..., :3], b0_field)
+    theta = np.arccos(cos_theta) * 180 / np.pi
+
+    # Apply the WM mask and FA threshold
+    if nufo is not None:
+        wm_mask_bool = (wm_mask >= 0.9) & (fa > fa_thr) & (nufo == 1)
+    else:
+        wm_mask_bool = (wm_mask >= 0.9) & (fa > fa_thr)
+    for i in range(len(bins) - 1):
+        angle_mask_0_90 = (theta >= bins[i]) & (theta < bins[i+1]) 
+        angle_mask_90_180 = (180 - theta >= bins[i]) & (180 - theta < bins[i+1])
+        angle_mask = angle_mask_0_90 | angle_mask_90_180
+        mask = wm_mask_bool & angle_mask
+        mask_name = "sf_mask_" + str(bins[i]) + "_to_" + str(bins[i+1]) \
+            + "_degrees.nii.gz"
+        mask_path = output_path / mask_name
+        nib.save(nib.Nifti1Image(mask.astype(np.uint8), affine), mask_path)
+
+
+def save_results_as_txt(bins, measure_means, nb_voxels, names, out_folder):
+    # Save the results to a text file
+    results = np.column_stack((bins[:-1], bins[1:], measure_means, nb_voxels))
+    output_path = out_folder / 'sf_results.txt'
+    header = 'Angle_min\tAngle_max\t'
+    for name in names:
+        header += str(name) + '\t'
+    header += 'Nb_voxels'
+    np.savetxt(str(output_path), results, fmt='%10.5f', delimiter='\t',
+               header=header)

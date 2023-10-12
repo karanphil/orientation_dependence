@@ -3,8 +3,10 @@ import nibabel as nib
 import numpy as np
 from pathlib import Path
 
-from modules.io import (save_angle_map)
-from modules.orientation_dependence import (compute_single_fiber_means)
+from modules.io import (save_angle_maps, save_masks_by_angle_bins,
+                        save_results_as_txt)
+from modules.orientation_dependence import (compute_single_fiber_means,
+                                            fit_single_fiber_results)
 
 from scilpy.io.utils import (add_overwrite_arg)
 
@@ -37,9 +39,6 @@ def _build_arg_parser():
                    help='Path to the principal eigenvector of DTI.')
     p.add_argument('--in_roi',
                    help='Path to the ROI for single fiber analysis.')
-    
-    p.add_argument('--save_angle_maps', action='store_true'
-                   help='If set, will save the angle maps.')
 
     p.add_argument('--files_basename',
                    help='Basename of all the saved txt or png files.')
@@ -60,6 +59,19 @@ def _build_arg_parser():
                    help='Value of the minimal number of voxels per bin [%(default)s].')
     p.add_argument('--poly_order', default=10,
                    help='Order of the polynome to fit [%(default)s].')
+    
+    p1 = p.add_mutually_exclusive_group()
+    p1.add_argument('--save_angle_info', action='store_true',
+                    help='If set, will save the angle maps and masks.')
+    p1.add_argument('--angle_folder',
+                    help='Output folder of where to save the angle info.')
+    
+    p2 = p.add_mutually_exclusive_group()
+    p2.add_argument('--save_txt_files', action='store_true',
+                    help='If set, will save the results as txt files.')
+    p2.add_argument('--txt_folder',
+                    help='Output folder of where to save the txt files.')
+
     add_overwrite_arg(p)
     return p
 
@@ -71,8 +83,7 @@ def main():
     if args.files_basename:
         files_basename = args.files_basename
     else:
-        files_basename = "_" + str(args.fa_thr) + "_fa_thr_" \
-            + str(args.bin_width) + "_bin_width"
+        files_basename = "_"
         
     out_folder = Path(args.out_folder)
 
@@ -98,15 +109,12 @@ def main():
         e1 = peaks
 
     measures = np.ndarray((fa.shape) + (len(args.measures),))
+    measures_name = np.ndarray((len(args.measures),), dtype=object)
     for i, measure in enumerate(args.measures):
         measures[..., i] = (nib.load(measure)).get_fdata()
+        measures_name[i] = Path(measure).name.split(".")[0]
 
-    if args.save_angle_maps:
-        print("Saving angle maps.")
-        save_angle_map(e1, fa, wm_mask, affine, out_folder,
-                       peaks, peak_values, nufo)
-
-    print("Computing single fiber means.")
+    print("Computing single-fiber means.")
     bins, measure_means, nb_voxels =\
         compute_single_fiber_means(e1, fa,
                                    wm_mask,
@@ -116,6 +124,26 @@ def main():
                                    bin_width=args.bin_width,
                                    fa_thr=args.fa_thr,
                                    min_nb_voxels=args.min_nb_voxels)
+    
+    print("Fitting the whole brain results.")
+    measures_fit = fit_single_fiber_results(bins, measure_means,
+                                             poly_order=args.poly_order)
+    # Watch out, the function is not adapted to receiving all the measures at once!!!
+    
+    if args.save_txt_files:
+        print("Saving results as txt files.")
+        save_results_as_txt(bins, measure_means, nb_voxels, measures_name,
+                            Path(args.txt_folder))
+        
+    if args.save_angle_info:
+        print("Saving angle maps.")
+        save_angle_maps(e1, fa, wm_mask, affine, Path(args.angle_folder),
+                        peaks, peak_values, nufo)
+        
+        print("Saving single-fiber masks.")
+        save_masks_by_angle_bins(e1, fa, wm_mask, affine,
+                                 Path(args.angle_folder), nufo=nufo,
+                                 bin_width=10, fa_thr=args.fa_thr)
     
 if __name__ == "__main__":
     main()
