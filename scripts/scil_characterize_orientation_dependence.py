@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 
 from modules.io import (save_angle_map)
-from modules.orientation_dependence import (compute_single_fiber_averages)
+from modules.orientation_dependence import (compute_single_fiber_means)
 
 from scilpy.io.utils import (add_overwrite_arg)
 
@@ -94,22 +94,25 @@ def main():
     else:
         e1 = peaks
 
+    measures = np.ndarray((fa.shape) + (len(args.measures),))
+    for i, measure in enumerate(args.measures):
+        measures[..., i] = (nib.load(measure)).get_fdata()
+
     if args.compute_angle_maps:
         print("Computing angle maps.")
-        save_angle_map(e1, fa, wm_mask, affine, out_folder, peaks, peak_values, nufo)
+        save_angle_map(e1, fa, wm_mask, affine, out_folder,
+                       peaks, peak_values, nufo)
 
-    print("Computing single fiber averages.")
-    w_brain_results = compute_single_fiber_averages(e1, fa,
-                                                    wm_mask,
-                                                    affine,
-                                                    mtr=mtr,
-                                                    ihmtr=ihmtr,
-                                                    mtsat=mtsat,
-                                                    ihmtsat=ihmtsat,
-                                                    nufo=nufo,
-                                                    bin_width=args.bin_width,
-                                                    fa_thr=args.fa_thr,
-                                                    min_nb_voxels=args.min_nb_voxels)
+    print("Computing single fiber means.")
+    bins, measure_means, nb_voxels =\
+        compute_single_fiber_means(e1, fa,
+                                   wm_mask,
+                                   affine,
+                                   measures,
+                                   nufo=nufo,
+                                   bin_width=args.bin_width,
+                                   fa_thr=args.fa_thr,
+                                   min_nb_voxels=args.min_nb_voxels)
     
 if __name__ == "__main__":
     main()
