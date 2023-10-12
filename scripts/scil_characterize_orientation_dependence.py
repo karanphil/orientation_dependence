@@ -129,6 +129,8 @@ def main():
     measures_fit = fit_single_fiber_results(bins, measure_means,
                                              poly_order=args.poly_order)
     # Watch out, the function is not adapted to receiving all the measures at once!!!
+    # To do: save one .npy per measure. So loop inside the fit function and return an array of the fits,
+    # then save then separatly.
     
     if args.save_txt_files:
         print("Saving results as txt files.")
