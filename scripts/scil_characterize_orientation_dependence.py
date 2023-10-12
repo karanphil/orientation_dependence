@@ -37,6 +37,9 @@ def _build_arg_parser():
                    help='Path to the principal eigenvector of DTI.')
     p.add_argument('--in_roi',
                    help='Path to the ROI for single fiber analysis.')
+    
+    p.add_argument('--save_angle_maps', action='store_true'
+                   help='If set, will save the angle maps.')
 
     p.add_argument('--files_basename',
                    help='Basename of all the saved txt or png files.')
@@ -98,8 +101,8 @@ def main():
     for i, measure in enumerate(args.measures):
         measures[..., i] = (nib.load(measure)).get_fdata()
 
-    if args.compute_angle_maps:
-        print("Computing angle maps.")
+    if args.save_angle_maps:
+        print("Saving angle maps.")
         save_angle_map(e1, fa, wm_mask, affine, out_folder,
                        peaks, peak_values, nufo)
 
