@@ -3,9 +3,10 @@ import nibabel as nib
 import numpy as np
 from pathlib import Path
 
-from modules.io import (plot_means, save_angle_maps, save_masks_by_angle_bins,
-                        save_results_as_txt)
-from modules.orientation_dependence import (compute_single_fiber_means,
+from modules.io import (plot_means, plot_3d_means, save_angle_maps,
+                        save_masks_by_angle_bins, save_results_as_txt)
+from modules.orientation_dependence import (compute_crossing_fibers_means,
+                                            compute_single_fiber_means,
                                             fit_single_fiber_results)
 
 from scilpy.io.utils import (add_overwrite_arg)
@@ -29,7 +30,8 @@ def _build_arg_parser():
     p.add_argument('in_wm_mask',
                    help='Path of the WM mask.')
     p.add_argument('out_folder',
-                   help='Path of the output folder for txt, png, masks and measures.')
+                   help='Path of the output folder for txt, png, masks and '
+                        'measures.')
     
     p.add_argument('--measures', nargs='+', default=[],
                    action='append', required=True,
@@ -46,14 +48,21 @@ def _build_arg_parser():
     g = p.add_argument_group(title='Characterization parameters')
     g.add_argument('--fa_thr', default=0.5,
                    help='Value of FA threshold [%(default)s].')
-    g.add_argument('--bin_width', default=1, type=int,
-                   help='Value of the bin width for the whole brain [%(default)s].')
-    # p.add_argument('--frac_thr', default=0.4,
-    #                help='Value of the fraction threshold for selecting 2 fibers [%(default)s].')
+    g.add_argument('--bin_width_1f', default=1, type=int,
+                   help='Value of the bin width for the single-fiber '
+                        'characterization [%(default)s].')
+    g.add_argument('--bin_width_2f', default=10, type=int,
+                   help='Value of the bin width for the two-fiber '
+                        'characterization [%(default)s].')
+    g.add_argument('--bin_width_3f', default=30, type=int,
+                   help='Value of the bin width for the three-fiber '
+                        'characterization [%(default)s].')
     g.add_argument('--min_frac_thr', default=0.1,
-                   help='Value of the minimal fraction threshold for selecting peaks to correct [%(default)s].')
+                   help='Value of the minimal fraction threshold for '
+                        'selecting peaks to correct [%(default)s].')
     g.add_argument('--min_nb_voxels', default=30, type=int,
-                   help='Value of the minimal number of voxels per bin [%(default)s].')
+                   help='Value of the minimal number of voxels per bin '
+                        '[%(default)s].')
     g.add_argument('--poly_order', default=10, type=int,
                    help='Order of the polynome to fit [%(default)s].')
     
@@ -127,6 +136,7 @@ def main():
     if args.measures_names != []:
         measures_name = args.measures_names[0]
 
+    #----------------------- Single-fiber section -----------------------------
     print("Computing single-fiber means.")
     bins, measure_means, nb_voxels =\
         compute_single_fiber_means(e1, fa,
@@ -135,7 +145,7 @@ def main():
                                    measures,
                                    nufo=nufo,
                                    mask=roi,
-                                   bin_width=args.bin_width,
+                                   bin_width=args.bin_width_1f,
                                    fa_thr=args.fa_thr,
                                    min_nb_voxels=args.min_nb_voxels)
     
@@ -177,6 +187,27 @@ def main():
         save_masks_by_angle_bins(e1, fa, wm_mask, affine, angle_folder,
                                  nufo=nufo, fa_thr=args.fa_thr,
                                  bin_width=args.angle_mask_bin_width)
+        
+    # Compute single-fiber delta_m_max
+    sf_delta_m_max = np.nanmax(measure_means,
+                               axis=0) - np.nanmin(measure_means, axis=0)
+
+    #---------------------- Crossing fibers section ---------------------------
+    print("Computing two-fiber means.")
+    bins, measure_means, nb_voxels, labels =\
+        compute_crossing_fibers_means(peaks, peak_values,
+                                        wm_mask, affine,
+                                        nufo, measures,
+                                        bin_width=args.bin_width_2f,
+                                        min_nb_voxels=args.min_nb_voxels)
+    
+    measure_mean_diag = np.diagonal(measure_means, axis1=1, axis2=2)
+    measure_mean_diag = np.swapaxes(measure_mean_diag, 1, 2)
+    nb_voxels_diag = np.diagonal(nb_voxels, axis1=1, axis2=2)
+
+    if args.save_plots:
+        print("Saving two-fiber results as plots.")
+        plot_3d_means(bins, measure_means[0], plots_folder, measures_name)
 
 if __name__ == "__main__":
     main()

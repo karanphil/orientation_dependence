@@ -38,7 +38,7 @@ def plot_means(bins, means, nb_voxels, names, out_folder,
     highres_bins = np.arange(0, 90 + 1, 0.5)
     plot_init()
     for i in range(means.shape[-1]):
-        out_path = out_folder / str("original_" + str(names[i]) + "_sf.png")
+        out_path = out_folder / str("original_" + str(names[i]) + "_1f.png")
         fig, (ax1, cax) = plt.subplots(1, 2,
                                        gridspec_kw={"width_ratios":[1, 0.05]})
         colorbar = ax1.scatter(mid_bins, means[..., i], c=nb_voxels,
@@ -47,7 +47,7 @@ def plot_means(bins, means, nb_voxels, names, out_folder,
         if cr_means is not None:
             ax1.scatter(mid_bins, cr_means[..., i], c=nb_voxels, cmap='Greys',
                         norm=norm, edgecolors="C0", linewidths=1, marker="s")
-            out_path = out_folder / str("corrected_" + str(names[i]) + "_sf.png")
+            out_path = out_folder / str("corrected_" + str(names[i]) + "_1f.png")
         if polyfit is not None:
             polynome = np.poly1d(polyfit[:, i])
             ax1.plot(highres_bins, polynome(highres_bins), "--", color="C0")
@@ -57,6 +57,25 @@ def plot_means(bins, means, nb_voxels, names, out_folder,
         fig.colorbar(colorbar, cax=cax, label="Voxel count")
         fig.tight_layout()
         plt.savefig(out_path, dpi=300)
+        plt.close()
+
+def plot_3d_means(bins, means, out_folder, names):
+    mid_bins = (bins[:-1] + bins[1:]) / 2.
+    plot_init()
+    for i in range(means.shape[-1]):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        X, Y = np.meshgrid(mid_bins, mid_bins)
+        ax.plot_surface(X, Y, means[..., i], cmap="jet")
+        ax.set_xlabel(r'$\theta_{a1}$')
+        ax.set_ylabel(r'$\theta_{a2}$')
+        ax.set_zlabel(str(names[i]) + ' mean')
+        fig.tight_layout()
+        views = np.array([[30, -135], [30, 45], [30, -45], [10, -90], [10, 0]])
+        for v, view in enumerate(views[:]):
+            out_path = out_folder / str(str(names[i]) + "_3D_view_" + str(v) + "_2f.png")
+            ax.view_init(view[0], view[1])
+            plt.savefig(out_path, dpi=300)
         plt.close()
 
 def save_angle_maps(peaks, fa, wm_mask, affine, output_path, fodf_peaks,
