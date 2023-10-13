@@ -34,16 +34,19 @@ def _build_arg_parser():
     p.add_argument('--measures', nargs='+', default=[],
                    action='append', required=True,
                    help='List of measures to characterize.')
+    p.add_argument('--measures_names', nargs='+', default=[],
+                   action='append',
+                   help='List of names for the measures to characterize.')
     
     p.add_argument('--in_e1',
                    help='Path to the principal eigenvector of DTI.')
     p.add_argument('--in_roi',
                    help='Path to the ROI for single fiber analysis.')
 
-    g = p.add_argument_group(title='Optional parameters')
+    g = p.add_argument_group(title='Characterization parameters')
     g.add_argument('--fa_thr', default=0.5,
                    help='Value of FA threshold [%(default)s].')
-    g.add_argument('--bin_width', default=1,
+    g.add_argument('--bin_width', default=1, type=int,
                    help='Value of the bin width for the whole brain [%(default)s].')
     # p.add_argument('--frac_thr', default=0.4,
     #                help='Value of the fraction threshold for selecting 2 fibers [%(default)s].')
@@ -51,25 +54,27 @@ def _build_arg_parser():
                    help='Value of the minimal fraction threshold for selecting peaks to correct [%(default)s].')
     g.add_argument('--min_nb_voxels', default=30, type=int,
                    help='Value of the minimal number of voxels per bin [%(default)s].')
-    g.add_argument('--poly_order', default=10,
+    g.add_argument('--poly_order', default=10, type=int,
                    help='Order of the polynome to fit [%(default)s].')
     
-    p1 = p.add_argument_group(title='Save angle info')
-    p1.add_argument('--save_angle_info', action='store_true',
+    s1 = p.add_argument_group(title='Save angle info')
+    s1.add_argument('--save_angle_info', action='store_true',
                     help='If set, will save the angle maps and masks.')
-    p1.add_argument('--angle_folder',
+    s1.add_argument('--angle_folder',
                     help='Output folder of where to save the angle info.')
+    s1.add_argument('--angle_mask_bin_width', default=10, type=int,
+                    help='Bin width used for the angle masks [%(default)s].')
     
-    p2 = p.add_argument_group(title='Save txt files')
-    p2.add_argument('--save_txt_files', action='store_true',
+    s2 = p.add_argument_group(title='Save txt files')
+    s2.add_argument('--save_txt_files', action='store_true',
                     help='If set, will save the results as txt files.')
-    p2.add_argument('--txt_folder',
+    s2.add_argument('--txt_folder',
                     help='Output folder of where to save the txt files.')
     
-    p3 = p.add_argument_group(title='Save plots')
-    p3.add_argument('--save_plots', action='store_true',
+    s3 = p.add_argument_group(title='Save plots')
+    s3.add_argument('--save_plots', action='store_true',
                     help='If set, will save the results as plots.')
-    p3.add_argument('--plots_folder',
+    s3.add_argument('--plots_folder',
                     help='Output folder of where to save the plots.')
 
     add_overwrite_arg(p)
@@ -80,11 +85,11 @@ def main():
     parser = _build_arg_parser()
     args = parser.parse_args()
 
-    if args.files_basename:
-        files_basename = args.files_basename
-    else:
-        files_basename = "_"
-        
+    if args.measures_names != [] and\
+        (len(args.measures_names[0]) != len(args.measures[0])):
+        parser.error('When using --measures_names, you need to specify ' +
+                     'the same number of measures as given in --measures.')
+
     out_folder = Path(args.out_folder)
 
     # Load the data
@@ -114,11 +119,13 @@ def main():
     else:
         roi = None
 
-    measures = np.ndarray((fa.shape) + (len(args.measures),))
-    measures_name = np.ndarray((len(args.measures),), dtype=object)
-    for i, measure in enumerate(args.measures):
+    measures = np.ndarray((fa.shape) + (len(args.measures[0]),))
+    measures_name = np.ndarray((len(args.measures[0]),), dtype=object)
+    for i, measure in enumerate(args.measures[0]):
         measures[..., i] = (nib.load(measure)).get_fdata()
         measures_name[i] = Path(measure).name.split(".")[0]
+    if args.measures_names != []:
+        measures_name = args.measures_names[0]
 
     print("Computing single-fiber means.")
     bins, measure_means, nb_voxels =\
@@ -155,7 +162,7 @@ def main():
         else:
             plots_folder = out_folder
         print("Saving single-fiber results as plots.")
-        plot_means(bins, measures, nb_voxels, measures_name,
+        plot_means(bins, measure_means, nb_voxels, measures_name,
                    plots_folder, polyfit=measures_fit)
         
     if args.save_angle_info:
@@ -168,7 +175,8 @@ def main():
                         peaks, peak_values, nufo)
         print("Saving single-fiber masks.")
         save_masks_by_angle_bins(e1, fa, wm_mask, affine, angle_folder,
-                                 nufo=nufo, bin_width=10, fa_thr=args.fa_thr)
-    
+                                 nufo=nufo, fa_thr=args.fa_thr,
+                                 bin_width=args.angle_mask_bin_width)
+
 if __name__ == "__main__":
     main()
