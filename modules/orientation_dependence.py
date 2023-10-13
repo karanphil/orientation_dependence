@@ -41,8 +41,11 @@ def compute_single_fiber_means(peaks, fa, wm_mask, affine,
     return bins, measure_means, nb_voxels
 
 def fit_single_fiber_results(bins, means, poly_order=8):
-    new_bins, new_means = extend_measure(bins, means)
-    mid_bins = (new_bins[:-1] + new_bins[1:]) / 2.
-    not_nan = np.isfinite(new_means)
-    fit = np.polyfit(mid_bins[not_nan], new_means[not_nan], poly_order)
-    return fit
+    fits = np.ndarray((poly_order + 1, means.shape[-1]))
+    for i in range(means.shape[-1]):
+        new_bins, new_means = extend_measure(bins, means[..., i])
+        mid_bins = (new_bins[:-1] + new_bins[1:]) / 2.
+        not_nan = np.isfinite(new_means)
+        fits[:, i] = np.polyfit(mid_bins[not_nan], new_means[not_nan],
+                                poly_order)
+    return fits

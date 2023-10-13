@@ -7,6 +7,58 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from modules.utils import compute_peaks_fraction
 
 
+def plot_init():
+    # plt.rcParams["font.family"] = "serif"
+    # plt.rcParams['font.serif'] = 'Helvetica'
+    # plt.style.use('seaborn-notebook')
+    plt.rcParams['axes.grid'] = False
+    plt.rcParams['grid.color'] = "darkgrey"
+    plt.rcParams['grid.linewidth'] = 1
+    plt.rcParams['grid.linestyle'] = "-"
+    plt.rcParams['grid.alpha'] = "0.5"
+    plt.rcParams['figure.figsize'] = (12.0, 5.0)
+    plt.rcParams['font.size'] = 12
+    plt.rcParams['axes.labelsize'] = plt.rcParams['font.size']
+    plt.rcParams['axes.titlesize'] = 1.2*plt.rcParams['font.size']
+    plt.rcParams['legend.fontsize'] = plt.rcParams['font.size']
+    plt.rcParams['xtick.labelsize'] = plt.rcParams['font.size']
+    plt.rcParams['ytick.labelsize'] = plt.rcParams['font.size']
+    plt.rcParams['axes.linewidth'] =1
+    plt.rcParams['lines.linewidth']=1
+    plt.rcParams['lines.markersize']=4
+    # plt.rcParams['text.latex.unicode']=True
+    # plt.rcParams['text.latex.preamble'] = [r'\usepackage{amssymb}', r"\usepackage{amstext}"]
+    # plt.rcParams['mathtext.default']='regular'
+
+def plot_means(bins, means, nb_voxels, names, out_folder,
+               cr_means=None, polyfit=None):
+    max_count = np.max(nb_voxels)
+    norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
+    mid_bins = (bins[:-1] + bins[1:]) / 2.
+    highres_bins = np.arange(0, 90 + 1, 0.5)
+    plot_init()
+    for i in range(means.shape[-1]):
+        out_path = out_folder / str("original_" + str(names[i]) + "_sf.png")
+        fig, (ax1, cax) = plt.subplots(1, 2,
+                                       gridspec_kw={"width_ratios":[1, 0.05]})
+        colorbar = ax1.scatter(mid_bins, means[..., i], c=nb_voxels,
+                               cmap='Greys', norm=norm,
+                               edgecolors="C0", linewidths=1)
+        if cr_means is not None:
+            ax1.scatter(mid_bins, cr_means[..., i], c=nb_voxels, cmap='Greys',
+                        norm=norm, edgecolors="C0", linewidths=1, marker="s")
+            out_path = out_folder / str("corrected_" + str(names[i]) + "_sf.png")
+        if polyfit is not None:
+            polynome = np.poly1d(polyfit[:, i])
+            ax1.plot(highres_bins, polynome(highres_bins), "--", color="C0")
+        ax1.set_xlabel(r'$\theta_a$')
+        ax1.set_xlim(0, 90)
+        ax1.set_ylabel( str(names[i]) + ' mean')
+        fig.colorbar(colorbar, cax=cax, label="Voxel count")
+        fig.tight_layout()
+        plt.savefig(out_path, dpi=300)
+        plt.close()
+
 def save_angle_maps(peaks, fa, wm_mask, affine, output_path, fodf_peaks,
                     peak_values, nufo, bin_width=1, fa_thr=0.5):
     # Find the direction of the B0 field
