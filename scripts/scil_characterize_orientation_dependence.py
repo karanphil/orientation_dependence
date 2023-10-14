@@ -3,9 +3,11 @@ import nibabel as nib
 import numpy as np
 from pathlib import Path
 
-from modules.io import (plot_means, plot_3d_means, save_angle_maps,
-                        save_masks_by_angle_bins, save_results_as_txt)
-from modules.orientation_dependence import (compute_crossing_fibers_means,
+from modules.io import (plot_means, plot_3d_means, plot_multiple_means,
+                        save_angle_maps, save_masks_by_angle_bins,
+                        save_results_as_txt)
+from modules.orientation_dependence import (analyse_delta_m_max,
+                                            compute_crossing_fibers_means,
                                             compute_single_fiber_means,
                                             fit_single_fiber_results)
 
@@ -132,6 +134,7 @@ def main():
     measures_name = np.ndarray((len(args.measures[0]),), dtype=object)
     for i, measure in enumerate(args.measures[0]):
         measures[..., i] = (nib.load(measure)).get_fdata()
+        # measures[..., i] = np.clip(measures[..., i], 0, None)
         measures_name[i] = Path(measure).name.split(".")[0]
     if args.measures_names != []:
         measures_name = args.measures_names[0]
@@ -201,13 +204,22 @@ def main():
                                         bin_width=args.bin_width_2f,
                                         min_nb_voxels=args.min_nb_voxels)
     
-    measure_mean_diag = np.diagonal(measure_means, axis1=1, axis2=2)
-    measure_mean_diag = np.swapaxes(measure_mean_diag, 1, 2)
+    measure_means_diag = np.diagonal(measure_means, axis1=1, axis2=2)
+    measure_means_diag = np.swapaxes(measure_means_diag, 1, 2)
     nb_voxels_diag = np.diagonal(nb_voxels, axis1=1, axis2=2)
+
+    delta_m_max_results = analyse_delta_m_max(bins, measure_means_diag,
+                                              sf_delta_m_max, nb_voxels_diag)
 
     if args.save_plots:
         print("Saving two-fiber results as plots.")
-        plot_3d_means(bins, measure_means[0], plots_folder, measures_name)
+        plot_3d_means(bins, measure_means[0], plots_folder, measures_name,
+                      nametype="original")
+
+        plot_multiple_means(bins, measure_means_diag, nb_voxels_diag,
+                            plots_folder, measures_name, labels=labels,
+                            legend_title=r"Peak$_1$ fraction", endname="2D_2f")
+
 
 if __name__ == "__main__":
     main()

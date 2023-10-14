@@ -53,13 +53,13 @@ def plot_means(bins, means, nb_voxels, names, out_folder,
             ax1.plot(highres_bins, polynome(highres_bins), "--", color="C0")
         ax1.set_xlabel(r'$\theta_a$')
         ax1.set_xlim(0, 90)
-        ax1.set_ylabel( str(names[i]) + ' mean')
+        ax1.set_ylabel(str(names[i]) + ' mean')
         fig.colorbar(colorbar, cax=cax, label="Voxel count")
         fig.tight_layout()
         plt.savefig(out_path, dpi=300)
         plt.close()
 
-def plot_3d_means(bins, means, out_folder, names):
+def plot_3d_means(bins, means, out_folder, names, nametype=""):
     mid_bins = (bins[:-1] + bins[1:]) / 2.
     plot_init()
     for i in range(means.shape[-1]):
@@ -73,9 +73,74 @@ def plot_3d_means(bins, means, out_folder, names):
         fig.tight_layout()
         views = np.array([[30, -135], [30, 45], [30, -45], [10, -90], [10, 0]])
         for v, view in enumerate(views[:]):
-            out_path = out_folder / str(str(names[i]) + "_3D_view_" + str(v) + "_2f.png")
+            out_path = out_folder / str(str(nametype) + "_" + str(names[i]) + "_3D_view_" + str(v) + "_2f.png")
             ax.view_init(view[0], view[1])
             plt.savefig(out_path, dpi=300)
+        plt.close()
+
+def plot_multiple_means(bins, means, nb_voxels, out_folder, names, endname="2f",
+                        means_cr=None, labels=None, legend_title=None,
+                        polyfit=None, delta_plot=False, xlim=[0, 1.03],
+                        p_frac=None, mt_max=None, mt_max_poly=None, leg_loc=None,
+                        markers="o"):
+    max_count = np.max(nb_voxels)
+    norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
+    mid_bins = (bins[:-1] + bins[1:]) / 2.
+    highres_bins = np.arange(0, 90 + 1, 0.5)
+    plot_init()
+    fig, (ax1, cax) = plt.subplots(1, 2,
+                                   gridspec_kw={"width_ratios":[1, 0.05]})
+    for j in range(means.shape[-1]):
+        out_path = out_folder / str("original_" + str(names[j]) + "_" + str(endname) + ".png")
+        for i in range(means.shape[0]):
+            if labels is not None:
+                colorbar = ax1.scatter(mid_bins, means[i, :, j],
+                                       c=nb_voxels[i], cmap='Greys', norm=norm,
+                                       label=labels[i], linewidths=1,
+                                       edgecolors="C" + str(i), marker=markers)
+            else:
+                colorbar = ax1.scatter(mid_bins, means[i, :, j],
+                                       c=nb_voxels[i], cmap='Greys', norm=norm,
+                                       linewidths=1, edgecolors="C" + str(i),
+                                       marker=markers)
+            if means_cr is not None:
+                ax1.scatter(mid_bins, means_cr[i, :, j], c=nb_voxels[i],
+                            cmap='Greys', norm=norm, edgecolors="C" + str(i),
+                            linewidths=1, marker="s")
+                out_path = out_folder / str("corrected_" + str(names[i]) + "_" + str(endname) + ".png")
+            if polyfit is not None:
+                polynome = np.poly1d(polyfit[:, j])
+                ax1.plot(highres_bins, polynome(highres_bins), "--",
+                         color="C" + str(i))
+        ax1.set_xlabel(r'$\theta_a$')
+        ax1.set_xlim(0, 90)
+        ax1.set_ylabel(str(names[j]) + ' mean')
+        if labels is not None:
+            ax1.legend(loc=leg_loc)
+        if legend_title is not None:
+            ax1.get_legend().set_title(legend_title)
+
+        if delta_plot:
+            # this is an inset axes over the main axes
+            highres_frac = np.arange(0, 1.01, 0.01)
+            # ax = inset_axes(ax1,
+            #                 bbox_to_anchor=[0.2, 0.2, 0.2, 0.2],
+            #                 width="50%", # width = 40% of parent_bbox
+            #                 height=1.0) # height : 1 inch
+            #                 # loc=2)
+            ax = plt.axes([0.13, 0.75, 0.16, 0.2])
+            for i in range(len(p_frac) - 1):
+                ax.scatter(p_frac[i], mt_max[i], color="C" + str(i), linewidths=1)
+            ax.scatter(p_frac[-1], mt_max[-1], color="black", linewidths=1)
+            ax.plot(highres_frac, mt_max_poly(highres_frac), "--", color="grey")
+            ax.set_xlabel(r'Peak$_1$ fraction')
+            ax.set_xlim(xlim[0], xlim[1])
+            ax.set_ylabel(str(names[j]) + r' $\delta m_{max}$')
+
+        fig.colorbar(colorbar, cax=cax, label="Voxel count")
+        fig.tight_layout()
+        print("toto")
+        plt.savefig(out_path, dpi=300)
         plt.close()
 
 def save_angle_maps(peaks, fa, wm_mask, affine, output_path, fodf_peaks,

@@ -3,6 +3,80 @@ import numpy as np
 from modules.utils import (extend_measure, compute_peaks_fraction)
 
 
+def analyse_delta_m_max(bins, measure_means_diag, delta_m_max, nb_voxels,
+                        frac_thrs=np.array([0.5, 0.6, 0.7, 0.8, 0.9])):
+
+    min_idx = np.nanargmin(measure_means_diag[0], axis=0)
+    max_idx = np.nanargmax(measure_means_diag[0], axis=0)
+
+    print(measure_means_diag.shape)
+
+    print(min_idx)
+    print(max_idx)
+
+    print(measure_means_diag[0, :, 0])
+
+    print(measure_means_diag[0, :, 0][min_idx[0]])
+    print(measure_means_diag[0, :, 0][max_idx[0]])
+
+    return 0
+
+    # min_nb_voxels = nb_voxels[:, min_idx]
+    # max_nb_voxels = nb_voxels[:, max_idx]
+
+    mtr_min = mtr_diag[:, min_idx]
+    mtr_max = mtr_diag[:, max_idx]
+    mtr_delta_m_max = np.zeros(5)
+    #mtr_delta_m_max[0] = 0
+    mtr_delta_m_max[0:4] = mtr_max - mtr_min
+    mtr_delta_m_max[4] = mtr_single_fiber_delta_m_max
+    mtr_delta_m_max /= mtr_delta_m_max[4]
+
+    ihmtr_min = ihmtr_diag[:, min_idx]
+    ihmtr_max = ihmtr_diag[:, max_idx]
+    ihmtr_delta_m_max = np.zeros(5)
+    #ihmtr_delta_m_max[0] = 0
+    ihmtr_delta_m_max[0:4] = ihmtr_min - ihmtr_max
+    ihmtr_delta_m_max[4] = ihmtr_single_fiber_delta_m_max
+    ihmtr_delta_m_max /= ihmtr_delta_m_max[4]
+
+    frac_thrs_mid = np.zeros((len(frac_thrs)))
+    # frac_thrs_mid[0] = 0
+    frac_thrs_mid[-1] = 1
+    frac_thrs_mid[0:-1] = (frac_thrs[:-1] + frac_thrs[1:])/2.
+
+    frac_thrs_mid = frac_thrs_mid[~np.isnan(mtr_delta_m_max)]
+    mtr_delta_m_max = mtr_delta_m_max[~np.isnan(mtr_delta_m_max)]
+    ihmtr_delta_m_max = ihmtr_delta_m_max[~np.isnan(ihmtr_delta_m_max)]
+
+    idx_to_fit = np.array([0, 1, 2, -1])
+
+    mtr_to_fit = np.take(mtr_delta_m_max, idx_to_fit) - 1
+    frac_thrs_to_fit = np.take(frac_thrs_mid, idx_to_fit) - 1
+    frac_thrs_to_fit = frac_thrs_to_fit[:, np.newaxis]
+    slope_mtr, _, _, _ = np.linalg.lstsq(frac_thrs_to_fit, mtr_to_fit)
+    origin_mtr = slope_mtr * (-1) + 1
+
+    def mtr_fct(x):
+        return slope_mtr * x + origin_mtr
+    
+    ihmtr_to_fit = np.take(ihmtr_delta_m_max, idx_to_fit) - 1
+    slope_ihmtr, _, _, _ = np.linalg.lstsq(frac_thrs_to_fit, ihmtr_to_fit)
+    origin_ihmtr = slope_ihmtr * (-1) + 1
+
+    def ihmtr_fct(x):
+        return slope_ihmtr * x + origin_ihmtr
+
+    # mtr_fit = np.polyfit(np.take(frac_thrs_mid, idx_to_fit), np.take(mtr_delta_m_max, idx_to_fit), 1)
+    # mtr_fit = np.polyfit(frac_thrs_mid[:5], mtr_delta_m_max[:5], 1)
+    # mtr_polynome = np.poly1d(mtr_fit)
+
+    # ihmtr_fit = np.polyfit(np.take(frac_thrs_mid, idx_to_fit), np.take(ihmtr_delta_m_max, idx_to_fit), 1)
+    # ihmtr_fit = np.polyfit(frac_thrs_mid[:5], ihmtr_delta_m_max[:5], 1)
+    # ihmtr_polynome = np.poly1d(ihmtr_fit)
+    
+    return mtr_fct, ihmtr_fct, mtr_delta_m_max, ihmtr_delta_m_max, frac_thrs_mid
+
 def compute_crossing_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
                                   measures, bin_width=10,
                                   frac_thrs=np.array([0.5, 0.6, 0.7, 0.8, 0.9]),
