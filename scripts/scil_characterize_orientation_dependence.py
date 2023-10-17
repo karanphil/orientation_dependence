@@ -208,8 +208,9 @@ def main():
     measure_means_diag = np.swapaxes(measure_means_diag, 1, 2)
     nb_voxels_diag = np.diagonal(nb_voxels, axis1=1, axis2=2)
 
-    delta_m_max_results = analyse_delta_m_max(bins, measure_means_diag,
-                                              sf_delta_m_max, nb_voxels_diag)
+    slope, origin, delta_m_max, frac_thrs_mid =\
+        analyse_delta_m_max(bins, measure_means_diag,
+                            sf_delta_m_max, nb_voxels_diag)
 
     if args.save_plots:
         print("Saving two-fiber results as plots.")
