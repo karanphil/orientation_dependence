@@ -81,8 +81,9 @@ def plot_3d_means(bins, means, out_folder, names, nametype=""):
 def plot_multiple_means(bins, means, nb_voxels, out_folder, names,
                         endname="2f", means_cr=None, labels=None,
                         legend_title=None, polyfit=None,
-                        xlim=[0, 1.03], delta_max=None, delta_max_fit=None,
-                        p_frac=None, leg_loc=None, markers="o"):
+                        xlim=[0, 1.03], delta_max=None, delta_max_slope=None,
+                        delta_max_origin=None, p_frac=None, leg_loc=3,
+                        markers="o"):
     max_count = np.max(nb_voxels)
     norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
     mid_bins = (bins[:-1] + bins[1:]) / 2.
@@ -130,10 +131,13 @@ def plot_multiple_means(bins, means, nb_voxels, out_folder, names,
             #                 # loc=2)
             ax = plt.axes([0.13, 0.75, 0.16, 0.2])
             for i in range(len(p_frac) - 1):
-                ax.scatter(p_frac[i], delta_max[i], color="C" + str(i),
+                ax.scatter(p_frac[i], delta_max[i, j], color="C" + str(i),
                            linewidths=1)
-            ax.scatter(p_frac[-1], delta_max[-1], color="black", linewidths=1)
-            ax.plot(highres_frac, delta_max_fit(highres_frac), "--",
+            ax.scatter(p_frac[-1], delta_max[-1, j], color="black",
+                       linewidths=1)
+            ax.plot(highres_frac,
+                    delta_max_slope[j] * highres_frac + delta_max_origin[j],
+                    "--",
                     color="grey")
             ax.set_xlabel(r'Peak$_1$ fraction')
             ax.set_xlim(xlim[0], xlim[1])

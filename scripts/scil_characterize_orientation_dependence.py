@@ -208,9 +208,23 @@ def main():
     measure_means_diag = np.swapaxes(measure_means_diag, 1, 2)
     nb_voxels_diag = np.diagonal(nb_voxels, axis1=1, axis2=2)
 
-    slope, origin, delta_m_max, frac_thrs_mid =\
+    print("Analysing two-fiber delta_m_max.")
+    slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins =\
         analyse_delta_m_max(bins, measure_means_diag,
                             sf_delta_m_max, nb_voxels_diag)
+    print("Analysis found these bins as minima and maxima: ")
+    for i in range(len(measures_name)):
+        print(str(measures_name[i]) + " minimum at " + str(min_bins[i]) + " degrees")
+        print(str(measures_name[i]) + " maximum at " + str(max_bins[i]) + " degrees")
+
+    print("Saving delta_m_max fit results.")
+    for i in range(slope.shape[-1]):
+        out_path = out_folder / str(str(measures_name[i]) + "_delta_m_max_fit.npy")
+        np.save(out_path, np.concatenate(([slope[i]], [origin[i]])))
+
+    if args.save_txt_files:
+        print("Saving results as txt files.")
+        # TODO
 
     if args.save_plots:
         print("Saving two-fiber results as plots.")
@@ -219,8 +233,14 @@ def main():
 
         plot_multiple_means(bins, measure_means_diag, nb_voxels_diag,
                             plots_folder, measures_name, labels=labels,
-                            legend_title=r"Peak$_1$ fraction", endname="2D_2f")
+                            legend_title=r"Peak$_1$ fraction", endname="2D_2f",
+                            delta_max=delta_m_max,
+                            delta_max_slope=slope,
+                            delta_max_origin=origin,
+                            p_frac=frac_thrs_mid)
 
+    print("Computing 3 crossing fibers means.")
+    # TODO
 
 if __name__ == "__main__":
     main()

@@ -12,6 +12,8 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
     measures_idx = np.arange(means_diag.shape[-1])
     means_min = means_diag[:, min_idx, measures_idx]
     means_max = means_diag[:, max_idx, measures_idx]
+    min_bins = (bins[min_idx] + bins[min_idx + 1]) /2 # +1 might cause problems
+    max_bins = (bins[max_idx] + bins[max_idx + 1]) /2 # for last index
 
     delta_m_max = np.zeros((len(frac_thrs), means_diag.shape[-1]))
     delta_m_max[0:4] = means_max - means_min
@@ -41,7 +43,7 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
                                             delta_m_max_to_fit, rcond=None)
         origin[i] = slope[i] * (-1) + 1
 
-    return slope, origin, delta_m_max, frac_thrs_mid
+    return slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins
 
 def compute_crossing_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
                                   measures, bin_width=10,
