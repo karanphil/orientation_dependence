@@ -3,9 +3,21 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from pathlib import Path
 
 from modules.utils import compute_peaks_fraction
 
+
+def extract_measures(measures_arg, data_shape, names_arg=[]):
+    measures = np.ndarray((data_shape) + (len(measures_arg[0]),))
+    measures_name = np.ndarray((len(measures_arg[0]),), dtype=object)
+    for i, measure in enumerate(measures_arg[0]):
+        measures[..., i] = (nib.load(measure)).get_fdata()
+        # measures[..., i] = np.clip(measures[..., i], 0, None)
+        measures_name[i] = Path(measure).name.split(".")[0]
+    if names_arg != []:
+        measures_name = names_arg[0]
+    return measures, measures_name
 
 def plot_init():
     # plt.rcParams["font.family"] = "serif"

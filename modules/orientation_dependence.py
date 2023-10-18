@@ -1,6 +1,7 @@
 import numpy as np
 
-from modules.utils import (extend_measure, compute_peaks_fraction)
+from modules.utils import (extend_measure, compute_peaks_fraction,
+                           compute_corrections, nb_peaks_factor)
 
 
 def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
@@ -44,6 +45,40 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
         origin[i] = slope[i] * (-1) + 1
 
     return slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins
+
+def correct_measure(peaks, peak_values, measure, affine, wm_mask,
+                    polynome, peak_frac_thr=0, polynome_factor=None):
+    peaks_fraction = compute_peaks_fraction(peak_values)
+
+    if polynome_factor is not None:
+        peaks_fraction_factor = nb_peaks_factor(polynome_factor, peaks_fraction[..., 0])
+    else:
+        peaks_fraction_factor = np.ones(peaks_fraction.shape[:3])
+    
+    # Find the direction of the B0 field
+    rot = affine[0:3, 0:3]
+    z_axis = np.array([0, 0, 1])
+    b0_field = np.dot(rot.T, z_axis)
+
+    peaks_angles = np.empty((peaks_fraction.shape))
+    peaks_angles[:] = np.nan
+    corrections = np.zeros((peaks_fraction.shape))
+    # Calculate the angle between e1 and B0 field for each peak
+    wm_mask_bool = (wm_mask >= 0.9)
+    for i in range(peaks_angles.shape[-1]):
+        mask = wm_mask_bool & (peaks_fraction[..., i] > peak_frac_thr)
+        cos_theta = np.dot(peaks[mask, i*3:(i+1)*3], b0_field)
+        theta = np.arccos(cos_theta) * 180 / np.pi
+        peaks_angles[mask, i] = np.abs(theta//90 * 90 - theta%90) % 180
+
+        corrections[mask, i] = compute_corrections(polynome,
+                                                   peaks_angles[mask, i],
+                                                   peaks_fraction[mask, i],
+                                                   peaks_fraction_factor[mask])
+    
+    total_corrections = np.sum(corrections, axis=-1)
+
+    return measure + total_corrections
 
 def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
                                measures, bin_width=30, 

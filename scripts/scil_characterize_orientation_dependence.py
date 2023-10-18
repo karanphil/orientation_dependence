@@ -5,7 +5,7 @@ from pathlib import Path
 
 from modules.io import (plot_means, plot_3d_means, plot_multiple_means,
                         save_angle_maps, save_masks_by_angle_bins,
-                        save_results_as_npz)
+                        save_results_as_npz, extract_measures)
 from modules.orientation_dependence import (analyse_delta_m_max,
                                             compute_three_fibers_means,
                                             compute_two_fibers_means,
@@ -39,8 +39,7 @@ def _build_arg_parser():
     p.add_argument('--measures', nargs='+', default=[],
                    action='append', required=True,
                    help='List of measures to characterize.')
-    p.add_argument('--measures_names', nargs='+', default=[],
-                   action='append',
+    p.add_argument('--measures_names', nargs='+', default=[], action='append',
                    help='List of names for the measures to characterize.')
     
     p.add_argument('--in_e1',
@@ -135,14 +134,8 @@ def main():
     else:
         roi = None
 
-    measures = np.ndarray((fa.shape) + (len(args.measures[0]),))
-    measures_name = np.ndarray((len(args.measures[0]),), dtype=object)
-    for i, measure in enumerate(args.measures[0]):
-        measures[..., i] = (nib.load(measure)).get_fdata()
-        # measures[..., i] = np.clip(measures[..., i], 0, None)
-        measures_name[i] = Path(measure).name.split(".")[0]
-    if args.measures_names != []:
-        measures_name = args.measures_names[0]
+    measures, measures_name = extract_measures(args.measures, fa.shape,
+                                               args.measures_names)
 
     #----------------------- Single-fiber section -----------------------------
     print("Computing single-fiber means.")
