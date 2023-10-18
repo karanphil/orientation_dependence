@@ -19,6 +19,6 @@ def extend_measure(bins, measure):
     new_measure = np.concatenate((np.flip(measure[1:10]), measure, np.flip(measure[-10:-1])))
     return new_bins, new_measure
 
-def nb_peaks_factor(polynome, peak_fraction):
-    nb_peaks_factor = polynome(peak_fraction)
+def nb_peaks_factor(delta_m_max_fct, peak_fraction):
+    nb_peaks_factor = delta_m_max_fct(peak_fraction)
     return np.clip(nb_peaks_factor, 0, 1)

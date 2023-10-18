@@ -219,7 +219,7 @@ def main():
     print("Saving delta_m_max fit results.")
     for i in range(slope.shape[-1]):
         out_path = out_folder / str(str(measures_name[i]) + "_delta_m_max_fit.npy")
-        np.save(out_path, np.concatenate(([slope[i]], [origin[i]])))
+        np.save(out_path, np.concatenate(([origin[i]], [slope[i]])))
 
     if args.save_npz_files:
         print("Saving results as npz files.")

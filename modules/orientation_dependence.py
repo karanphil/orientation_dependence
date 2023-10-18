@@ -47,11 +47,11 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
     return slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins
 
 def correct_measure(peaks, peak_values, measure, affine, wm_mask,
-                    polynome, peak_frac_thr=0, polynome_factor=None):
+                    polynome, peak_frac_thr=0, delta_m_max_fct=None):
     peaks_fraction = compute_peaks_fraction(peak_values)
 
-    if polynome_factor is not None:
-        peaks_fraction_factor = nb_peaks_factor(polynome_factor, peaks_fraction[..., 0])
+    if delta_m_max_fct is not None:
+        peaks_fraction_factor = nb_peaks_factor(delta_m_max_fct, peaks_fraction[..., 0])
     else:
         peaks_fraction_factor = np.ones(peaks_fraction.shape[:3])
     
