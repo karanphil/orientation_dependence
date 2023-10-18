@@ -5,9 +5,10 @@ from pathlib import Path
 
 from modules.io import (plot_means, plot_3d_means, plot_multiple_means,
                         save_angle_maps, save_masks_by_angle_bins,
-                        save_results_as_txt)
+                        save_results_as_npz)
 from modules.orientation_dependence import (analyse_delta_m_max,
-                                            compute_crossing_fibers_means,
+                                            compute_three_fibers_means,
+                                            compute_two_fibers_means,
                                             compute_single_fiber_means,
                                             fit_single_fiber_results)
 
@@ -68,6 +69,10 @@ def _build_arg_parser():
     g.add_argument('--poly_order', default=10, type=int,
                    help='Order of the polynome to fit [%(default)s].')
     
+    g.add_argument('--compute_three_fiber_crossings', action='store_true',
+                   help='If set, will perform the three-fiber crossings '
+                        'analysis.')
+    
     s1 = p.add_argument_group(title='Save angle info')
     s1.add_argument('--save_angle_info', action='store_true',
                     help='If set, will save the angle maps and masks.')
@@ -76,11 +81,11 @@ def _build_arg_parser():
     s1.add_argument('--angle_mask_bin_width', default=10, type=int,
                     help='Bin width used for the angle masks [%(default)s].')
     
-    s2 = p.add_argument_group(title='Save txt files')
-    s2.add_argument('--save_txt_files', action='store_true',
-                    help='If set, will save the results as txt files.')
-    s2.add_argument('--txt_folder',
-                    help='Output folder of where to save the txt files.')
+    s2 = p.add_argument_group(title='Save npz files')
+    s2.add_argument('--save_npz_files', action='store_true',
+                    help='If set, will save the results as npz files.')
+    s2.add_argument('--npz_folder',
+                    help='Output folder of where to save the npz files.')
     
     s3 = p.add_argument_group(title='Save plots')
     s3.add_argument('--save_plots', action='store_true',
@@ -160,14 +165,15 @@ def main():
         out_path = out_folder / str(str(measures_name[i]) + "_polyfit.npy")
         np.save(out_path, measures_fit[:, i])
     
-    if args.save_txt_files:
-        if args.txt_folder:
-            txt_folder = Path(args.txt_folder)
+    if args.save_npz_files:
+        if args.npz_folder:
+            npz_folder = Path(args.npz_folder)
         else:
-            txt_folder = out_folder
-        print("Saving results as txt files.")
-        save_results_as_txt(bins, measure_means, nb_voxels, measures_name,
-                            txt_folder)
+            npz_folder = out_folder
+        out_path = npz_folder / '1f_results'
+        print("Saving results as npz files.")
+        save_results_as_npz(bins, measure_means, nb_voxels, measures_name,
+                            out_path)
         
     if args.save_plots:
         if args.plots_folder:
@@ -198,7 +204,7 @@ def main():
     #---------------------- Crossing fibers section ---------------------------
     print("Computing two-fiber means.")
     bins, measure_means, nb_voxels, labels =\
-        compute_crossing_fibers_means(peaks, peak_values,
+        compute_two_fibers_means(peaks, peak_values,
                                         wm_mask, affine,
                                         nufo, measures,
                                         bin_width=args.bin_width_2f,
@@ -222,9 +228,11 @@ def main():
         out_path = out_folder / str(str(measures_name[i]) + "_delta_m_max_fit.npy")
         np.save(out_path, np.concatenate(([slope[i]], [origin[i]])))
 
-    if args.save_txt_files:
-        print("Saving results as txt files.")
-        # TODO
+    if args.save_npz_files:
+        print("Saving results as npz files.")
+        out_path = npz_folder / "2f_results"
+        save_results_as_npz(bins, measure_means, nb_voxels, measures_name,
+                            out_path)
 
     if args.save_plots:
         print("Saving two-fiber results as plots.")
@@ -239,8 +247,24 @@ def main():
                             delta_max_origin=origin,
                             p_frac=frac_thrs_mid)
 
-    print("Computing 3 crossing fibers means.")
-    # TODO
+    if args.compute_three_fiber_crossings:
+        print("Computing 3 crossing fibers means.")
+        bins, measure_means, nb_voxels, labels =\
+            compute_three_fibers_means(peaks, peak_values, wm_mask, affine,
+                                    nufo, measures, bin_width=args.bin_width_3f,
+                                    min_nb_voxels=args.min_nb_voxels)
+        
+        if args.save_npz_files:
+            print("Saving results as npz files.")
+            out_path = npz_folder / "3f_results"
+            save_results_as_npz(bins, measure_means, nb_voxels, measures_name,
+                                out_path)
+
+        if args.save_plots:
+            print("Saving three-fiber results as plots.")
+            plot_multiple_means(bins, measure_means, nb_voxels, plots_folder,
+                                measures_name, endname="2D_3f", labels=labels,
+                                legend_title=r"Peak$_1$ fraction")
 
 if __name__ == "__main__":
     main()

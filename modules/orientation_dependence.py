@@ -45,10 +45,67 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
 
     return slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins
 
-def compute_crossing_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
-                                  measures, bin_width=10,
-                                  frac_thrs=np.array([0.5, 0.6, 0.7, 0.8, 0.9]),
-                                  min_nb_voxels=5):
+def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
+                               measures, bin_width=30, 
+                               frac_thrs=np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]),
+                               min_nb_voxels=5):
+    peaks_fraction = compute_peaks_fraction(peak_values)
+
+    # Find the direction of the B0 field
+    rot = affine[0:3, 0:3]
+    z_axis = np.array([0, 0, 1])
+    b0_field = np.dot(rot.T, z_axis)
+
+    bins = np.arange(0, 90 + bin_width, bin_width)
+
+    # Calculate the angle between e1 and B0 field
+    cos_theta_f1 = np.dot(peaks[..., 0:3], b0_field)
+    theta_f1 = np.arccos(cos_theta_f1) * 180 / np.pi
+    cos_theta_f2 = np.dot(peaks[..., 3:6], b0_field)
+    theta_f2 = np.arccos(cos_theta_f2) * 180 / np.pi
+    cos_theta_f3 = np.dot(peaks[..., 6:9], b0_field)
+    theta_f3 = np.arccos(cos_theta_f3) * 180 / np.pi
+
+    labels = np.zeros((len(frac_thrs) - 1), dtype=object)
+    measure_means = np.zeros((len(frac_thrs) - 1, len(bins) - 1,
+                          measures.shape[-1]))
+    nb_voxels = np.zeros((len(frac_thrs) - 1, len(bins) - 1))
+
+    for idx in range(len(frac_thrs) - 1):
+        # Apply the WM mask
+        wm_mask_bool = (wm_mask >= 0.9) & (nufo == 3)
+        fraction_mask_bool = (peaks_fraction[..., 0] >= frac_thrs[idx]) & (peaks_fraction[..., 0] < frac_thrs[idx + 1])
+        for i in range(len(bins) - 1):
+            angle_mask_0_90 = (theta_f1 >= bins[i]) & (theta_f1 < bins[i+1])
+            angle_mask_90_180 = (180 - theta_f1 >= bins[i]) & (180 - theta_f1 < bins[i+1])
+            angle_mask = angle_mask_0_90 | angle_mask_90_180
+            mask_f1 = angle_mask
+
+            angle_mask_0_90 = (theta_f2 >= bins[i]) & (theta_f2 < bins[i+1]) 
+            angle_mask_90_180 = (180 - theta_f2 >= bins[i]) & (180 - theta_f2 < bins[i+1])
+            angle_mask = angle_mask_0_90 | angle_mask_90_180
+            mask_f2 = angle_mask
+
+            angle_mask_0_90 = (theta_f3 >= bins[i]) & (theta_f3 < bins[i+1]) 
+            angle_mask_90_180 = (180 - theta_f3 >= bins[i]) & (180 - theta_f3 < bins[i+1])
+            angle_mask = angle_mask_0_90 | angle_mask_90_180
+            mask_f3 = angle_mask
+
+            mask = mask_f1 & mask_f2 & mask_f3 & wm_mask_bool & fraction_mask_bool
+            nb_voxels[idx, i] = np.sum(mask)
+            if np.sum(mask) < min_nb_voxels:
+                measure_means[idx, i, :] = None
+            else:
+                measure_means[idx, i] = np.mean(measures[mask], axis=0)
+
+        labels[idx] = "[" + str(frac_thrs[idx]) + ", " + str(frac_thrs[idx + 1]) + "["
+
+    return bins, measure_means, nb_voxels, labels
+
+def compute_two_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
+                             measures, bin_width=10,
+                             frac_thrs=np.array([0.5, 0.6, 0.7, 0.8, 0.9]),
+                             min_nb_voxels=5):
     peaks_fraction = compute_peaks_fraction(peak_values)
 
     # Find the direction of the B0 field

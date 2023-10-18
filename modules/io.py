@@ -222,7 +222,7 @@ def save_angle_maps(peaks, fa, wm_mask, affine, output_path, fodf_peaks,
         mask_f3 = angle_mask & wm_mask_bool & fraction_mask_bool
         peak_3[mask_f3] = (bins[i] + bins[i + 1]) /2.
 
-    map_1_name = "peak_1_sf_angles_map.nii.gz"
+    map_1_name = "peak_1_1f_angles_map.nii.gz"
     map_1_path = output_path / map_1_name
     nib.save(nib.Nifti1Image(peak_1_sf, affine), map_1_path)
 
@@ -263,19 +263,18 @@ def save_masks_by_angle_bins(peaks, fa, wm_mask, affine, output_path,
         angle_mask_90_180 = (180 - theta >= bins[i]) & (180 - theta < bins[i+1])
         angle_mask = angle_mask_0_90 | angle_mask_90_180
         mask = wm_mask_bool & angle_mask
-        mask_name = "sf_mask_" + str(bins[i]) + "_to_" + str(bins[i+1]) \
+        mask_name = "1f_mask_" + str(bins[i]) + "_to_" + str(bins[i+1]) \
             + "_degrees.nii.gz"
         mask_path = output_path / mask_name
         nib.save(nib.Nifti1Image(mask.astype(np.uint8), affine), mask_path)
 
 
-def save_results_as_txt(bins, measure_means, nb_voxels, names, out_folder):
-    # Save the results to a text file
-    results = np.column_stack((bins[:-1], bins[1:], measure_means, nb_voxels))
-    output_path = out_folder / 'sf_results.txt'
-    header = 'Angle_min\tAngle_max\t'
-    for name in names:
-        header += str(name) + '\t'
-    header += 'Nb_voxels'
-    np.savetxt(str(output_path), results, fmt='%10.5f', delimiter='\t',
-               header=header)
+def save_results_as_npz(bins, measure_means, nb_voxels, names, out_path):
+    # Save the results to a npz files
+    savez_dict = dict()
+    savez_dict['Angle_min'] = bins[:-1]
+    savez_dict['Angle_max'] = bins[1:]
+    savez_dict['Nb_voxels'] = nb_voxels
+    for i in range(measure_means.shape[-1]):
+        savez_dict[str(names[i])] = measure_means[..., i]
+    np.savez(str(out_path), **savez_dict)
