@@ -67,8 +67,8 @@ def main():
         parser.error('When using --measures_names, you need to specify ' +
                      'the same number of measures as given in --measures.')
         
-    if args.delta_m_max_fit != [] and\
-        (len(args.delta_m_max_fit[0]) != len(args.measures[0])):
+    if args.delta_m_max_fits != [] and\
+        (len(args.delta_m_max_fits[0]) != len(args.measures[0])):
         parser.error('When using --delta_m_max_fit, you need to provide ' +
                      'the same number of fits as given in --measures.')
 
@@ -115,7 +115,7 @@ def main():
         corrected_path = out_folder / str(str(measures_name[i]) + "_corrected.nii.gz")
         nib.save(nib.Nifti1Image(corrected_measure, affine), corrected_path)
         if args.save_differences:
-            if args.plots_folder:
+            if args.differences_folder:
                 diff_folder = Path(args.differences_folder)
             else:
                 diff_folder = out_folder
