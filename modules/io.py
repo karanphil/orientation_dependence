@@ -65,7 +65,7 @@ def plot_means(bins, means, nb_voxels, names, out_folder,
             ax1.plot(highres_bins, polynome(highres_bins), "--", color="C0")
         ax1.set_xlabel(r'$\theta_a$')
         ax1.set_xlim(0, 90)
-        ax1.set_ylim(0, 1.1 * np.nanmax(means[..., i]))
+        ax1.set_ylim(0.975 * np.nanmin(means[..., i]), 1.025 * np.nanmax(means[..., i]))
         ax1.set_ylabel(str(names[i]) + ' mean')
         fig.colorbar(colorbar, cax=cax, label="Voxel count")
         fig.tight_layout()

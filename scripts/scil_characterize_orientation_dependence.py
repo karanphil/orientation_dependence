@@ -170,6 +170,15 @@ def main():
                                    bin_width=args.bin_width_1f,
                                    fa_thr=args.fa_thr,
                                    min_nb_voxels=args.min_nb_voxels)
+
+    not_nan = np.isfinite(measure_means)
+    if np.sum(not_nan) == 0:
+        msg = """No angle bin was filled above the required minimum number of
+              voxels. The script was unable to produce a single-fiber
+              characterization of the measures. If --in_roi was used, the
+              region of interest probably contains too few single-fiber
+              voxels. Try to carefully reduce the min_nb_voxels."""
+        raise ValueError(msg)
     
     print("Fitting the whole brain results.")
     measures_fit = fit_single_fiber_results(bins,
