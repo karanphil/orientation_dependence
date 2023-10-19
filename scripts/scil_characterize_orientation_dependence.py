@@ -48,7 +48,7 @@ def _build_arg_parser():
     p.add_argument('--in_e1',
                    help='Path to the principal eigenvector of DTI.')
     p.add_argument('--in_roi',
-                   help='Path to the ROI for single fiber analysis.')
+                   help='Path to the ROI for where to analyze.')
 
     p.add_argument('--compute_three_fiber_crossings', action='store_true',
                    help='If set, will perform the three-fiber crossings '

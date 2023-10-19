@@ -47,7 +47,8 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
     return slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins
 
 def correct_measure(peaks, peak_values, measure, affine, wm_mask,
-                    polynome, peak_frac_thr=0, delta_m_max_fct=None):
+                    polynome, peak_frac_thr=0, delta_m_max_fct=None,
+                    mask=None):
     peaks_fraction = compute_peaks_fraction(peak_values)
 
     if delta_m_max_fct is not None:
@@ -65,6 +66,8 @@ def correct_measure(peaks, peak_values, measure, affine, wm_mask,
     corrections = np.zeros((peaks_fraction.shape))
     # Calculate the angle between e1 and B0 field for each peak
     wm_mask_bool = (wm_mask >= 0.9)
+    if mask is not None:
+        wm_mask_bool = wm_mask_bool & (mask > 0)
     for i in range(peaks_angles.shape[-1]):
         mask = wm_mask_bool & (peaks_fraction[..., i] > peak_frac_thr)
         cos_theta = np.dot(peaks[mask, i*3:(i+1)*3], b0_field)

@@ -45,6 +45,9 @@ def _build_arg_parser():
                    help='List of delta_m_max fit files. Should be the '
                         'output of the \n'
                         'scil_characterize_orientation_dependence.py script.')
+    
+    p.add_argument('--in_roi',
+                   help='Path to the ROI for where to correct.')
 
     g = p.add_argument_group(title='Characterization parameters')
     g.add_argument('--min_frac_thr', default=0.1,
@@ -89,6 +92,12 @@ def main():
 
     affine = peaks_img.affine
 
+    if args.in_roi:
+        roi_img = nib.load(args.in_roi)
+        roi = roi_img.get_fdata()
+    else:
+        roi = None
+
     measures, measures_name = extract_measures(args.measures, wm_mask.shape,
                                                args.measures_names)
     
@@ -113,7 +122,7 @@ def main():
             delta_m_max_fct = None
         corrected_measure = correct_measure(peaks, peak_values,
                                             measures[..., i], affine,
-                                            wm_mask, polynome,
+                                            wm_mask, polynome, mask=roi,
                                             peak_frac_thr=args.min_frac_thr,
                                             delta_m_max_fct=delta_m_max_fct)
         corrected_path = out_folder / str(str(measures_name[i]) + "_corrected.nii.gz")
