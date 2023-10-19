@@ -151,7 +151,7 @@ def main():
         correction = True
         measures_corrected, _ = extract_measures(args.measures_corrected,
                                                  fa.shape)
-        measures = np.ndarray((fa.shape) + (nb_measures * 2))
+        measures = np.ndarray((fa.shape) + (nb_measures * 2,))
         measures[..., :nb_measures] = measures_original
         measures[..., nb_measures:] = measures_corrected
     else:
@@ -199,7 +199,7 @@ def main():
         else:
             plots_folder = out_folder
         print("Saving single-fiber results as plots.")
-        plot_means(bins, measure_means, nb_voxels, measures_name,
+        plot_means(bins, measure_means[:, :nb_measures], nb_voxels, measures_name,
                    plots_folder, polyfit=measures_fit)
         if correction:
             plot_means(bins, measure_means[:, :nb_measures], nb_voxels,
@@ -220,8 +220,8 @@ def main():
                                  bin_width=args.angle_mask_bin_width)
         
     # Compute single-fiber delta_m_max
-    sf_delta_m_max = np.nanmax(measure_means,
-                               axis=0) - np.nanmin(measure_means, axis=0)
+    sf_delta_m_max = np.nanmax(measure_means[:, :nb_measures], axis=0) -\
+        np.nanmin(measure_means[:, :nb_measures], axis=0)
 
     #---------------------- Crossing fibers section ---------------------------
     print("Computing two-fiber means.")
@@ -264,18 +264,16 @@ def main():
         print("Saving two-fiber results as plots.")
         plot_3d_means(bins, measure_means[0, :, :, :nb_measures], plots_folder,
                       measures_name, nametype="original")
-        plot_multiple_means(bins, measure_means_diag, nb_voxels_diag,
-                            plots_folder, measures_name, labels=labels,
-                            legend_title=r"Peak$_1$ fraction", endname="2D_2f",
-                            delta_max=delta_m_max,
-                            delta_max_slope=slope,
-                            delta_max_origin=origin,
-                            p_frac=frac_thrs_mid,
-                            nametype="original")
+        plot_multiple_means(bins, measure_means_diag[..., :nb_measures],
+                            nb_voxels_diag, plots_folder, measures_name,
+                            labels=labels, legend_title=r"Peak$_1$ fraction",
+                            endname="2D_2f", delta_max=delta_m_max,
+                            delta_max_slope=slope, delta_max_origin=origin,
+                            p_frac=frac_thrs_mid, nametype="original")
         if correction:
             plot_3d_means(bins, measure_means[0, :, :, nb_measures:],
                           plots_folder, measures_name, nametype="corrected")
-            plot_multiple_means(bins, measure_means_diag[..., :nb_measures],
+            plot_multiple_means(bins, measure_means_diag[..., nb_measures:],
                                 nb_voxels_diag, plots_folder, measures_name,
                                 labels=labels,
                                 legend_title=r"Peak$_1$ fraction",
@@ -312,7 +310,7 @@ def main():
                                     measures_name, endname="2D_3f",
                                     labels=labels,
                                     legend_title=r"Peak$_1$ fraction",
-                                    nametype="corrected")
+                                    nametype="corrected", markers='s')
 
 if __name__ == "__main__":
     main()
