@@ -41,6 +41,9 @@ def _build_arg_parser():
                    help='List of measures to characterize.')
     p.add_argument('--measures_names', nargs='+', default=[], action='append',
                    help='List of names for the measures to characterize.')
+    p.add_argument('--measures_corrected', nargs='+', default=[],
+                   action='append',
+                   help='List of corrected measures to characterize.')
     
     p.add_argument('--in_e1',
                    help='Path to the principal eigenvector of DTI.')
@@ -100,9 +103,15 @@ def main():
     parser = _build_arg_parser()
     args = parser.parse_args()
 
+    nb_measures = len(args.measures[0])
     if args.measures_names != [] and\
-        (len(args.measures_names[0]) != len(args.measures[0])):
+        (len(args.measures_names[0]) != nb_measures):
         parser.error('When using --measures_names, you need to specify ' +
+                     'the same number of measures as given in --measures.')
+
+    if args.measures_corrected != [] and\
+        (len(args.measures_corrected[0]) != nb_measures):
+        parser.error('When using --measures_corrected, you need to specify ' +
                      'the same number of measures as given in --measures.')
 
     out_folder = Path(args.out_folder)
@@ -134,8 +143,20 @@ def main():
     else:
         roi = None
 
-    measures, measures_name = extract_measures(args.measures, fa.shape,
-                                               args.measures_names)
+    measures_original, measures_name = extract_measures(args.measures,
+                                                        fa.shape,
+                                                        args.measures_names)
+
+    if args.measures_corrected != []:
+        correction = True
+        measures_corrected, _ = extract_measures(args.measures_corrected,
+                                                 fa.shape)
+        measures = np.ndarray((fa.shape) + (nb_measures * 2))
+        measures[..., :nb_measures] = measures_original
+        measures[..., nb_measures:] = measures_corrected
+    else:
+        correction = False
+        measures = measures_original
 
     #----------------------- Single-fiber section -----------------------------
     print("Computing single-fiber means.")
@@ -151,10 +172,11 @@ def main():
                                    min_nb_voxels=args.min_nb_voxels)
     
     print("Fitting the whole brain results.")
-    measures_fit = fit_single_fiber_results(bins, measure_means,
-                                             poly_order=args.poly_order)
+    measures_fit = fit_single_fiber_results(bins,
+                                            measure_means[:, :nb_measures],
+                                            poly_order=args.poly_order)
     print("Saving polyfit results.")
-    for i in range(measures_fit.shape[-1]):
+    for i in range(nb_measures):
         out_path = out_folder / str(str(measures_name[i]) + "_polyfit.npy")
         np.save(out_path, measures_fit[:, i])
     
@@ -163,11 +185,14 @@ def main():
             npz_folder = Path(args.npz_folder)
         else:
             npz_folder = out_folder
-        out_path = npz_folder / '1f_results'
+        out_path = npz_folder / '1f_original_results'
         print("Saving results as npz files.")
-        save_results_as_npz(bins, measure_means, nb_voxels, measures_name,
-                            out_path)
-        
+        save_results_as_npz(bins, measure_means[:, :nb_measures], nb_voxels,
+                            measures_name, out_path)
+        if correction:
+            out_path = npz_folder / '1f_corrected_results'
+            save_results_as_npz(bins, measure_means[:, nb_measures:], nb_voxels,
+                                measures_name, out_path)
     if args.save_plots:
         if args.plots_folder:
             plots_folder = Path(args.plots_folder)
@@ -176,6 +201,10 @@ def main():
         print("Saving single-fiber results as plots.")
         plot_means(bins, measure_means, nb_voxels, measures_name,
                    plots_folder, polyfit=measures_fit)
+        if correction:
+            plot_means(bins, measure_means[:, :nb_measures], nb_voxels,
+                       measures_name, plots_folder, polyfit=measures_fit,
+                       cr_means=measure_means[:, nb_measures:])
         
     if args.save_angle_info:
         if args.angle_folder:
@@ -209,10 +238,10 @@ def main():
 
     print("Analysing two-fiber delta_m_max.")
     slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins =\
-        analyse_delta_m_max(bins, measure_means_diag,
+        analyse_delta_m_max(bins, measure_means_diag[..., :nb_measures],
                             sf_delta_m_max, nb_voxels_diag)
     print("Analysis found these bins as minima and maxima: ")
-    for i in range(len(measures_name)):
+    for i in range(nb_measures):
         print(str(measures_name[i]) + " minimum at " + str(min_bins[i]) + " degrees")
         print(str(measures_name[i]) + " maximum at " + str(max_bins[i]) + " degrees")
 
@@ -223,22 +252,35 @@ def main():
 
     if args.save_npz_files:
         print("Saving results as npz files.")
-        out_path = npz_folder / "2f_results"
-        save_results_as_npz(bins, measure_means, nb_voxels, measures_name,
-                            out_path)
+        out_path = npz_folder / "2f_original_results"
+        save_results_as_npz(bins, measure_means[..., :nb_measures], nb_voxels,
+                            measures_name, out_path)
+        if correction:
+            out_path = npz_folder / '2f_corrected_results'
+            save_results_as_npz(bins, measure_means[..., nb_measures:],
+                                nb_voxels, measures_name, out_path)
 
     if args.save_plots:
         print("Saving two-fiber results as plots.")
-        plot_3d_means(bins, measure_means[0], plots_folder, measures_name,
-                      nametype="original")
-
+        plot_3d_means(bins, measure_means[0, :, :, :nb_measures], plots_folder,
+                      measures_name, nametype="original")
         plot_multiple_means(bins, measure_means_diag, nb_voxels_diag,
                             plots_folder, measures_name, labels=labels,
                             legend_title=r"Peak$_1$ fraction", endname="2D_2f",
                             delta_max=delta_m_max,
                             delta_max_slope=slope,
                             delta_max_origin=origin,
-                            p_frac=frac_thrs_mid)
+                            p_frac=frac_thrs_mid,
+                            nametype="original")
+        if correction:
+            plot_3d_means(bins, measure_means[0, :, :, nb_measures:],
+                          plots_folder, measures_name, nametype="corrected")
+            plot_multiple_means(bins, measure_means_diag[..., :nb_measures],
+                                nb_voxels_diag, plots_folder, measures_name,
+                                labels=labels,
+                                legend_title=r"Peak$_1$ fraction",
+                                endname="2D_2f", markers='s',
+                                nametype="corrected")
 
     if args.compute_three_fiber_crossings:
         print("Computing 3 crossing fibers means.")
@@ -249,15 +291,28 @@ def main():
         
         if args.save_npz_files:
             print("Saving results as npz files.")
-            out_path = npz_folder / "3f_results"
-            save_results_as_npz(bins, measure_means, nb_voxels, measures_name,
-                                out_path)
+            out_path = npz_folder / "3f_original_results"
+            save_results_as_npz(bins, measure_means[..., :nb_measures],
+                                nb_voxels, measures_name, out_path)
+            if correction:
+                out_path = npz_folder / '3f_corrected_results'
+                save_results_as_npz(bins, measure_means[..., nb_measures:],
+                                    nb_voxels, measures_name, out_path)
 
         if args.save_plots:
             print("Saving three-fiber results as plots.")
-            plot_multiple_means(bins, measure_means, nb_voxels, plots_folder,
+            plot_multiple_means(bins, measure_means[..., :nb_measures],
+                                nb_voxels, plots_folder,
                                 measures_name, endname="2D_3f", labels=labels,
-                                legend_title=r"Peak$_1$ fraction")
+                                legend_title=r"Peak$_1$ fraction",
+                                nametype="original")
+            if correction:
+                plot_multiple_means(bins, measure_means[..., nb_measures:],
+                                    nb_voxels, plots_folder,
+                                    measures_name, endname="2D_3f",
+                                    labels=labels,
+                                    legend_title=r"Peak$_1$ fraction",
+                                    nametype="corrected")
 
 if __name__ == "__main__":
     main()

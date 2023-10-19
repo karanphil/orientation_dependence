@@ -194,8 +194,8 @@ def compute_two_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
     return bins, measure_means, nb_voxels, labels
 
 def compute_single_fiber_means(peaks, fa, wm_mask, affine,
-                                  measures, nufo=None, mask=None,
-                                  bin_width=1, fa_thr=0.5, min_nb_voxels=5):
+                               measures, nufo=None, mask=None,
+                               bin_width=1, fa_thr=0.5, min_nb_voxels=5):
     # Find the direction of the B0 field
     rot = affine[0:3, 0:3]
     z_axis = np.array([0, 0, 1])

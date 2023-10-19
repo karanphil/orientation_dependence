@@ -9,6 +9,10 @@ from modules.orientation_dependence import (correct_measure)
 from scilpy.io.utils import (add_overwrite_arg)
 
 
+# We suggest running scil_characterize_orientation_dependence.py again with
+# the corrected data to make sure everything is in order.
+
+
 def _build_arg_parser():
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)

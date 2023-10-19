@@ -95,7 +95,7 @@ def plot_multiple_means(bins, means, nb_voxels, out_folder, names,
                         legend_title=None, polyfit=None,
                         xlim=[0, 1.03], delta_max=None, delta_max_slope=None,
                         delta_max_origin=None, p_frac=None, leg_loc=3,
-                        markers="o"):
+                        markers="o", nametype=""):
     max_count = np.max(nb_voxels)
     norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
     mid_bins = (bins[:-1] + bins[1:]) / 2.
@@ -104,7 +104,7 @@ def plot_multiple_means(bins, means, nb_voxels, out_folder, names,
         plot_init()
         fig, (ax1, cax) = plt.subplots(1, 2,
                                        gridspec_kw={"width_ratios":[1, 0.05]})
-        out_path = out_folder / str("original_" + str(names[j]) + "_" + str(endname) + ".png")
+        out_path = out_folder / str(str(nametype) + "_" + str(names[j]) + "_" + str(endname) + ".png")
         for i in range(means.shape[0]):
             if labels is not None:
                 colorbar = ax1.scatter(mid_bins, means[i, :, j],
@@ -120,7 +120,6 @@ def plot_multiple_means(bins, means, nb_voxels, out_folder, names,
                 ax1.scatter(mid_bins, means_cr[i, :, j], c=nb_voxels[i],
                             cmap='Greys', norm=norm, edgecolors="C" + str(i),
                             linewidths=1, marker="s")
-                out_path = out_folder / str("corrected_" + str(names[i]) + "_" + str(endname) + ".png")
             if polyfit is not None:
                 polynome = np.poly1d(polyfit[:, j])
                 ax1.plot(highres_bins, polynome(highres_bins), "--",
