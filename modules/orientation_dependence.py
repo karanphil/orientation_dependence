@@ -81,7 +81,7 @@ def correct_measure(peaks, peak_values, measure, affine, wm_mask,
     return measure + total_corrections
 
 def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
-                               measures, bin_width=30, 
+                               measures, bin_width=30, mask=None,
                                frac_thrs=np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]),
                                min_nb_voxels=5):
     peaks_fraction = compute_peaks_fraction(peak_values)
@@ -109,6 +109,8 @@ def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
     for idx in range(len(frac_thrs) - 1):
         # Apply the WM mask
         wm_mask_bool = (wm_mask >= 0.9) & (nufo == 3)
+        if mask is not None:
+            wm_mask_bool = wm_mask_bool & (mask > 0)
         fraction_mask_bool = (peaks_fraction[..., 0] >= frac_thrs[idx]) & (peaks_fraction[..., 0] < frac_thrs[idx + 1])
         for i in range(len(bins) - 1):
             angle_mask_0_90 = (theta_f1 >= bins[i]) & (theta_f1 < bins[i+1])
@@ -138,7 +140,7 @@ def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
     return bins, measure_means, nb_voxels, labels
 
 def compute_two_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
-                             measures, bin_width=10,
+                             measures, bin_width=10, mask=None,
                              frac_thrs=np.array([0.5, 0.6, 0.7, 0.8, 0.9]),
                              min_nb_voxels=5):
     peaks_fraction = compute_peaks_fraction(peak_values)
@@ -164,6 +166,8 @@ def compute_two_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
     for idx in range(len(frac_thrs) - 1):
         # Apply the WM mask
         wm_mask_bool = (wm_mask >= 0.9) & (nufo == 2)
+        if mask is not None:
+            wm_mask_bool = wm_mask_bool & (mask > 0)
         fraction_mask_bool = (peaks_fraction[..., 0] >= frac_thrs[idx]) & (peaks_fraction[..., 0] < frac_thrs[idx + 1])
         for i in range(len(bins) - 1):
             angle_mask_0_90 = (theta_f1 >= bins[i]) & (theta_f1 < bins[i+1])

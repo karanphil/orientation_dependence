@@ -50,6 +50,10 @@ def _build_arg_parser():
     p.add_argument('--in_roi',
                    help='Path to the ROI for single fiber analysis.')
 
+    p.add_argument('--compute_three_fiber_crossings', action='store_true',
+                   help='If set, will perform the three-fiber crossings '
+                        'analysis.')
+
     g = p.add_argument_group(title='Characterization parameters')
     g.add_argument('--fa_thr', default=0.5,
                    help='Value of FA threshold [%(default)s].')
@@ -70,10 +74,6 @@ def _build_arg_parser():
                         '[%(default)s].')
     g.add_argument('--poly_order', default=10, type=int,
                    help='Order of the polynome to fit [%(default)s].')
-    
-    g.add_argument('--compute_three_fiber_crossings', action='store_true',
-                   help='If set, will perform the three-fiber crossings '
-                        'analysis.')
     
     s1 = p.add_argument_group(title='Save angle info')
     s1.add_argument('--save_angle_info', action='store_true',
@@ -228,7 +228,7 @@ def main():
     bins, measure_means, nb_voxels, labels =\
         compute_two_fibers_means(peaks, peak_values,
                                         wm_mask, affine,
-                                        nufo, measures,
+                                        nufo, measures, mask=roi,
                                         bin_width=args.bin_width_2f,
                                         min_nb_voxels=args.min_nb_voxels)
     
@@ -285,7 +285,7 @@ def main():
         bins, measure_means, nb_voxels, labels =\
             compute_three_fibers_means(peaks, peak_values, wm_mask, affine,
                                     nufo, measures, bin_width=args.bin_width_3f,
-                                    min_nb_voxels=args.min_nb_voxels)
+                                    min_nb_voxels=args.min_nb_voxels, mask=roi)
         
         if args.save_npz_files:
             print("Saving results as npz files.")
