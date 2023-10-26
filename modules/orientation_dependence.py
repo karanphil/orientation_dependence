@@ -46,6 +46,7 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
 
     return slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins
 
+
 def correct_measure(peaks, peak_values, measure, affine, wm_mask,
                     polynome, peak_frac_thr=0, delta_m_max_fct=None,
                     mask=None):
@@ -82,6 +83,7 @@ def correct_measure(peaks, peak_values, measure, affine, wm_mask,
     total_corrections = np.sum(corrections, axis=-1)
 
     return measure + total_corrections
+
 
 def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
                                measures, bin_width=30, mask=None,
@@ -142,6 +144,7 @@ def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
 
     return bins, measure_means, nb_voxels, labels
 
+
 def compute_two_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
                              measures, bin_width=10, mask=None,
                              frac_thrs=np.array([0.5, 0.6, 0.7, 0.8, 0.9]),
@@ -200,6 +203,7 @@ def compute_two_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
 
     return bins, measure_means, nb_voxels, labels
 
+
 def compute_single_fiber_means(peaks, fa, wm_mask, affine,
                                measures, nufo=None, mask=None,
                                bin_width=1, fa_thr=0.5, min_nb_voxels=5):
@@ -237,6 +241,7 @@ def compute_single_fiber_means(peaks, fa, wm_mask, affine,
             measure_means[i] = np.mean(measures[mask_total], axis=0)
 
     return bins, measure_means, nb_voxels
+
 
 def fit_single_fiber_results(bins, means, poly_order=8):
     fits = np.ndarray((poly_order + 1, means.shape[-1]))

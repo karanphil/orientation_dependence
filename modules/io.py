@@ -19,6 +19,7 @@ def extract_measures(measures_arg, data_shape, names_arg=[]):
         measures_name = names_arg[0]
     return measures, measures_name
 
+
 def plot_init():
     # plt.rcParams["font.family"] = "serif"
     # plt.rcParams['font.serif'] = 'Helvetica'
@@ -41,6 +42,7 @@ def plot_init():
     # plt.rcParams['text.latex.unicode']=True
     # plt.rcParams['text.latex.preamble'] = [r'\usepackage{amssymb}', r"\usepackage{amstext}"]
     # plt.rcParams['mathtext.default']='regular'
+
 
 def plot_means(bins, means, nb_voxels, names, out_folder,
                cr_means=None, polyfit=None):
@@ -72,6 +74,7 @@ def plot_means(bins, means, nb_voxels, names, out_folder,
         plt.savefig(out_path, dpi=300)
         plt.close()
 
+
 def plot_3d_means(bins, means, out_folder, names, nametype=""):
     mid_bins = (bins[:-1] + bins[1:]) / 2.
     plot_init()
@@ -90,6 +93,7 @@ def plot_3d_means(bins, means, out_folder, names, nametype=""):
             ax.view_init(view[0], view[1])
             plt.savefig(out_path, dpi=300)
         plt.close()
+
 
 def plot_multiple_means(bins, means, nb_voxels, out_folder, names,
                         endname="2f", means_cr=None, labels=None,
@@ -159,6 +163,7 @@ def plot_multiple_means(bins, means, nb_voxels, out_folder, names,
         fig.tight_layout()
         plt.savefig(out_path, dpi=300)
         plt.close()
+
 
 def save_angle_maps(peaks, fa, wm_mask, affine, output_path, fodf_peaks,
                     peak_values, nufo, bin_width=1, fa_thr=0.5):
