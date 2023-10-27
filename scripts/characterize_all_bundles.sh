@@ -1,6 +1,6 @@
 wdir="/home/pkaran/Samsung/data/MT_Diffusion/myelo_inferno";
 cd $wdir;
-bin_width=3
+bin_width=1
 bin_width_dir="${bin_width}_degree_bins"
 poly_order=15;
 for bundle in bundles/sub-004-hc_ses-4/masks/*;

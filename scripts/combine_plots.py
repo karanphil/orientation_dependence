@@ -44,6 +44,7 @@ def main():
                      'the same number of polyfits as given in --results.')
 
     out_folder = Path(args.out_folder)
+    min_nb_voxels = args.min_nb_voxels
 
     results = []
     extracted_bundles = []
@@ -82,12 +83,19 @@ def main():
         row = i // 2
         if bundles_names[i] in extracted_bundles:
             result = results[bundle_idx]
+            is_measures = result['Nb_voxels'] >= min_nb_voxels
+            is_not_measures = np.invert(is_measures)
             norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
-            # WARNING!!! I must adapt this script to the new way of saving the results (with all bins not None).
-            colorbar = ax[row, col].scatter(mid_bins, result[measure],
-                                            c=result['Nb_voxels'],
+            colorbar = ax[row, col].scatter(mid_bins[is_measures],
+                                            result[measure][is_measures],
+                                            c=result['Nb_voxels'][is_measures],
                                             cmap='Greys', norm=norm,
                                             edgecolors="C0", linewidths=1)
+            ax[row, col].scatter(mid_bins[is_not_measures],
+                                 result[measure][is_not_measures],
+                                 c=result['Nb_voxels'][is_not_measures],
+                                 cmap='Greys', norm=norm, alpha=0.5,
+                                 edgecolors="C0", linewidths=1)
             # if cr_means is not None:
             #     ax1.scatter(mid_bins, cr_means[..., i], c=nb_voxels, cmap='Greys',
             #                 norm=norm, edgecolors="C0", linewidths=1, marker="s")
