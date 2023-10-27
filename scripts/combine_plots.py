@@ -26,6 +26,7 @@ def _build_arg_parser():
                    action='append', required=True,
                    help='List of polyfits.')
     p.add_argument('--measures_names', nargs='+', default=[], action='append',
+                   required=True,
                    help='List of names the characterized measures.')
 
     g = p.add_argument_group(title='Characterization parameters')
@@ -58,34 +59,36 @@ def main():
     for i, result in enumerate(args.results[0]):
         results.append(np.load(result))
         bundles_name.append(args.bundles_names[0][i])
-        polyfits.append(np.load(result))
+        polyfits.append(np.load(result)) # Il y a plus qu'un polyfit file par bundle?
+    
+    nb_bundles = len(results)
+    nb_measures = len(results[0].files()) - 3
+    measures_names = args.measures_names[0]
 
-    plot_init()
-
-    max_count = np.max(nb_voxels)
-    norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
-    mid_bins = (bins[:-1] + bins[1:]) / 2.
+    mid_bins = (results[0]['Angle_min'] + results[0]['Angle_max']) / 2.
     highres_bins = np.arange(0, 90 + 1, 0.5)
     plot_init()
-    for i in range(means.shape[-1]):
-        out_path = out_folder / str("original_" + str(names[i]) + "_1f.png")
-        fig, (ax1, cax) = plt.subplots(1, 2,
-                                       gridspec_kw={"width_ratios":[1, 0.05]})
-        colorbar = ax1.scatter(mid_bins, means[..., i], c=nb_voxels,
-                               cmap='Greys', norm=norm,
-                               edgecolors="C0", linewidths=1)
-        if cr_means is not None:
-            ax1.scatter(mid_bins, cr_means[..., i], c=nb_voxels, cmap='Greys',
-                        norm=norm, edgecolors="C0", linewidths=1, marker="s")
-            out_path = out_folder / str("corrected_" + str(names[i]) + "_1f.png")
-        if polyfit is not None:
-            polynome = np.poly1d(polyfit[:, i])
-            ax1.plot(highres_bins, polynome(highres_bins), "--", color="C0")
-        ax1.set_xlabel(r'$\theta_a$')
-        ax1.set_xlim(0, 90)
-        ax1.set_ylim(0.975 * np.nanmin(means[..., i]), 1.025 * np.nanmax(means[..., i]))
-        ax1.set_ylabel(str(names[i]) + ' mean')
-        fig.colorbar(colorbar, cax=cax, label="Voxel count")
+    for measure in measures_names:
+        out_path = out_folder / str("all_bundles_original_" + str(measure) + "_1f.png")
+        fig, (ax, cax) = plt.subplots(nb_bundles, 2,
+                                        gridspec_kw={"width_ratios":[1, 0.05]})
+        for j, result in enumerate(results):
+            max_count = np.max(result['Nb_voxels'])
+            norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
+            colorbar = ax[j].scatter(mid_bins, result[measure], c=result['Nb_voxels'],
+                                     cmap='Greys', norm=norm,
+                                     edgecolors="C0", linewidths=1)
+            # if cr_means is not None:
+            #     ax1.scatter(mid_bins, cr_means[..., i], c=nb_voxels, cmap='Greys',
+            #                 norm=norm, edgecolors="C0", linewidths=1, marker="s")
+            #     out_path = out_folder / str("corrected_" + str(names[i]) + "_1f.png")
+            polynome = np.poly1d(polyfits[j])
+            ax[j].plot(highres_bins, polynome(highres_bins), "--", color="C0")
+            ax[j].set_xlabel(r'$\theta_a$')
+            ax[j].set_xlim(0, 90)
+            ax[j].set_ylim(0.975 * np.nanmin(result[measure]), 1.025 * np.nanmax(result[measure]))
+            ax[j].set_ylabel(str(measure) + ' mean')
+            ax[j].colorbar(colorbar, cax=cax[j], label="Voxel count")
         fig.tight_layout()
         plt.savefig(out_path, dpi=300)
         plt.close()
