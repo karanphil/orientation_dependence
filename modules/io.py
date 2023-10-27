@@ -20,7 +20,7 @@ def extract_measures(measures_arg, data_shape, names_arg=[]):
     return measures, measures_name
 
 
-def plot_init():
+def plot_init(dims=(12.0, 5.0), font_size=12):
     # plt.rcParams["font.family"] = "serif"
     # plt.rcParams['font.serif'] = 'Helvetica'
     # plt.style.use('seaborn-notebook')
@@ -29,8 +29,8 @@ def plot_init():
     plt.rcParams['grid.linewidth'] = 1
     plt.rcParams['grid.linestyle'] = "-"
     plt.rcParams['grid.alpha'] = "0.5"
-    plt.rcParams['figure.figsize'] = (12.0, 5.0)
-    plt.rcParams['font.size'] = 12
+    plt.rcParams['figure.figsize'] = dims
+    plt.rcParams['font.size'] = font_size
     plt.rcParams['axes.labelsize'] = plt.rcParams['font.size']
     plt.rcParams['axes.titlesize'] = 1.2*plt.rcParams['font.size']
     plt.rcParams['legend.fontsize'] = plt.rcParams['font.size']
