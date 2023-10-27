@@ -45,7 +45,10 @@ def plot_init(dims=(12.0, 5.0), font_size=12):
 
 
 def plot_means(bins, means, nb_voxels, names, out_folder,
-               cr_means=None, polyfit=None):
+               cr_means=None, polyfit=None, is_measures=None):
+    if is_measures is None:
+        is_measures = np.ones(means.shape[0])
+    is_not_measures = np.invert(is_measures)
     max_count = np.max(nb_voxels)
     norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
     mid_bins = (bins[:-1] + bins[1:]) / 2.
@@ -55,19 +58,29 @@ def plot_means(bins, means, nb_voxels, names, out_folder,
         out_path = out_folder / str("original_" + str(names[i]) + "_1f.png")
         fig, (ax1, cax) = plt.subplots(1, 2,
                                        gridspec_kw={"width_ratios":[1, 0.05]})
-        colorbar = ax1.scatter(mid_bins, means[..., i], c=nb_voxels,
-                               cmap='Greys', norm=norm,
-                               edgecolors="C0", linewidths=1)
+        colorbar = ax1.scatter(mid_bins[is_measures], means[is_measures][..., i],
+                               c=nb_voxels[is_measures], cmap='Greys',
+                               norm=norm, edgecolors="C0", linewidths=1)
+        ax1.scatter(mid_bins[is_not_measures], means[is_not_measures][..., i],
+                    c=nb_voxels[is_not_measures], cmap='Greys', norm=norm,
+                    alpha=0.5, edgecolors="C0", linewidths=1)
         if cr_means is not None:
-            ax1.scatter(mid_bins, cr_means[..., i], c=nb_voxels, cmap='Greys',
-                        norm=norm, edgecolors="C0", linewidths=1, marker="s")
+            ax1.scatter(mid_bins[is_measures], cr_means[is_measures][..., i],
+                        c=nb_voxels[is_measures], cmap='Greys', norm=norm,
+                        edgecolors="C0", linewidths=1, marker="s")
+            ax1.scatter(mid_bins[is_not_measures],
+                        cr_means[is_not_measures][..., i],
+                        c=nb_voxels[is_not_measures],
+                        cmap='Greys', norm=norm, alpha=0.5,
+                        edgecolors="C0", linewidths=1, marker="s")
             out_path = out_folder / str("corrected_" + str(names[i]) + "_1f.png")
         if polyfit is not None:
             polynome = np.poly1d(polyfit[:, i])
             ax1.plot(highres_bins, polynome(highres_bins), "--", color="C0")
         ax1.set_xlabel(r'$\theta_a$')
         ax1.set_xlim(0, 90)
-        ax1.set_ylim(0.975 * np.nanmin(means[..., i]), 1.025 * np.nanmax(means[..., i]))
+        ax1.set_ylim(0.975 * np.nanmin(means[is_measures][..., i]),
+                     1.025 * np.nanmax(means[is_measures][..., i]))
         ax1.set_ylabel(str(names[i]) + ' mean')
         fig.colorbar(colorbar, cax=cax, label="Voxel count")
         fig.tight_layout()

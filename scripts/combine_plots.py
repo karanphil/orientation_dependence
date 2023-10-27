@@ -83,6 +83,7 @@ def main():
         if bundles_names[i] in extracted_bundles:
             result = results[bundle_idx]
             norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
+            # WARNING!!! I must adapt this script to the new way of saving the results (with all bins not None).
             colorbar = ax[row, col].scatter(mid_bins, result[measure],
                                             c=result['Nb_voxels'],
                                             cmap='Greys', norm=norm,

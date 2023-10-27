@@ -72,7 +72,7 @@ def _build_arg_parser():
     g.add_argument('--min_nb_voxels', default=30, type=int,
                    help='Value of the minimal number of voxels per bin '
                         '[%(default)s].')
-    g.add_argument('--poly_order', default=10, type=int,
+    g.add_argument('--poly_order', default=15, type=int,
                    help='Order of the polynome to fit [%(default)s].')
     
     s1 = p.add_argument_group(title='Save angle info')
@@ -131,6 +131,8 @@ def main():
 
     affine = peaks_img.affine
 
+    min_nb_voxels = args.min_nb_voxels
+
     if args.in_e1:
         e1_img = nib.load(args.in_e1)
         e1 = e1_img.get_fdata()
@@ -168,11 +170,11 @@ def main():
                                    nufo=nufo,
                                    mask=roi,
                                    bin_width=args.bin_width_1f,
-                                   fa_thr=args.fa_thr,
-                                   min_nb_voxels=args.min_nb_voxels)
+                                   fa_thr=args.fa_thr)
 
-    not_nan = np.isfinite(measure_means)
-    if np.sum(not_nan) == 0:
+    is_measures = nb_voxels >= min_nb_voxels
+    nb_bins = np.sum(is_measures)
+    if nb_bins == 0:
         msg = """No angle bin was filled above the required minimum number of
               voxels. The script was unable to produce a single-fiber
               characterization of the measures. If --in_roi was used, the
@@ -183,7 +185,8 @@ def main():
     print("Fitting the whole brain results.")
     measures_fit = fit_single_fiber_results(bins,
                                             measure_means[:, :nb_measures],
-                                            poly_order=args.poly_order)
+                                            poly_order=args.poly_order,
+                                            is_measures=is_measures)
     print("Saving polyfit results.")
     for i in range(nb_measures):
         out_path = out_folder / str(str(measures_name[i]) + "_polyfit.npy")
@@ -209,11 +212,12 @@ def main():
             plots_folder = out_folder
         print("Saving single-fiber results as plots.")
         plot_means(bins, measure_means[:, :nb_measures], nb_voxels, measures_name,
-                   plots_folder, polyfit=measures_fit)
+                   plots_folder, polyfit=measures_fit, is_measures=is_measures)
         if correction:
             plot_means(bins, measure_means[:, :nb_measures], nb_voxels,
                        measures_name, plots_folder, polyfit=measures_fit,
-                       cr_means=measure_means[:, nb_measures:])
+                       cr_means=measure_means[:, nb_measures:],
+                       is_measures=is_measures)
         
     if args.save_angle_info:
         if args.angle_folder:
@@ -229,10 +233,13 @@ def main():
                                  bin_width=args.angle_mask_bin_width)
         
     # Compute single-fiber delta_m_max
-    sf_delta_m_max = np.nanmax(measure_means[:, :nb_measures], axis=0) -\
-        np.nanmin(measure_means[:, :nb_measures], axis=0)
+    sf_delta_m_max = np.nanmax(measure_means[is_measures, :nb_measures],
+                               axis=0) -\
+        np.nanmin(measure_means[is_measures, :nb_measures], axis=0)
 
     #---------------------- Crossing fibers section ---------------------------
+    # Note: Beyond this point, no measures with nb_voxels below min_nb_voxels
+    # will be saved. These bins will have None as measures value.
     print("Computing two-fiber means.")
     bins, measure_means, nb_voxels, labels =\
         compute_two_fibers_means(peaks, peak_values,

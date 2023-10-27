@@ -16,11 +16,15 @@ def compute_peaks_fraction(peak_values):
     return peaks_fraction
 
 
-def extend_measure(bins, measure):
+def extend_measure(bins, measure, is_measure=None):
     # new_bins = np.concatenate((np.flip(-bins[1:10]), bins, 180 - np.flip(bins[-10:-1])))
     # new_measure = np.concatenate((np.flip(measure[1:10]), measure, np.flip(measure[-10:-1])))
     new_bins = np.concatenate((np.flip(-bins[1:]), bins, 180 - np.flip(bins[:-1])))
     new_measure = np.concatenate((np.flip(measure[1:]), measure, np.flip(measure[:-1])))
+    if is_measure is not None:
+        new_is_measure = np.concatenate((np.flip(is_measure[1:]),
+                                         is_measure, np.flip(is_measure[:-1])))
+        return new_bins[1: -1], new_measure, new_is_measure
     return new_bins[1: -1], new_measure
 
 
