@@ -16,16 +16,28 @@ def compute_peaks_fraction(peak_values):
     return peaks_fraction
 
 
-def extend_measure(bins, measure, is_measure=None):
+def extend_measure(bins, measure, is_measure=None, weights=None):
     # new_bins = np.concatenate((np.flip(-bins[1:10]), bins, 180 - np.flip(bins[-10:-1])))
     # new_measure = np.concatenate((np.flip(measure[1:10]), measure, np.flip(measure[-10:-1])))
     new_bins = np.concatenate((np.flip(-bins[1:]), bins, 180 - np.flip(bins[:-1])))
     new_measure = np.concatenate((np.flip(measure[1:]), measure, np.flip(measure[:-1])))
+    new_is_measure = np.ones(new_measure.shape[0])
+    new_weights = np.ones(new_measure.shape[0])
     if is_measure is not None:
         new_is_measure = np.concatenate((np.flip(is_measure[1:]),
                                          is_measure, np.flip(is_measure[:-1])))
-        return new_bins[1: -1], new_measure, new_is_measure
-    return new_bins[1: -1], new_measure
+    if weights is not None:
+        new_weights = np.concatenate((np.flip(weights[1:]),
+                                      weights, np.flip(weights[:-1])))
+    return new_bins[1: -1], new_measure, new_is_measure, new_weights
+
+
+def extend_measure_v2(bins, measure, is_measure=None, weights=None):
+    new_bins = bins
+    new_measure = measure
+    new_is_measure = is_measure
+    new_weights = weights
+    return new_bins, new_measure, new_is_measure, new_weights
 
 
 def nb_peaks_factor(delta_m_max_fct, peak_fraction):

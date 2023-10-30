@@ -3,7 +3,8 @@ import numpy as np
 from scipy.stats import (shapiro, kstest)
 
 from modules.utils import (extend_measure, compute_peaks_fraction,
-                           compute_corrections, nb_peaks_factor)
+                           compute_corrections, nb_peaks_factor,
+                           extend_measure_v2)
 
 
 def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
@@ -221,7 +222,6 @@ def compute_single_fiber_means(peaks, fa, wm_mask, affine,
     theta = np.arccos(cos_theta) * 180 / np.pi
 
     measure_means = np.zeros((len(bins) - 1, measures.shape[-1]))
-    measure_vars = np.zeros((len(bins) - 1, measures.shape[-1]))
     nb_voxels = np.zeros((len(bins) - 1))
 
     # Apply the WM mask and FA threshold
@@ -240,22 +240,28 @@ def compute_single_fiber_means(peaks, fa, wm_mask, affine,
         nb_voxels[i] = np.sum(mask_total)
         if np.sum(mask_total) < 1:
             measure_means[i, :] = None
-            measure_vars[i, :] = None
         else:
             measure_means[i] = np.mean(measures[mask_total], axis=0)
 
     return bins, measure_means, nb_voxels
 
 
-def fit_single_fiber_results(bins, means, poly_order=8, is_measures=None):
+def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
+                             weights=None):
     if is_measures is None:
         is_measures = np.ones(means.shape[0])
+    if weights is None:
+        weights = np.ones(means.shape[0])
     fits = np.ndarray((poly_order + 1, means.shape[-1]))
+    residuals = np.ndarray((means.shape[-1]), dtype=object)
     for i in range(means.shape[-1]):
-        new_bins, new_means, new_is_measures = extend_measure(bins, means[..., i],
-                                                              is_measure=is_measures)
+        new_bins, new_means, new_is_measures, new_weights =\
+            extend_measure_v2(bins, means[..., i], is_measure=is_measures,
+                           weights=weights)
         mid_bins = (new_bins[:-1] + new_bins[1:]) / 2.
-        fits[:, i] = np.polyfit(mid_bins[new_is_measures],
+        fits[:, i], residuals[i], _, _, _ = np.polyfit(mid_bins[new_is_measures],
                                 new_means[new_is_measures],
-                                poly_order)
-    return fits
+                                poly_order,
+                                w=new_weights[new_is_measures],
+                                full=True)
+    return fits, residuals
