@@ -1,5 +1,7 @@
 import numpy as np
 
+from scipy.stats import (shapiro, kstest)
+
 from modules.utils import (extend_measure, compute_peaks_fraction,
                            compute_corrections, nb_peaks_factor)
 
@@ -219,6 +221,7 @@ def compute_single_fiber_means(peaks, fa, wm_mask, affine,
     theta = np.arccos(cos_theta) * 180 / np.pi
 
     measure_means = np.zeros((len(bins) - 1, measures.shape[-1]))
+    measure_vars = np.zeros((len(bins) - 1, measures.shape[-1]))
     nb_voxels = np.zeros((len(bins) - 1))
 
     # Apply the WM mask and FA threshold
@@ -237,6 +240,7 @@ def compute_single_fiber_means(peaks, fa, wm_mask, affine,
         nb_voxels[i] = np.sum(mask_total)
         if np.sum(mask_total) < 1:
             measure_means[i, :] = None
+            measure_vars[i, :] = None
         else:
             measure_means[i] = np.mean(measures[mask_total], axis=0)
 
