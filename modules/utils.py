@@ -16,7 +16,7 @@ def compute_peaks_fraction(peak_values):
     return peaks_fraction
 
 
-def extend_measure(bins, measure, is_measure=None, weights=None):
+def extend_measure_v3(bins, measure, is_measure=None, weights=None):
     # new_bins = np.concatenate((np.flip(-bins[1:10]), bins, 180 - np.flip(bins[-10:-1])))
     # new_measure = np.concatenate((np.flip(measure[1:10]), measure, np.flip(measure[-10:-1])))
     new_bins = np.concatenate((np.flip(-bins[1:]), bins, 180 - np.flip(bins[:-1])))
@@ -40,7 +40,7 @@ def extend_measure_v2(bins, measure, is_measure=None, weights=None):
     return new_bins, new_measure, new_is_measure, new_weights
 
 
-def extend_measure_v3(bins, measure, is_measure, weights=None):
+def extend_measure(bins, measure, is_measure, weights=None):
     mid_bins = (bins[:-1] + bins[1:]) / 2.
     new_bins = mid_bins[is_measure][~np.isnan(measure[is_measure])]
     bin_width = bins[1] - bins[0]

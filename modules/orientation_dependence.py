@@ -3,8 +3,7 @@ import numpy as np
 from scipy.stats import (shapiro, kstest)
 
 from modules.utils import (extend_measure, compute_peaks_fraction,
-                           compute_corrections, nb_peaks_factor,
-                           extend_measure_v2, extend_measure_v3)
+                           compute_corrections, nb_peaks_factor)
 
 
 def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
@@ -253,18 +252,17 @@ def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
     if weights is None:
         weights = np.ones(means.shape[0])
     fits = np.zeros((poly_order + 1, means.shape[-1]))
-    residuals = np.zeros((means.shape[-1]), dtype=object)
     for i in range(means.shape[-1]):
         new_bins, new_means, new_is_measures, new_weights =\
-            extend_measure_v3(bins, means[..., i], is_measure=is_measures,
-                              weights=weights)
+            extend_measure(bins, means[..., i], is_measure=is_measures,
+                           weights=weights)
         # mid_bins = (new_bins[:-1] + new_bins[1:]) / 2.
         effective_poly_order = int(np.floor(poly_order * (new_bins[-2] - new_bins[1]) / (bins[-1] - bins[1])))
         print("Polyfit order was set to", effective_poly_order)
-        fits[poly_order - effective_poly_order:, i], residuals[i], _, _, _ =\
+        fits[poly_order - effective_poly_order:, i] =\
             np.polyfit(new_bins[new_is_measures],
                        new_means[new_is_measures],
                        effective_poly_order,
                        w=new_weights[new_is_measures],
                        full=True)
-    return fits, residuals
+    return fits
