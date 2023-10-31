@@ -75,8 +75,11 @@ def _build_arg_parser():
     g.add_argument('--use_weighted_polyfit', action='store_true',
                    help='If set, use weights when performing the polyfit. '
                         '[%(default)s].')
-    g.add_argument('--poly_order', default=15, type=int,
+    g.add_argument('--poly_order', default=10, type=int,
                    help='Order of the polynome to fit [%(default)s].')
+    g.add_argument('--scale_poly_order', action='store_true',
+                   help='If set, scale the polynome order to the range of '
+                        'angles where measures are present. [%(default)s].')
     
     s1 = p.add_argument_group(title='Save angle info')
     s1.add_argument('--save_angle_info', action='store_true',
@@ -195,7 +198,8 @@ def main():
                                             measure_means[:, :nb_measures],
                                             poly_order=args.poly_order,
                                             is_measures=is_measures,
-                                            weights=weights)
+                                            weights=weights,
+                                            scale_poly_order=args.scale_poly_order)
 
     print("Saving polyfit results.")
     for i in range(nb_measures):

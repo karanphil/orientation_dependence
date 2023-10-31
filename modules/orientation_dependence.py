@@ -246,7 +246,7 @@ def compute_single_fiber_means(peaks, fa, wm_mask, affine,
 
 
 def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
-                             weights=None):
+                             weights=None, scale_poly_order=False):
     if is_measures is None:
         is_measures = np.ones(means.shape[0])
     if weights is None:
@@ -257,12 +257,15 @@ def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
             extend_measure(bins, means[..., i], is_measure=is_measures,
                            weights=weights)
         # mid_bins = (new_bins[:-1] + new_bins[1:]) / 2.
-        effective_poly_order = int(np.floor(poly_order * (new_bins[-2] - new_bins[1]) / (bins[-1] - bins[1])))
+        if scale_poly_order:
+            effective_poly_order = int(np.floor(poly_order *\
+                (new_bins[-2] - new_bins[1]) / (bins[-1] - bins[1])))
+        else:
+            effective_poly_order = poly_order
         print("Polyfit order was set to", effective_poly_order)
         fits[poly_order - effective_poly_order:, i] =\
             np.polyfit(new_bins[new_is_measures],
                        new_means[new_is_measures],
                        effective_poly_order,
-                       w=new_weights[new_is_measures],
-                       full=True)
+                       w=new_weights[new_is_measures])
     return fits
