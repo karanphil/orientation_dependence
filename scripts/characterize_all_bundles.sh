@@ -2,7 +2,7 @@ wdir="/home/pkaran/Samsung/data/MT_Diffusion/myelo_inferno";
 cd $wdir;
 bin_width=5;
 bin_width_dir="${bin_width}_degree_bins";
-poly_order=8;
+poly_order=6;
 for bundle in bundles/sub-004-hc_ses-4/masks/*;
     do bundle_name=$(basename -- "${bundle%%.*}");
     if [ 1 == 1 ];

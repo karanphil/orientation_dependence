@@ -40,6 +40,20 @@ def extend_measure_v2(bins, measure, is_measure=None, weights=None):
     return new_bins, new_measure, new_is_measure, new_weights
 
 
+def extend_measure_v3(bins, measure, is_measure, weights=None):
+    first_bin = bins[~np.isnan(measure[is_measure])][0]
+    first_measure = measure[~np.isnan(measure[is_measure])][0]
+    last_bin = bins[~np.isnan(measure[is_measure])][-1]
+    last_measure = measure[~np.isnan(measure[is_measure])][-1]
+    bin_width = bins[1] - bins[0]
+    # !!!!! Problème : ça marche pas quand je veux insérer une mesure à la place d'un NaN entre 0 et 90 degrés...
+    new_bins = np.concatenate((first_bin - bin_width, bins, last_bin + bin_width))
+    new_measure = np.concatenate((first_measure, measure, last_measure))
+    new_is_measure = is_measure
+    new_weights = weights
+    return new_bins, new_measure, new_is_measure, new_weights
+
+
 def nb_peaks_factor(delta_m_max_fct, peak_fraction):
     nb_peaks_factor = delta_m_max_fct(peak_fraction)
     return np.clip(nb_peaks_factor, 0, 1)
