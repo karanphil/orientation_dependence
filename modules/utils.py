@@ -41,16 +41,20 @@ def extend_measure_v2(bins, measure, is_measure=None, weights=None):
 
 
 def extend_measure_v3(bins, measure, is_measure, weights=None):
-    first_bin = bins[~np.isnan(measure[is_measure])][0]
-    first_measure = measure[~np.isnan(measure[is_measure])][0]
-    last_bin = bins[~np.isnan(measure[is_measure])][-1]
-    last_measure = measure[~np.isnan(measure[is_measure])][-1]
+    mid_bins = (bins[:-1] + bins[1:]) / 2.
+    new_bins = mid_bins[is_measure][~np.isnan(measure[is_measure])]
     bin_width = bins[1] - bins[0]
-    # !!!!! Problème : ça marche pas quand je veux insérer une mesure à la place d'un NaN entre 0 et 90 degrés...
-    new_bins = np.concatenate((first_bin - bin_width, bins, last_bin + bin_width))
-    new_measure = np.concatenate((first_measure, measure, last_measure))
-    new_is_measure = is_measure
-    new_weights = weights
+    new_measure = measure[is_measure][~np.isnan(measure[is_measure])]
+    new_is_measure = is_measure[is_measure][~np.isnan(measure[is_measure])]
+    new_weights = weights[is_measure][~np.isnan(measure[is_measure])]
+    new_bins = np.concatenate(([new_bins[0] - bin_width], new_bins,
+                               [new_bins[-1] + bin_width]))
+    new_measure = np.concatenate(([new_measure[0]], new_measure,
+                                  [new_measure[-1]]))
+    new_is_measure = np.concatenate(([new_is_measure[0]], new_is_measure,
+                                     [new_is_measure[-1]]))
+    new_weights = np.concatenate(([new_weights[0]], new_weights,
+                                  [new_weights[-1]]))
     return new_bins, new_measure, new_is_measure, new_weights
 
 

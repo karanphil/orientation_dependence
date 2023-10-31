@@ -26,7 +26,7 @@ def _build_arg_parser():
                    help='List of names for the characterized bundles.')
 
     g = p.add_argument_group(title='Characterization parameters')
-    g.add_argument('--min_nb_voxels', default=30, type=int,
+    g.add_argument('--min_nb_voxels', default=1, type=int,
                    help='Value of the minimal number of voxels per bin '
                         '[%(default)s].')
 
@@ -77,11 +77,11 @@ def main():
     out_path = out_folder / str("all_bundles_original_" + str(measure) + "_1f.png")
     plot_init(dims=(8, 10), font_size=10)
     fig, ax = plt.subplots(nb_rows, 2, layout='constrained')
-    bundle_idx = 0
     for i in range(nb_bundles):
         col = i % 2
         row = i // 2
         if bundles_names[i] in extracted_bundles:
+            bundle_idx = extracted_bundles.index(bundles_names[i])
             result = results[bundle_idx]
             is_measures = result['Nb_voxels'] >= min_nb_voxels
             is_not_measures = np.invert(is_measures)
