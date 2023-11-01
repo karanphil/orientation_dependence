@@ -44,6 +44,74 @@ def plot_init(dims=(12.0, 5.0), font_size=12):
     # plt.rcParams['mathtext.default']='regular'
 
 
+def plot_all_bundles_means(bins, means, nb_voxels, is_measures, max_count,
+                           polyfits, bundles_names, measure_name, out_folder,
+                           bundles_order=None):
+    if bundles_order is None:
+        bundles_order = bundles_names
+    nb_bundles = bundles_order.shape[0]
+    nb_rows = int(np.ceil(nb_bundles / 2))
+
+    mid_bins = (bins[:-1] + bins[1:]) / 2.
+    highres_bins = np.arange(0, 90 + 1, 0.5)
+
+    out_path = out_folder / str("all_bundles_original_" + str(measure_name) + "_1f.png")
+    plot_init(dims=(8, 10), font_size=10)
+    fig, ax = plt.subplots(nb_rows, 2, layout='constrained')
+    for i in range(nb_bundles):
+        col = i % 2
+        row = i // 2
+        if bundles_order[i] in bundles_names:
+            bundle_idx = np.argwhere(bundles_order[i] == bundles_names).squeeze()
+            is_measure = is_measures[..., bundle_idx].squeeze()
+            is_not_measure = np.invert(is_measure)
+            norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
+            colorbar = ax[row, col].scatter(mid_bins[is_measure],
+                                            means[is_measure][..., bundle_idx],
+                                            c=nb_voxels[is_measure][..., bundle_idx],
+                                            cmap='Greys', norm=norm,
+                                            edgecolors="C0", linewidths=1)
+            ax[row, col].scatter(mid_bins[is_not_measure],
+                                 means[is_not_measure][..., bundle_idx],
+                                 c=nb_voxels[is_not_measure][..., bundle_idx],
+                                 cmap='Greys', norm=norm, alpha=0.5,
+                                 edgecolors="C0", linewidths=1)
+            polynome = np.poly1d(polyfits[..., bundle_idx])
+            ax[row, col].plot(highres_bins, polynome(highres_bins), "--",
+                              color="C0")
+            ax[row, col].set_ylim(0.975 * np.nanmin(means[..., bundle_idx]),
+                                  1.025 * np.nanmax(means[..., bundle_idx]))
+            ax[row, col].set_yticks([np.round(np.nanmin(means[..., bundle_idx]),
+                                              decimals=1),
+                                     np.round(np.nanmax(means[..., bundle_idx]),
+                                              decimals=1)])
+            ax[row, col].set_xlim(0, 90)
+        else:
+            ax[row, col].set_yticks([])
+        ax[row, col].legend(handles=[colorbar],
+                            labels=[bundles_names[bundle_idx]],
+                            loc='center left', bbox_to_anchor=(1, 0.5),
+                            markerscale=0, handletextpad=-2.0, handlelength=2)
+        if row != nb_rows - 1:
+            ax[row, col].get_xaxis().set_ticks([])
+        if row == (nb_rows - 1) / 2:
+            ax[row, 0].set_ylabel(str(measure_name) + ' mean')
+            ax[row, 0].yaxis.set_label_coords(-0.25, 0.5)
+    fig.colorbar(colorbar, ax=ax[:, 1], location='right',
+                 label="Voxel count", aspect=100)
+    ax[nb_rows - 1, 0].set_xlabel(r'$\theta_a$')
+    ax[nb_rows - 1, 0].set_xlim(0, 90)
+    ax[nb_rows - 1, 0].set_xticks([0, 15, 30, 45, 60, 75, 90])
+    ax[nb_rows - 1, 1].set_xlabel(r'$\theta_a$')
+    ax[nb_rows - 1, 1].set_xlim(0, 90)
+    ax[nb_rows - 1, 1].set_xticks([0, 15, 30, 45, 60, 75, 90])
+    if nb_bundles % 2 != 0:
+        ax[nb_rows - 1, 1].set_yticks([])
+    fig.get_layout_engine().set(h_pad=0, hspace=0)
+    plt.savefig(out_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+
 def plot_means(bins, means, nb_voxels, names, out_folder,
                cr_means=None, polyfit=None, is_measures=None):
     if is_measures is None:

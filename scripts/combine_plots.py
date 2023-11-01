@@ -68,6 +68,7 @@ def main():
     if "MCP" in bundles_names:
         bundles_names.remove("MCP")
         bundles_names.append("MCP")
+
     nb_bundles = len(bundles_names)
     nb_rows = int(np.ceil(nb_bundles / 2))
 
