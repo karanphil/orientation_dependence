@@ -82,8 +82,6 @@ def main():
             vox_indices = (seg_start + (0.5 * segments)).astype(int)
 
             normalization_weights = np.ones_like(seg_lengths)
-            if length_weighting:
-                normalization_weights = seg_lengths
 
             normalized_seg = np.reshape(segments / seg_lengths[..., None], (-1, 3))
 
@@ -91,11 +89,10 @@ def main():
                                                     normalized_seg,
                                                     normalization_weights):
                 vox_idx = tuple(vox_idx)
-                bingham_at_idx = bingham_coeffs[vox_idx]  # (5, N_PARAMS)
+                peaks_at_idx = peaks[vox_idx]
 
-                bingham_peak_dir = bingham_to_peak_direction(bingham_at_idx)
                 cos_theta = np.abs(np.dot(seg_dir.reshape((-1, 3)),
-                                        bingham_peak_dir.T))
+                                        peaks_at_idx.T))
 
                 metric_val = 0.0
                 if (cos_theta > min_cos_theta).any():
