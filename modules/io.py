@@ -16,7 +16,7 @@ def extract_measures(measures_arg, data_shape, names_arg=[]):
         # measures[..., i] = np.clip(measures[..., i], 0, None)
         measures_name[i] = Path(measure).name.split(".")[0]
     if names_arg != []:
-        measures_name = names_arg[0]
+        measures_name = np.array(names_arg[0])
     return measures, measures_name
 
 

@@ -118,21 +118,22 @@ def main():
     bundles, bundles_names = extract_measures(args.bundles,
                                               fa.shape,
                                               args.bundles_names)
+    nb_bundles = bundles_names.shape[0]
 
     #----------------------- Single-fiber section -----------------------------
     print("Computing single-fiber means.")
     polyfits = np.zeros((args.poly_order + 1, nb_measures,
-                         len(bundles_names)))
-    max_measures = np.zeros((nb_measures, len(bundles_names)))
+                         nb_bundles))
+    max_measures = np.zeros((nb_measures, nb_bundles))
     is_measures = np.ones((len(np.arange(0, 90 + args.bin_width_1f,
                                          args.bin_width_1f)) - 1,
-                            len(bundles_names)), dtype=bool)
+                            nb_bundles, dtype=bool))
     means = np.zeros((len(np.arange(0, 90 + args.bin_width_1f,
                                     args.bin_width_1f)) - 1,
-                      nb_measures, len(bundles_names)))
+                      nb_measures, nb_bundles))
     voxel_counts = np.zeros((len(np.arange(0, 90 + args.bin_width_1f,
                                            args.bin_width_1f)) - 1,
-                             len(bundles_names)))
+                             nb_bundles))
     max_count = 0
     for i in range(bundles.shape[-1]):
         print("Processing {} bundle.".format(bundles_names[i]))
