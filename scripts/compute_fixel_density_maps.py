@@ -24,7 +24,7 @@ def _build_arg_parser():
                    help='Path of the output folder for txt, png, masks and '
                         'measures.')
 
-    p.add_argument('--bundles', nargs='+', default=[],
+    p.add_argument('--in_bundles', nargs='+', default=[],
                    action='append', required=True,
                    help='Path to the bundle ROIs for where to analyze.')
     p.add_argument('--bundles_names', nargs='+', default=[], action='append',
@@ -47,23 +47,22 @@ def main():
     peaks = peaks_img.get_fdata()
 
     affine = peaks_img.affine
-    
-    bundles, bundles_names = extract_measures(args.bundles,
-                                              peaks.shape[:-1],
-                                              args.bundles_names)
-    
-    nb_bundles = bundles_names.shape[0]
 
-    max_theta = 60
+    max_theta = 45
+    thrs_value = 0.00
+
+    nb_bundles = len(args.in_bundles[0])
+
+    fixel_density_maps = np.zeros((peaks.shape[:-1]) + (5, nb_bundles))
+    fixel_density_masks = np.zeros((peaks.shape[:-1]) + (5, nb_bundles))
     
-    for i in range(nb_bundles):
-        sft = load_tractogram_with_reference(parser, args, bundles[i])
+    for i, bundle in enumerate(args.in_bundles[0]):
+        print(bundle)
+        sft = load_tractogram_with_reference(parser, args, bundle)
 
         sft.to_vox()
         sft.to_corner()
 
-        metric_sum_map = np.zeros(metric.shape[:-1])
-        weight_map = np.zeros(metric.shape[:-1])
         min_cos_theta = np.cos(np.radians(max_theta))
 
         all_crossed_indices = grid_intersections(sft.streamlines)
@@ -81,27 +80,39 @@ def main():
             seg_start = crossed_indices[non_zero_lengths]
             vox_indices = (seg_start + (0.5 * segments)).astype(int)
 
-            normalization_weights = np.ones_like(seg_lengths)
-
             normalized_seg = np.reshape(segments / seg_lengths[..., None], (-1, 3))
 
-            for vox_idx, seg_dir, norm_weight in zip(vox_indices,
-                                                    normalized_seg,
-                                                    normalization_weights):
+            for vox_idx, seg_dir in zip(vox_indices, normalized_seg):
                 vox_idx = tuple(vox_idx)
-                peaks_at_idx = peaks[vox_idx]
+                peaks_at_idx = peaks[vox_idx].reshape((5,3))
 
                 cos_theta = np.abs(np.dot(seg_dir.reshape((-1, 3)),
                                         peaks_at_idx.T))
 
-                metric_val = 0.0
                 if (cos_theta > min_cos_theta).any():
                     lobe_idx = np.argmax(np.squeeze(cos_theta), axis=0)  # (n_segs)
-                    metric_val = metric[vox_idx][lobe_idx]
+                    fixel_density_maps[vox_idx][lobe_idx][i] += 1
 
-                metric_sum_map[vox_idx] += metric_val * norm_weight
-                weight_map[vox_idx] += norm_weight
+        maps_thrs = thrs_value * np.max(fixel_density_maps[..., i])
+        fixel_density_masks[..., i] = np.where(fixel_density_maps[..., i] > maps_thrs,
+                                               1, 0)
 
+    nb_bundles_per_fixel = np.sum(fixel_density_masks, axis=-1)
+    nb_unique_bundles_per_fixel = np.where(np.sum(fixel_density_masks,
+                                                  axis=-2) > 0, 1, 0)
+    nb_bundles_per_voxel = np.sum(nb_unique_bundles_per_fixel, axis=-1)
+
+    nib.save(nib.Nifti1Image(fixel_density_maps.astype(np.uint8),
+             affine), out_folder / "fixel_density_maps.nii.gz")
+    
+    nib.save(nib.Nifti1Image(fixel_density_masks.astype(np.uint8),
+             affine), out_folder / "fixel_density_masks.nii.gz")
+    
+    nib.save(nib.Nifti1Image(nb_bundles_per_fixel.astype(np.uint8),
+             affine), out_folder / "nb_bundles_per_fixel.nii.gz")
+    
+    nib.save(nib.Nifti1Image(nb_bundles_per_voxel.astype(np.uint8),
+             affine), out_folder / "nb_bundles_per_voxel.nii.gz")
 
 if __name__ == "__main__":
     main()
