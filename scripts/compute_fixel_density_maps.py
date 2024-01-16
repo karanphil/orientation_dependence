@@ -5,10 +5,6 @@ from pathlib import Path
 
 from dipy.io.stateful_tractogram import StatefulTractogram
 
-from modules.io import (extract_measures, plot_all_bundles_means)
-from modules.orientation_dependence import (compute_single_fiber_means,
-                                            fit_single_fiber_results)
-
 from scilpy.io.streamlines import load_tractogram_with_reference
 from scilpy.io.utils import (add_overwrite_arg, add_reference_arg)
 from scilpy.tractanalysis.grid_intersections import grid_intersections
