@@ -254,13 +254,13 @@ def main():
     #---------------------- Crossing fibers section ---------------------------
     # Note: Beyond this point, no measures with nb_voxels below min_nb_voxels
     # will be saved. These bins will have None as measures value.
-    # Note: all the data is now saved, but the plots are not adapted.
     print("Computing two-fiber means.")
     bins, measure_means, nb_voxels, labels =\
         compute_two_fibers_means(peaks, peak_values,
                                         wm_mask, affine,
-                                        nufo, measures, roi=roi,
-                                        bin_width=args.bin_width_2f)
+                                        nufo, measures, mask=roi,
+                                        bin_width=args.bin_width_2f,
+                                        min_nb_voxels=args.min_nb_voxels)
     
     measure_means_diag = np.diagonal(measure_means, axis1=1, axis2=2)
     measure_means_diag = np.swapaxes(measure_means_diag, 1, 2)
@@ -315,7 +315,7 @@ def main():
         bins, measure_means, nb_voxels, labels =\
             compute_three_fibers_means(peaks, peak_values, wm_mask, affine,
                                     nufo, measures, bin_width=args.bin_width_3f,
-                                    roi=roi)
+                                    min_nb_voxels=args.min_nb_voxels, mask=roi)
         
         if args.save_npz_files:
             print("Saving results as npz files.")
