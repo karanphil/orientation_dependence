@@ -22,7 +22,7 @@ def _build_arg_parser():
 
     p.add_argument('--in_bundles', nargs='+', default=[],
                    action='append', required=True,
-                   help='Path to the bundle ROIs for where to analyze.')
+                   help='Path to the bundle trk for where to analyze.')
     p.add_argument('--bundles_names', nargs='+', default=[], action='append',
                    help='List of names of the bundles.')
 
