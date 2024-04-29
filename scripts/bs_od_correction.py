@@ -127,7 +127,7 @@ def main():
     max_measures = np.zeros((nb_measures, nb_bundles))
     is_measures = np.ones((len(np.arange(0, 90 + args.bin_width_1f,
                                          args.bin_width_1f)) - 1,
-                            nb_bundles, dtype=bool))
+                            nb_bundles), dtype=bool)
     means = np.zeros((len(np.arange(0, 90 + args.bin_width_1f,
                                     args.bin_width_1f)) - 1,
                       nb_measures, nb_bundles))
