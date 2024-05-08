@@ -23,8 +23,12 @@ def _build_arg_parser():
     p.add_argument('--in_bundles', nargs='+', default=[],
                    action='append', required=True,
                    help='Path to the bundle trk for where to analyze.')
-    p.add_argument('--bundles_names', nargs='+', default=[], action='append',
-                   help='List of names of the bundles.')
+    
+    p.add_argument('--maps_thr', default=0.0,
+                   help='Value of density maps threshold [%(default)s].')
+    
+    p.add_argument('--norm', default="fixel", choices=["fixel", "voxel"],
+                   help='Way of normalizing the density maps [%(default)s].')
 
     add_overwrite_arg(p)
     add_reference_arg(p)
@@ -45,7 +49,7 @@ def main():
     affine = peaks_img.affine
 
     max_theta = 45
-    thrs_value = 0.00
+    thrs_value = args.maps_thr
 
     nb_bundles = len(args.in_bundles[0])
 
@@ -53,7 +57,8 @@ def main():
     fixel_density_masks = np.zeros((peaks.shape[:-1]) + (5, nb_bundles))
     
     for i, bundle in enumerate(args.in_bundles[0]):
-        print(bundle)
+        bundle_name = Path(bundle).name.split(".")[0]
+        print(bundle_name)
         sft = load_tractogram_with_reference(parser, args, bundle)
 
         sft.to_vox()
@@ -89,16 +94,39 @@ def main():
                     lobe_idx = np.argmax(np.squeeze(cos_theta), axis=0)  # (n_segs)
                     fixel_density_maps[vox_idx][lobe_idx][i] += 1
 
+        # Currently, this applies a threshold on the number of streamlines.
         maps_thrs = thrs_value * np.max(fixel_density_maps[..., i])
         fixel_density_masks[..., i] = np.where(fixel_density_maps[..., i] > maps_thrs,
                                                1, 0)
+
+    # Normalizing the density maps
+    voxel_sum = np.sum(np.sum(fixel_density_maps, axis=-1), axis=-1)
+    fixel_sum = np.sum(fixel_density_maps, axis=-1)
+
+
+    for i, bundle in enumerate(args.in_bundles[0]):
+        bundle_name = Path(bundle).name.split(".")[0]
+
+        if args.norm == "voxel":
+            fixel_density_maps[..., 0, i] /= voxel_sum
+            fixel_density_maps[..., 1, i] /= voxel_sum
+            fixel_density_maps[..., 2, i] /= voxel_sum
+            fixel_density_maps[..., 3, i] /= voxel_sum
+            fixel_density_maps[..., 4, i] /= voxel_sum
+        
+        elif args.norm == "fixel":
+            fixel_density_maps[..., i] /= fixel_sum
+
+        nib.save(nib.Nifti1Image(fixel_density_maps[..., i],
+                                 affine),
+                 out_folder / "fixel_density_maps_{}.nii.gz".format(bundle_name))
 
     nb_bundles_per_fixel = np.sum(fixel_density_masks, axis=-1)
     nb_unique_bundles_per_fixel = np.where(np.sum(fixel_density_masks,
                                                   axis=-2) > 0, 1, 0)
     nb_bundles_per_voxel = np.sum(nb_unique_bundles_per_fixel, axis=-1)
 
-    nib.save(nib.Nifti1Image(fixel_density_maps.astype(np.uint8),
+    nib.save(nib.Nifti1Image(fixel_density_maps,
              affine), out_folder / "fixel_density_maps.nii.gz")
     
     nib.save(nib.Nifti1Image(fixel_density_masks.astype(np.uint8),
