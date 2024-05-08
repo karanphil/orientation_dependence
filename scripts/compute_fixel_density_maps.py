@@ -3,11 +3,12 @@ import nibabel as nib
 import numpy as np
 from pathlib import Path
 
-from dipy.io.stateful_tractogram import StatefulTractogram
-
-from scilpy.io.streamlines import load_tractogram_with_reference
-from scilpy.io.utils import (add_overwrite_arg, add_reference_arg)
+from dipy.io.streamline import load_tractogram
+from scilpy.io.utils import (add_overwrite_arg, add_processes_arg,
+                             add_reference_arg)
 from scilpy.tractanalysis.grid_intersections import grid_intersections
+
+from modules.fixel_analysis import compute_fixel_density
 
 
 def _build_arg_parser():
@@ -31,6 +32,7 @@ def _build_arg_parser():
                    help='Way of normalizing the density maps [%(default)s].')
 
     add_overwrite_arg(p)
+    add_processes_arg(p)
     add_reference_arg(p)
     return p
 
@@ -50,59 +52,20 @@ def main():
 
     max_theta = 45
     thrs_value = args.maps_thr
-
-    nb_bundles = len(args.in_bundles[0])
-
-    fixel_density_maps = np.zeros((peaks.shape[:-1]) + (5, nb_bundles))
-    fixel_density_masks = np.zeros((peaks.shape[:-1]) + (5, nb_bundles))
     
-    for i, bundle in enumerate(args.in_bundles[0]):
-        bundle_name = Path(bundle).name.split(".")[0]
-        print(bundle_name)
-        sft = load_tractogram_with_reference(parser, args, bundle)
+    fixel_density_maps = compute_fixel_density(peaks, max_theta,
+                                               args.in_bundles[0],
+                                               nbr_processes=args.nbr_processes)
 
-        sft.to_vox()
-        sft.to_corner()
+    # fixel_density_masks = np.zeros(fixel_density_maps.shape)
 
-        min_cos_theta = np.cos(np.radians(max_theta))
-
-        all_crossed_indices = grid_intersections(sft.streamlines)
-        for crossed_indices in all_crossed_indices:
-            segments = crossed_indices[1:] - crossed_indices[:-1]
-            seg_lengths = np.linalg.norm(segments, axis=1)
-
-            # Remove points where the segment is zero.
-            # This removes numpy warnings of division by zero.
-            non_zero_lengths = np.nonzero(seg_lengths)[0]
-            segments = segments[non_zero_lengths]
-            seg_lengths = seg_lengths[non_zero_lengths]
-
-            # Those starting points are used for the segment vox_idx computations
-            seg_start = crossed_indices[non_zero_lengths]
-            vox_indices = (seg_start + (0.5 * segments)).astype(int)
-
-            normalized_seg = np.reshape(segments / seg_lengths[..., None], (-1, 3))
-
-            for vox_idx, seg_dir in zip(vox_indices, normalized_seg):
-                vox_idx = tuple(vox_idx)
-                peaks_at_idx = peaks[vox_idx].reshape((5,3))
-
-                cos_theta = np.abs(np.dot(seg_dir.reshape((-1, 3)),
-                                        peaks_at_idx.T))
-
-                if (cos_theta > min_cos_theta).any():
-                    lobe_idx = np.argmax(np.squeeze(cos_theta), axis=0)  # (n_segs)
-                    fixel_density_maps[vox_idx][lobe_idx][i] += 1
-
-        # Currently, this applies a threshold on the number of streamlines.
-        maps_thrs = thrs_value * np.max(fixel_density_maps[..., i])
-        fixel_density_masks[..., i] = np.where(fixel_density_maps[..., i] > maps_thrs,
-                                               1, 0)
+    # Currently, this applies a threshold on the number of streamlines.
+    # maps_thrs = thrs_value * np.max(fixel_density_maps[..., i])
+    fixel_density_masks = fixel_density_maps > thrs_value
 
     # Normalizing the density maps
     voxel_sum = np.sum(np.sum(fixel_density_maps, axis=-1), axis=-1)
     fixel_sum = np.sum(fixel_density_maps, axis=-1)
-
 
     for i, bundle in enumerate(args.in_bundles[0]):
         bundle_name = Path(bundle).name.split(".")[0]
