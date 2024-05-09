@@ -17,9 +17,13 @@ def _build_arg_parser():
                    help='Path of the output folder for txt, png, masks and '
                         'measures.')
     
-    p.add_argument('--results', nargs='+', default=[],
+    p.add_argument('--results_1f', nargs='+', default=[],
                    action='append', required=True,
                    help='List of characterization results.')
+    p.add_argument('--results_2f', nargs='+', default=[],
+                   action='append', required=True,
+                   help='List of characterization results.')
+
     p.add_argument('--bundles_names', nargs='+', default=[], action='append',
                    required=True,
                    help='List of names for the characterized bundles.')
@@ -46,23 +50,24 @@ def main():
     parser = _build_arg_parser()
     args = parser.parse_args()
 
-    nb_results = len(args.results[0])
-
     out_folder = Path(args.out_folder)
     min_nb_voxels = args.min_nb_voxels
 
     bundles_names = args.bundles_names[0]
 
-    results = []
+    results_1f = []
+    results_2f = []
     extracted_bundles = []
     max_count = 0
     tmp = 0
-    for i, result in enumerate(args.results[0]):
-        if str(Path(result).parent) in bundles_names:
-            print("Loading: ", result)
-            results.append(np.load(result))
-            extracted_bundles.append(str(Path(result).parent))
-            curr_max_count = np.max(results[tmp]['Nb_voxels'])
+    for i, result_1f, result_2f in enumerate(zip(args.results_1f[0], args.results_2f[0])):
+        if str(Path(result_1f).parent) in bundles_names:
+            print("Loading: ", result_1f, result_2f)
+            results_1f.append(np.load(result_1f))
+            results_2f.append(np.load(result_2f))
+            extracted_bundles.append(str(Path(result_1f).parent))
+            curr_max_count = np.max([np.max(results_1f[tmp]['Nb_voxels']),
+                                     np.max(results_2f[tmp]['Nb_voxels'])])
             if curr_max_count > max_count:
                 max_count = curr_max_count
             tmp += 1
@@ -89,7 +94,7 @@ def main():
     # nb_rows = int(np.ceil(nb_bundles / 2))
     nb_rows = nb_bundles
 
-    mid_bins = (results[0]['Angle_min'] + results[0]['Angle_max']) / 2.
+    mid_bins = (results_1f[0]['Angle_min'] + results_1f[0]['Angle_max']) / 2.
     highres_bins = np.arange(0, 90 + 1, 0.5)
 
     s_mtr = np.ones(nb_bundles) * 0.0005
@@ -134,8 +139,9 @@ def main():
         col = 0
         row = i
         if bundles_names[i] in extracted_bundles:
+            # Add loop over peak fractions here.
             bundle_idx = extracted_bundles.index(bundles_names[i])
-            result = results[bundle_idx]
+            result = results_1f[bundle_idx]
             is_measures = result['Nb_voxels'] >= min_nb_voxels
             is_not_measures = np.invert(is_measures)
             norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
