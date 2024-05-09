@@ -21,9 +21,6 @@ def extract_measures(measures_arg, data_shape, names_arg=[]):
 
 
 def plot_init(dims=(12.0, 5.0), font_size=12):
-    # plt.rcParams["font.family"] = "serif"
-    # plt.rcParams['font.serif'] = 'Helvetica'
-    # plt.style.use('seaborn-notebook')
     plt.rcParams['axes.grid'] = False
     plt.rcParams['grid.color'] = "darkgrey"
     plt.rcParams['grid.linewidth'] = 1
@@ -39,9 +36,6 @@ def plot_init(dims=(12.0, 5.0), font_size=12):
     plt.rcParams['axes.linewidth'] =1
     plt.rcParams['lines.linewidth']=1
     plt.rcParams['lines.markersize']=4
-    # plt.rcParams['text.latex.unicode']=True
-    # plt.rcParams['text.latex.preamble'] = [r'\usepackage{amssymb}', r"\usepackage{amstext}"]
-    # plt.rcParams['mathtext.default']='regular'
 
 
 def plot_all_bundles_means(bins, means, nb_voxels, is_measures, max_count,
