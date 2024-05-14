@@ -60,7 +60,7 @@ def main():
     extracted_bundles = []
     max_count = 0
     tmp = 0
-    for i, result_1f, result_2f in enumerate(zip(args.results_1f[0], args.results_2f[0])):
+    for i, (result_1f, result_2f) in enumerate(zip(args.results_1f[0], args.results_2f[0])):
         if str(Path(result_1f).parent) in bundles_names:
             print("Loading: ", result_1f, result_2f)
             results_1f.append(np.load(result_1f))
@@ -94,7 +94,6 @@ def main():
     # nb_rows = int(np.ceil(nb_bundles / 2))
     nb_rows = nb_bundles
 
-    mid_bins = (results_1f[0]['Angle_min'] + results_1f[0]['Angle_max']) / 2.
     highres_bins = np.arange(0, 90 + 1, 0.5)
 
     s_mtr = np.ones(nb_bundles) * 0.0005
@@ -139,88 +138,172 @@ def main():
         col = 0
         row = i
         if bundles_names[i] in extracted_bundles:
-            # Add loop over peak fractions here.
-            bundle_idx = extracted_bundles.index(bundles_names[i])
-            result = results_1f[bundle_idx]
-            is_measures = result['Nb_voxels'] >= min_nb_voxels
-            is_not_measures = np.invert(is_measures)
-            norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
-            colorbar = ax[row, col].scatter(mid_bins[is_measures],
-                                            result['MTR'][is_measures],
-                                            c=result['Nb_voxels'][is_measures],
-                                            cmap='Greys', norm=norm,
-                                            edgecolors=cm.naviaS(2), linewidths=1)
-            ax[row, col].scatter(mid_bins[is_not_measures],
-                                 result['MTR'][is_not_measures],
-                                 c=result['Nb_voxels'][is_not_measures],
-                                 cmap='Greys', norm=norm, alpha=0.5,
-                                 edgecolors=cm.naviaS(2), linewidths=1)
-            ax[row, col + 1].scatter(mid_bins[is_measures],
-                                            result['MTsat'][is_measures],
-                                            c=result['Nb_voxels'][is_measures],
-                                            cmap='Greys', norm=norm,
-                                            edgecolors=cm.naviaS(3), linewidths=1)
-            ax[row, col + 1].scatter(mid_bins[is_not_measures],
-                                 result['MTsat'][is_not_measures],
-                                 c=result['Nb_voxels'][is_not_measures],
-                                 cmap='Greys', norm=norm, alpha=0.5,
-                                 edgecolors=cm.naviaS(3), linewidths=1)
-            ax[row, col + 2].scatter(mid_bins[is_measures],
-                                            result['ihMTR'][is_measures],
-                                            c=result['Nb_voxels'][is_measures],
-                                            cmap='Greys', norm=norm,
-                                            edgecolors=cm.naviaS(4), linewidths=1)
-            ax[row, col + 2].scatter(mid_bins[is_not_measures],
-                                 result['ihMTR'][is_not_measures],
-                                 c=result['Nb_voxels'][is_not_measures],
-                                 cmap='Greys', norm=norm, alpha=0.5,
-                                 edgecolors=cm.naviaS(4), linewidths=1)
-            ax[row, col + 3].scatter(mid_bins[is_measures],
-                                            result['ihMTsat'][is_measures],
-                                            c=result['Nb_voxels'][is_measures],
-                                            cmap='Greys', norm=norm,
-                                            edgecolors=cm.naviaS(5), linewidths=1)
-            ax[row, col + 3].scatter(mid_bins[is_not_measures],
-                                 result['ihMTsat'][is_not_measures],
-                                 c=result['Nb_voxels'][is_not_measures],
-                                 cmap='Greys', norm=norm, alpha=0.5,
-                                 edgecolors=cm.naviaS(5), linewidths=1)
+            for j in range (5):
+                bundle_idx = extracted_bundles.index(bundles_names[i])
+                if j == 4: ########## 1f #########
+                    result = results_1f[bundle_idx]
+                    mid_bins = (result['Angle_min'] + result['Angle_max']) / 2.
+                    is_measures = result['Nb_voxels'] >= min_nb_voxels
+                    is_not_measures = np.invert(is_measures)
+                    norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
+                    colorbar = ax[row, col].scatter(mid_bins[is_measures],
+                                                    result['MTR'][is_measures],
+                                                    c=result['Nb_voxels'][is_measures],
+                                                    cmap='Greys', norm=norm,
+                                                    edgecolors=cm.naviaS(2), linewidths=1)
+                    ax[row, col].scatter(mid_bins[is_not_measures],
+                                        result['MTR'][is_not_measures],
+                                        c=result['Nb_voxels'][is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
+                                        edgecolors=cm.naviaS(2), linewidths=1)
+                    ax[row, col + 1].scatter(mid_bins[is_measures],
+                                                    result['MTsat'][is_measures],
+                                                    c=result['Nb_voxels'][is_measures],
+                                                    cmap='Greys', norm=norm,
+                                                    edgecolors=cm.naviaS(2), linewidths=1)
+                    ax[row, col + 1].scatter(mid_bins[is_not_measures],
+                                        result['MTsat'][is_not_measures],
+                                        c=result['Nb_voxels'][is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
+                                        edgecolors=cm.naviaS(2), linewidths=1)
+                    ax[row, col + 2].scatter(mid_bins[is_measures],
+                                                    result['ihMTR'][is_measures],
+                                                    c=result['Nb_voxels'][is_measures],
+                                                    cmap='Greys', norm=norm,
+                                                    edgecolors=cm.naviaS(2), linewidths=1)
+                    ax[row, col + 2].scatter(mid_bins[is_not_measures],
+                                        result['ihMTR'][is_not_measures],
+                                        c=result['Nb_voxels'][is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
+                                        edgecolors=cm.naviaS(2), linewidths=1)
+                    ax[row, col + 3].scatter(mid_bins[is_measures],
+                                                    result['ihMTsat'][is_measures],
+                                                    c=result['Nb_voxels'][is_measures],
+                                                    cmap='Greys', norm=norm,
+                                                    edgecolors=cm.naviaS(2), linewidths=1)
+                    ax[row, col + 3].scatter(mid_bins[is_not_measures],
+                                        result['ihMTsat'][is_not_measures],
+                                        c=result['Nb_voxels'][is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
+                                        edgecolors=cm.naviaS(2), linewidths=1)
 
-            is_not_nan = result['Nb_voxels'] > 0
-            weights = np.sqrt(result['Nb_voxels'][is_not_nan]) / np.max(result['Nb_voxels'][is_not_nan])
-            mtr_fit = splrep(mid_bins[is_not_nan], result['MTR'][is_not_nan], w=weights, s=s_mtr[i])
-            ax[row, col].plot(highres_bins, BSpline(*mtr_fit)(highres_bins), "--", color=cm.naviaS(2))
-            mtsat_fit = splrep(mid_bins[is_not_nan], result['MTsat'][is_not_nan], w=weights, s=s_mtsat[i])
-            ax[row, col + 1].plot(highres_bins, BSpline(*mtsat_fit)(highres_bins), "--", color=cm.naviaS(3))
-            ihmtr_fit = splrep(mid_bins[is_not_nan], result['ihMTR'][is_not_nan], w=weights, s=s_ihmtr[i])
-            ax[row, col + 2].plot(highres_bins, BSpline(*ihmtr_fit)(highres_bins), "--", color=cm.naviaS(4))
-            ihmtsat_fit = splrep(mid_bins[is_not_nan], result['ihMTsat'][is_not_nan], w=weights, s=s_ihmtsat[i])
-            ax[row, col + 3].plot(highres_bins, BSpline(*ihmtsat_fit)(highres_bins), "--", color=cm.naviaS(5))
+                    is_not_nan = result['Nb_voxels'] > 0
+                    weights = np.sqrt(result['Nb_voxels'][is_not_nan]) / np.max(result['Nb_voxels'][is_not_nan])
+                    mtr_fit = splrep(mid_bins[is_not_nan], result['MTR'][is_not_nan], w=weights, s=s_mtr[i])
+                    ax[row, col].plot(highres_bins, BSpline(*mtr_fit)(highres_bins), "--", color=cm.naviaS(2))
+                    mtsat_fit = splrep(mid_bins[is_not_nan], result['MTsat'][is_not_nan], w=weights, s=s_mtsat[i])
+                    ax[row, col + 1].plot(highres_bins, BSpline(*mtsat_fit)(highres_bins), "--", color=cm.naviaS(2))
+                    ihmtr_fit = splrep(mid_bins[is_not_nan], result['ihMTR'][is_not_nan], w=weights, s=s_ihmtr[i])
+                    ax[row, col + 2].plot(highres_bins, BSpline(*ihmtr_fit)(highres_bins), "--", color=cm.naviaS(2))
+                    ihmtsat_fit = splrep(mid_bins[is_not_nan], result['ihMTsat'][is_not_nan], w=weights, s=s_ihmtsat[i])
+                    ax[row, col + 3].plot(highres_bins, BSpline(*ihmtsat_fit)(highres_bins), "--", color=cm.naviaS(2))
 
-            ax[row, col].set_ylim(0.975 * np.nanmin(result['MTR']),
-                                  1.025 * np.nanmax(result['MTR']))
-            ax[row, col].set_yticks([np.round(np.nanmin(result['MTR']), decimals=1),
-                                     np.round(np.nanmax(result['MTR']), decimals=1)])
-            ax[row, col].set_xlim(0, 90)
-            # ax[row, col].tick_params(axis='y', labelcolor="C0")
-            ax[row, col + 1].set_ylim(0.975 * np.nanmin(result['MTsat']),
-                                      1.025 * np.nanmax(result['MTsat']))
-            ax[row, col + 1].set_yticks([np.round(np.nanmin(result['MTsat']), decimals=1),
-                                         np.round(np.nanmax(result['MTsat']), decimals=1)])
-            ax[row, col + 1].set_xlim(0, 90)
-            # ax[row, col + 1].tick_params(axis='y', labelcolor="C2")
-            ax[row, col + 2].set_ylim(0.975 * np.nanmin(result['ihMTR']),
-                                      1.025 * np.nanmax(result['ihMTR']))
-            ax[row, col + 2].set_yticks([np.round(np.nanmin(result['ihMTR']), decimals=1),
-                                         np.round(np.nanmax(result['ihMTR']), decimals=1)])
-            ax[row, col + 2].set_xlim(0, 90)
-            ax[row, col + 3].set_ylim(0.975 * np.nanmin(result['ihMTsat']),
-                                      1.025 * np.nanmax(result['ihMTsat']))
-            ax[row, col + 3].set_yticks([np.round(np.nanmin(result['ihMTsat']), decimals=1),
-                                         np.round(np.nanmax(result['ihMTsat']), decimals=1)])
-            ax[row, col + 3].set_xlim(0, 90)
+                    ax[row, col].set_ylim(0.975 * np.nanmin(result['MTR']),
+                                        1.025 * np.nanmax(result['MTR']))
+                    ax[row, col].set_yticks([np.round(np.nanmin(result['MTR']), decimals=1),
+                                            np.round(np.nanmax(result['MTR']), decimals=1)])
+                    ax[row, col].set_xlim(0, 90)
+                    # ax[row, col].tick_params(axis='y', labelcolor="C0")
+                    ax[row, col + 1].set_ylim(0.975 * np.nanmin(result['MTsat']),
+                                            1.025 * np.nanmax(result['MTsat']))
+                    ax[row, col + 1].set_yticks([np.round(np.nanmin(result['MTsat']), decimals=1),
+                                                np.round(np.nanmax(result['MTsat']), decimals=1)])
+                    ax[row, col + 1].set_xlim(0, 90)
+                    # ax[row, col + 1].tick_params(axis='y', labelcolor="C2")
+                    ax[row, col + 2].set_ylim(0.975 * np.nanmin(result['ihMTR']),
+                                            1.025 * np.nanmax(result['ihMTR']))
+                    ax[row, col + 2].set_yticks([np.round(np.nanmin(result['ihMTR']), decimals=1),
+                                                np.round(np.nanmax(result['ihMTR']), decimals=1)])
+                    ax[row, col + 2].set_xlim(0, 90)
+                    ax[row, col + 3].set_ylim(0.975 * np.nanmin(result['ihMTsat']),
+                                            1.025 * np.nanmax(result['ihMTsat']))
+                    ax[row, col + 3].set_yticks([np.round(np.nanmin(result['ihMTsat']), decimals=1),
+                                                np.round(np.nanmax(result['ihMTsat']), decimals=1)])
+                    ax[row, col + 3].set_xlim(0, 90)
 
-            bundle_idx += 1
+                    bundle_idx += 1
+                else: ########## 2f #########
+                    result = results_2f[bundle_idx]
+                    mid_bins = (result['Angle_min'] + result['Angle_max']) / 2.
+                    is_measures = np.diagonal(result['Nb_voxels'][j]) >= min_nb_voxels
+                    is_not_measures = np.invert(is_measures)
+                    norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
+                    colorbar = ax[row, col].scatter(mid_bins[is_measures],
+                                                    np.diagonal(result['MTR'][j])[is_measures],
+                                                    c=np.diagonal(result['Nb_voxels'][j])[is_measures],
+                                                    cmap='Greys', norm=norm,
+                                                    edgecolors=cm.naviaS(2+1+j), linewidths=1)
+                    ax[row, col].scatter(mid_bins[is_not_measures],
+                                        np.diagonal(result['MTR'][j])[is_not_measures],
+                                        c=np.diagonal(result['Nb_voxels'][j])[is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
+                                        edgecolors=cm.naviaS(2+1+j), linewidths=1)
+                    ax[row, col + 1].scatter(mid_bins[is_measures],
+                                                    np.diagonal(result['MTsat'][j])[is_measures],
+                                                    c=np.diagonal(result['Nb_voxels'][j])[is_measures],
+                                                    cmap='Greys', norm=norm,
+                                                    edgecolors=cm.naviaS(2+1+j), linewidths=1)
+                    ax[row, col + 1].scatter(mid_bins[is_not_measures],
+                                        np.diagonal(result['MTsat'][j])[is_not_measures],
+                                        c=np.diagonal(result['Nb_voxels'][j])[is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
+                                        edgecolors=cm.naviaS(2+1+j), linewidths=1)
+                    ax[row, col + 2].scatter(mid_bins[is_measures],
+                                                    np.diagonal(result['ihMTR'][j])[is_measures],
+                                                    c=np.diagonal(result['Nb_voxels'][j])[is_measures],
+                                                    cmap='Greys', norm=norm,
+                                                    edgecolors=cm.naviaS(2+1+j), linewidths=1)
+                    ax[row, col + 2].scatter(mid_bins[is_not_measures],
+                                        np.diagonal(result['ihMTR'][j])[is_not_measures],
+                                        c=np.diagonal(result['Nb_voxels'][j])[is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
+                                        edgecolors=cm.naviaS(2+1+j), linewidths=1)
+                    ax[row, col + 3].scatter(mid_bins[is_measures],
+                                                    np.diagonal(result['ihMTsat'][j])[is_measures],
+                                                    c=np.diagonal(result['Nb_voxels'][j])[is_measures],
+                                                    cmap='Greys', norm=norm,
+                                                    edgecolors=cm.naviaS(2+1+j), linewidths=1)
+                    ax[row, col + 3].scatter(mid_bins[is_not_measures],
+                                        np.diagonal(result['ihMTsat'][j])[is_not_measures],
+                                        c=np.diagonal(result['Nb_voxels'][j])[is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
+                                        edgecolors=cm.naviaS(2+1+j), linewidths=1)
+
+                    # is_not_nan = np.diagonal(result['Nb_voxels'][j]) > 0
+                    # weights = np.sqrt(np.diagonal(result['Nb_voxels'])[is_not_nan]) / np.max(np.diagonal(result['Nb_voxels'][j])[is_not_nan])
+                    # mtr_fit = splrep(mid_bins[is_not_nan], np.diagonal(result['MTR'][j])[is_not_nan], w=weights, s=s_mtr[i])
+                    # ax[row, col].plot(highres_bins, BSpline(*mtr_fit)(highres_bins), "--", color=cm.naviaS(2))
+                    # mtsat_fit = splrep(mid_bins[is_not_nan], np.diagonal(result['MTsat'][j])[is_not_nan], w=weights, s=s_mtsat[i])
+                    # ax[row, col + 1].plot(highres_bins, BSpline(*mtsat_fit)(highres_bins), "--", color=cm.naviaS(3))
+                    # ihmtr_fit = splrep(mid_bins[is_not_nan], np.diagonal(result['ihMTR'][j])[is_not_nan], w=weights, s=s_ihmtr[i])
+                    # ax[row, col + 2].plot(highres_bins, BSpline(*ihmtr_fit)(highres_bins), "--", color=cm.naviaS(4))
+                    # ihmtsat_fit = splrep(mid_bins[is_not_nan], np.diagonal(result['ihMTsat'][j])[is_not_nan], w=weights, s=s_ihmtsat[i])
+                    # ax[row, col + 3].plot(highres_bins, BSpline(*ihmtsat_fit)(highres_bins), "--", color=cm.naviaS(5))
+
+                    # ax[row, col].set_ylim(0.975 * np.nanmin(np.diagonal(result['MTR'], axis1=1, axis2=2)),
+                    #                     1.025 * np.nanmax(np.diagonal(result['MTR'], axis1=1, axis2=2)))
+                    # ax[row, col].set_yticks([np.round(np.nanmin(np.diagonal(result['MTR'], axis1=1, axis2=2)), decimals=1),
+                    #                         np.round(np.nanmax(np.diagonal(result['MTR'], axis1=1, axis2=2)), decimals=1)])
+                    # ax[row, col].set_xlim(0, 90)
+                    # # ax[row, col].tick_params(axis='y', labelcolor="C0")
+                    # ax[row, col + 1].set_ylim(0.975 * np.nanmin(np.diagonal(result['MTsat'], axis1=1, axis2=2)),
+                    #                         1.025 * np.nanmax(np.diagonal(result['MTsat'], axis1=1, axis2=2)))
+                    # ax[row, col + 1].set_yticks([np.round(np.nanmin(np.diagonal(result['MTsat'], axis1=1, axis2=2)), decimals=1),
+                    #                             np.round(np.nanmax(np.diagonal(result['MTsat'], axis1=1, axis2=2)), decimals=1)])
+                    # ax[row, col + 1].set_xlim(0, 90)
+                    # # ax[row, col + 1].tick_params(axis='y', labelcolor="C2")
+                    # ax[row, col + 2].set_ylim(0.975 * np.nanmin(np.diagonal(result['ihMTR'], axis1=1, axis2=2)),
+                    #                         1.025 * np.nanmax(np.diagonal(result['ihMTR'], axis1=1, axis2=2)))
+                    # ax[row, col + 2].set_yticks([np.round(np.nanmin(np.diagonal(result['ihMTR'], axis1=1, axis2=2)), decimals=1),
+                    #                             np.round(np.nanmax(np.diagonal(result['ihMTR'], axis1=1, axis2=2)), decimals=1)])
+                    # ax[row, col + 2].set_xlim(0, 90)
+                    # ax[row, col + 3].set_ylim(0.975 * np.nanmin(np.diagonal(result['ihMTsat'], axis1=1, axis2=2)),
+                    #                         1.025 * np.nanmax(np.diagonal(result['ihMTsat'], axis1=1, axis2=2)))
+                    # ax[row, col + 3].set_yticks([np.round(np.nanmin(np.diagonal(result['ihMTsat'], axis1=1, axis2=2)), decimals=1),
+                    #                             np.round(np.nanmax(np.diagonal(result['ihMTsat'], axis1=1, axis2=2)), decimals=1)])
+                    # ax[row, col + 3].set_xlim(0, 90)
+
+                    bundle_idx += 1
         else:
             is_measures = whole_wm['Nb_voxels'] >= min_nb_voxels
             is_not_measures = np.invert(is_measures)
