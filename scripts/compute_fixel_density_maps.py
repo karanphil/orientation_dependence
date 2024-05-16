@@ -2,6 +2,7 @@ import argparse
 import nibabel as nib
 import numpy as np
 from pathlib import Path
+import logging
 
 from dipy.io.streamline import load_tractogram
 from scilpy.io.utils import (add_overwrite_arg, add_processes_arg,
@@ -25,11 +26,11 @@ def _build_arg_parser():
                    action='append', required=True,
                    help='Path to the bundle trk for where to analyze.')
     
-    p.add_argument('--abs_thr', default=None,
+    p.add_argument('--abs_thr', default=None, type=int,
                    help='Value of density maps threshold to obtain density '
                         'masks, in number of streamlines [%(default)s].')
     
-    p.add_argument('--rel_thr', default=0.05,
+    p.add_argument('--rel_thr', default=None, type=float,
                    help='Value of density maps threshold to obtain density '
                         'masks, as a ratio of the normalized density '
                         '[%(default)s].')
@@ -58,6 +59,9 @@ def main():
     parser = _build_arg_parser()
     args = parser.parse_args()
 
+    if args.abs_thr is None and args.rel_thr is None:
+        logging.error("Need one of abs_thr and rel_thr.")
+
     out_folder = Path(args.out_folder)
 
     # Load the data
@@ -66,21 +70,26 @@ def main():
     peaks = peaks_img.get_fdata()
 
     affine = peaks_img.affine
+
+    bundles = []
+    for bundle in args.in_bundles[0]:
+        if "CR" in bundle:
+            print("Removing bundle ", bundle)
+        else:
+            bundles.append(bundle)
     
-    fixel_density_maps = compute_fixel_density(peaks, args.max_theta,
-                                               args.in_bundles[0],
+    fixel_density_maps = compute_fixel_density(peaks, args.max_theta, bundles,
                                                nbr_processes=args.nbr_processes)
 
     # This applies a threshold on the number of streamlines.
     if args.abs_thr is not None:
         fixel_density_masks = fixel_density_maps > args.abs_thr
-        args.rel_thr = None
 
     # Normalizing the density maps
     voxel_sum = np.sum(np.sum(fixel_density_maps, axis=-1), axis=-1)
     fixel_sum = np.sum(fixel_density_maps, axis=-1)
 
-    for i, bundle in enumerate(args.in_bundles[0]):
+    for i, bundle in enumerate(bundles):
         bundle_name = Path(bundle).name.split(".")[0]
 
         if args.norm == "voxel":
@@ -93,8 +102,7 @@ def main():
         elif args.norm == "fixel":
             fixel_density_maps[..., i] /= fixel_sum
 
-        nib.save(nib.Nifti1Image(fixel_density_maps[..., i],
-                                 affine),
+        nib.save(nib.Nifti1Image(fixel_density_maps[..., i], affine),
                  out_folder / "fixel_density_maps_{}.nii.gz".format(bundle_name))
     
     # This applies a threshold on the normalized density (percentage).
@@ -111,18 +119,16 @@ def main():
     # Single-fiber single-bundle voxels
     single_bundle_per_voxel = nb_bundles_per_voxel == 1
 
-    for i, bundle in enumerate(args.in_bundles[0]):
+    for i, bundle in enumerate(bundles):
         bundle_name = Path(bundle).name.split(".")[0]
 
         if args.save_masks:
+            nib.save(nib.Nifti1Image(fixel_density_masks[..., i].astype(np.uint8), affine),
+                     out_folder / "fixel_density_masks_{}.nii.gz".format(bundle_name))
             if args.select_single_bundle:
-                fixel_density_masks_sb = fixel_density_masks[..., i] * single_bundle_per_voxel
-                nib.save(nib.Nifti1Image(fixel_density_masks_sb, affine),
-                         out_folder / "fixel_density_masks_{}_alone.nii.gz".format(bundle_name))
-            else:
-                nib.save(nib.Nifti1Image(fixel_density_masks[..., i],
-                                         affine),
-                         out_folder / "fixel_density_masks_{}.nii.gz".format(bundle_name))
+                bundle_mask = fixel_density_masks[..., 0, i] * single_bundle_per_voxel
+                nib.save(nib.Nifti1Image(bundle_mask.astype(np.uint8), affine),
+                         out_folder / "bundle_mask_only_{}.nii.gz".format(bundle_name))
 
     nib.save(nib.Nifti1Image(fixel_density_maps,
              affine), out_folder / "fixel_density_maps.nii.gz")
