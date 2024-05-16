@@ -82,8 +82,9 @@ def main():
                                                nbr_processes=args.nbr_processes)
 
     # This applies a threshold on the number of streamlines.
+    fixel_density_masks_abs = np.ones(fixel_density_maps.shape)
     if args.abs_thr is not None:
-        fixel_density_masks = fixel_density_maps > args.abs_thr
+        fixel_density_masks_abs = fixel_density_maps > args.abs_thr
 
     # Normalizing the density maps
     voxel_sum = np.sum(np.sum(fixel_density_maps, axis=-1), axis=-1)
@@ -106,8 +107,11 @@ def main():
                  out_folder / "fixel_density_maps_{}.nii.gz".format(bundle_name))
     
     # This applies a threshold on the normalized density (percentage).
+    fixel_density_masks_rel = np.ones(fixel_density_maps.shape)
     if args.rel_thr is not None:
-        fixel_density_masks = fixel_density_maps > args.rel_thr
+        fixel_density_masks_rel = fixel_density_maps > args.rel_thr
+
+    fixel_density_masks = fixel_density_masks_rel * fixel_density_masks_abs
 
     # Compute number of bundles per fixel
     nb_bundles_per_fixel = np.sum(fixel_density_masks, axis=-1)
