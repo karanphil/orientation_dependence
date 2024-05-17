@@ -1,3 +1,4 @@
+from cmcrameri import cm
 import nibabel as nib
 import numpy as np
 import matplotlib as mpl
@@ -106,138 +107,124 @@ def plot_all_bundles_means(bins, means, nb_voxels, is_measures, max_count,
     plt.close()
 
 
-def plot_means(bins, means, nb_voxels, names, out_folder,
-               cr_means=None, polyfit=None, is_measures=None):
+def plot_means(bins, means, nb_voxels, names, out_folder, is_measures=None):
     if is_measures is None:
         is_measures = np.ones(means.shape[0])
     is_not_measures = np.invert(is_measures)
     max_count = np.max(nb_voxels)
     norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
     mid_bins = (bins[:-1] + bins[1:]) / 2.
-    highres_bins = np.arange(0, 90 + 1, 0.5)
-    plot_init()
+    plot_init(dims=(8, 3), font_size=10)
     for i in range(means.shape[-1]):
-        out_path = out_folder / str("original_" + str(names[i]) + "_1f.png")
-        fig, (ax1, cax) = plt.subplots(1, 2,
-                                       gridspec_kw={"width_ratios":[1, 0.05]})
+        out_path = out_folder / str(str(names[i]) + "_1f.png")
+        fig, ax1 = plt.subplots(1, 1,
+                                       gridspec_kw={"width_ratios":[1]},
+                                       layout='constrained')
         colorbar = ax1.scatter(mid_bins[is_measures], means[is_measures][..., i],
                                c=nb_voxels[is_measures], cmap='Greys',
-                               norm=norm, edgecolors="C0", linewidths=1)
+                               norm=norm, edgecolors=cm.naviaS(10), linewidths=1)
         ax1.scatter(mid_bins[is_not_measures], means[is_not_measures][..., i],
                     c=nb_voxels[is_not_measures], cmap='Greys', norm=norm,
-                    alpha=0.5, edgecolors="C0", linewidths=1)
-        if cr_means is not None:
-            ax1.scatter(mid_bins[is_measures], cr_means[is_measures][..., i],
-                        c=nb_voxels[is_measures], cmap='Greys', norm=norm,
-                        edgecolors="C0", linewidths=1, marker="s")
-            ax1.scatter(mid_bins[is_not_measures],
-                        cr_means[is_not_measures][..., i],
-                        c=nb_voxels[is_not_measures],
-                        cmap='Greys', norm=norm, alpha=0.5,
-                        edgecolors="C0", linewidths=1, marker="s")
-            out_path = out_folder / str("corrected_" + str(names[i]) + "_1f.png")
-        if polyfit is not None:
-            polynome = np.poly1d(polyfit[:, i])
-            ax1.plot(highres_bins, polynome(highres_bins), "--", color="C0")
+                    alpha=0.5, edgecolors=cm.naviaS(10), linewidths=1)
         ax1.set_xlabel(r'$\theta_a$')
         ax1.set_xlim(0, 90)
-        ax1.set_ylim(0.975 * np.nanmin(means[is_measures][..., i]),
-                     1.025 * np.nanmax(means[is_measures][..., i]))
-        ax1.set_ylabel(str(names[i]) + ' mean')
-        fig.colorbar(colorbar, cax=cax, label="Voxel count")
-        fig.tight_layout()
+        min_measure = np.nanmin(means[is_measures][..., i])
+        max_measure = np.nanmax(means[is_measures][..., i])
+        ax1.set_ylim(0.975 * min_measure,
+                     1.025 * max_measure)
+        ax1.set_yticks([np.round(min_measure, decimals=1),
+                        np.round(np.mean((min_measure, max_measure)), decimals=1),
+                        np.round(max_measure, decimals=1)])
+        ax1.set_ylabel(str(names[i]))
+        fig.colorbar(colorbar, ax=ax1, label="Voxel count")
+        fig.get_layout_engine().set(h_pad=0.02, hspace=0.05, wspace=0.05)
+        # fig.tight_layout()
         plt.savefig(out_path, dpi=300)
         plt.close()
 
 
-def plot_3d_means(bins, means, out_folder, names, nametype=""):
+def plot_3d_means(bins, means, out_folder, names):
     mid_bins = (bins[:-1] + bins[1:]) / 2.
-    plot_init()
+    plot_init(dims=(10, 8), font_size=10)
+    plt.rcParams['axes.labelsize'] = 12
     for i in range(means.shape[-1]):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         X, Y = np.meshgrid(mid_bins, mid_bins)
-        ax.plot_surface(X, Y, means[..., i], cmap="jet")
+        ax.plot_surface(X, Y, means[..., i], cmap=cm.navia)
         ax.set_xlabel(r'$\theta_{a1}$')
         ax.set_ylabel(r'$\theta_{a2}$')
-        ax.set_zlabel(str(names[i]) + ' mean')
+        ax.set_zlabel(str(names[i]))
         fig.tight_layout()
-        views = np.array([[30, -135], [30, 45], [30, -45], [10, -90], [10, 0]])
+        views = np.array([[45, -135], [45, 45]])
         for v, view in enumerate(views[:]):
-            out_path = out_folder / str(str(nametype) + "_" + str(names[i]) + "_3D_view_" + str(v) + "_2f.png")
+            out_path = out_folder / str(str(names[i]) + "_3D_2f_view_" + str(v + 1) + ".png")
             ax.view_init(view[0], view[1])
             plt.savefig(out_path, dpi=300)
         plt.close()
 
 
 def plot_multiple_means(bins, means, nb_voxels, out_folder, names,
-                        endname="2f", means_cr=None, labels=None,
-                        legend_title=None, polyfit=None,
-                        xlim=[0, 1.03], delta_max=None, delta_max_slope=None,
-                        delta_max_origin=None, p_frac=None, leg_loc=3,
-                        markers="o", nametype=""):
+                        endname="2f", labels=None, color_start=2,
+                        legend_title=None, markers="o", is_measures=None):
+    if is_measures is None:
+        is_measures = np.ones((means.shape[0], means.shape[1])).astype(bool)
+        is_not_measures = np.zeros((means.shape[0], means.shape[1])).astype(bool)
+    else:
+        is_not_measures = np.invert(is_measures)
+
     max_count = np.max(nb_voxels)
     norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
     mid_bins = (bins[:-1] + bins[1:]) / 2.
-    highres_bins = np.arange(0, 90 + 1, 0.5)
+
     for j in range(means.shape[-1]):
         plot_init()
         fig, (ax1, cax) = plt.subplots(1, 2,
                                        gridspec_kw={"width_ratios":[1, 0.05]})
-        out_path = out_folder / str(str(nametype) + "_" + str(names[j]) + "_" + str(endname) + ".png")
+        out_path = out_folder / str(str(names[j]) + "_" + str(endname) + ".png")
         for i in range(means.shape[0]):
             if labels is not None:
-                colorbar = ax1.scatter(mid_bins, means[i, :, j],
-                                       c=nb_voxels[i], cmap='Greys', norm=norm,
+                colorbar = ax1.scatter(mid_bins[is_measures[i]],
+                                       means[i, is_measures[i], j],
+                                       c=nb_voxels[i, is_measures[i]],
+                                       cmap='Greys', norm=norm,
                                        label=labels[i], linewidths=1,
-                                       edgecolors="C" + str(i), marker=markers)
-            else:
-                colorbar = ax1.scatter(mid_bins, means[i, :, j],
-                                       c=nb_voxels[i], cmap='Greys', norm=norm,
-                                       linewidths=1, edgecolors="C" + str(i),
+                                       edgecolors=cm.naviaS(i+color_start),
                                        marker=markers)
-            if means_cr is not None:
-                ax1.scatter(mid_bins, means_cr[i, :, j], c=nb_voxels[i],
-                            cmap='Greys', norm=norm, edgecolors="C" + str(i),
-                            linewidths=1, marker="s")
-            if polyfit is not None:
-                polynome = np.poly1d(polyfit[:, j])
-                ax1.plot(highres_bins, polynome(highres_bins), "--",
-                         color="C" + str(i))
+                ax1.scatter(mid_bins[is_not_measures[i]],
+                            means[i, is_not_measures[i], j],
+                            c=nb_voxels[i, is_not_measures[i]],
+                            cmap='Greys', norm=norm,
+                            linewidths=1, alpha=0.5,
+                            edgecolors=cm.naviaS(i+color_start),
+                            marker=markers)
+            else:
+                colorbar = ax1.scatter(mid_bins[is_measures[i]],
+                                       means[i, is_measures[i], j],
+                                       c=nb_voxels[i, is_measures[i]],
+                                       cmap='Greys', norm=norm,
+                                       linewidths=1,
+                                       edgecolors=cm.naviaS(i+color_start),
+                                       marker=markers)
+                ax1.scatter(mid_bins[is_not_measures[i]],
+                            means[i, is_not_measures[i], j],
+                            c=nb_voxels[i, is_not_measures[i]],
+                            cmap='Greys', norm=norm,
+                            linewidths=1, edgecolors=cm.naviaS(i+color_start),
+                            marker=markers, alpha=0.5)
         ax1.set_xlabel(r'$\theta_a$')
         ax1.set_xlim(0, 90)
-        ax1.set_ylabel(str(names[j]) + ' mean')
+        ax1.set_ylabel(str(names[j]))
         if labels is not None:
-            ax1.legend(loc=leg_loc)
+            ax1.legend()
         if legend_title is not None:
             ax1.get_legend().set_title(legend_title)
-
-        if delta_max is not None:
-            # this is an inset axes over the main axes
-            highres_frac = np.arange(0, 1.01, 0.01)
-            # ax = inset_axes(ax1,
-            #                 bbox_to_anchor=[0.2, 0.2, 0.2, 0.2],
-            #                 width="50%", # width = 40% of parent_bbox
-            #                 height=1.0) # height : 1 inch
-            #                 # loc=2)
-            ax = plt.axes([0.13, 0.75, 0.16, 0.2])
-            for i in range(len(p_frac) - 1):
-                ax.scatter(p_frac[i], delta_max[i, j], color="C" + str(i),
-                           linewidths=1)
-            ax.scatter(p_frac[-1], delta_max[-1, j], color="black",
-                       linewidths=1)
-            ax.plot(highres_frac,
-                    delta_max_slope[j] * highres_frac + delta_max_origin[j],
-                    "--",
-                    color="grey")
-            ax.set_xlabel(r'Peak$_1$ fraction')
-            ax.set_xlim(xlim[0], xlim[1])
-            ax.set_ylabel(str(names[j]) + r' $\delta m_{max}$')
 
         fig.colorbar(colorbar, cax=cax, label="Voxel count")
         fig.tight_layout()
         plt.savefig(out_path, dpi=300)
         plt.close()
+
 
 
 def save_angle_maps(peaks, fa, wm_mask, affine, output_path, fodf_peaks,

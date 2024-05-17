@@ -26,6 +26,9 @@ def _build_arg_parser():
                    action='append', required=True,
                    help='Path to the bundle trk for where to analyze.')
     
+    p.add_argument('--in_nufo',
+                   help='Path of the NuFO.')
+    
     p.add_argument('--abs_thr', default=None, type=int,
                    help='Value of density maps threshold to obtain density '
                         'masks, in number of streamlines [%(default)s].')
@@ -66,10 +69,13 @@ def main():
 
     # Load the data
     peaks_img = nib.load(args.in_peaks)
-
     peaks = peaks_img.get_fdata()
-
     affine = peaks_img.affine
+
+    nufo_sf = np.ones(peaks.shape[0:3]).astype(bool)
+    if args.in_nufo:
+        nufo = nib.load(args.in_nufo).get_fdata()
+        nufo_sf = nufo == 1
 
     bundles = []
     for bundle in args.in_bundles[0]:
@@ -122,6 +128,11 @@ def main():
     nb_bundles_per_voxel = np.sum(nb_unique_bundles_per_fixel, axis=-1)
     # Single-fiber single-bundle voxels
     single_bundle_per_voxel = nb_bundles_per_voxel == 1
+    # Making sure we also have single-fiber voxels only
+    single_bundle_per_voxel *= nufo_sf
+
+    nib.save(nib.Nifti1Image(single_bundle_per_voxel.astype(np.uint8),
+             affine), out_folder / "bundle_mask_only_WM.nii.gz")
 
     for i, bundle in enumerate(bundles):
         bundle_name = Path(bundle).name.split(".")[0]

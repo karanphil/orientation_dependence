@@ -88,9 +88,8 @@ def correct_measure(peaks, peak_values, measure, affine, wm_mask,
 
 
 def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
-                               measures, bin_width=30, mask=None,
-                               frac_thrs=np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]),
-                               min_nb_voxels=5):
+                               measures, bin_width=30, roi=None,
+                               frac_thrs=np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])):
     peaks_fraction = compute_peaks_fraction(peak_values)
 
     # Find the direction of the B0 field
@@ -116,8 +115,8 @@ def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
     for idx in range(len(frac_thrs) - 1):
         # Apply the WM mask
         wm_mask_bool = (wm_mask >= 0.9) & (nufo == 3)
-        if mask is not None:
-            wm_mask_bool = wm_mask_bool & (mask > 0)
+        if roi is not None:
+            wm_mask_bool = wm_mask_bool & (roi > 0)
         fraction_mask_bool = (peaks_fraction[..., 0] >= frac_thrs[idx]) & (peaks_fraction[..., 0] < frac_thrs[idx + 1])
         for i in range(len(bins) - 1):
             angle_mask_0_90 = (theta_f1 >= bins[i]) & (theta_f1 < bins[i+1])
@@ -137,7 +136,7 @@ def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
 
             mask = mask_f1 & mask_f2 & mask_f3 & wm_mask_bool & fraction_mask_bool
             nb_voxels[idx, i] = np.sum(mask)
-            if np.sum(mask) < min_nb_voxels:
+            if np.sum(mask) < 1:
                 measure_means[idx, i, :] = None
             else:
                 measure_means[idx, i] = np.mean(measures[mask], axis=0)
@@ -148,9 +147,8 @@ def compute_three_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
 
 
 def compute_two_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
-                             measures, bin_width=10, mask=None,
-                             frac_thrs=np.array([0.5, 0.6, 0.7, 0.8, 0.9]),
-                             min_nb_voxels=5):
+                             measures, bin_width=10, roi=None,
+                             frac_thrs=np.array([0.5, 0.6, 0.7, 0.8, 0.9])):
     peaks_fraction = compute_peaks_fraction(peak_values)
 
     # Find the direction of the B0 field
@@ -174,8 +172,8 @@ def compute_two_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
     for idx in range(len(frac_thrs) - 1):
         # Apply the WM mask
         wm_mask_bool = (wm_mask >= 0.9) & (nufo == 2)
-        if mask is not None:
-            wm_mask_bool = wm_mask_bool & (mask > 0)
+        if roi is not None:
+            wm_mask_bool = wm_mask_bool & (roi > 0)
         fraction_mask_bool = (peaks_fraction[..., 0] >= frac_thrs[idx]) & (peaks_fraction[..., 0] < frac_thrs[idx + 1])
         for i in range(len(bins) - 1):
             angle_mask_0_90 = (theta_f1 >= bins[i]) & (theta_f1 < bins[i+1])
@@ -189,7 +187,7 @@ def compute_two_fibers_means(peaks, peak_values, wm_mask, affine, nufo,
                 mask_f2 = angle_mask
                 mask = mask_f1 & mask_f2 & wm_mask_bool & fraction_mask_bool
                 nb_voxels[idx, i, j] = np.sum(mask)
-                if np.sum(mask) < min_nb_voxels:
+                if np.sum(mask) < 1:
                     measure_means[idx, i, j, :] = None
                 else:
                     measure_means[idx, i, j] = np.mean(measures[mask], axis=0)
