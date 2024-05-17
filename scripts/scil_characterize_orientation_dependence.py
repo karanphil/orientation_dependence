@@ -62,7 +62,7 @@ def _build_arg_parser():
     g.add_argument('--min_frac_thr', default=0.1,
                    help='Value of the minimal fraction threshold for '
                         'selecting peaks to correct [%(default)s].')
-    g.add_argument('--min_nb_voxels', default=30, type=int,
+    g.add_argument('--min_nb_voxels', default=1, type=int,
                    help='Value of the minimal number of voxels per bin '
                         '[%(default)s].')
     
