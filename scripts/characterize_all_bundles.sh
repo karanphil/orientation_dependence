@@ -5,7 +5,7 @@ source_dir="Research/source";
 cd $wdir;
 bin_width=5;
 bin_width_dir="${bin_width}_degree_bins";
-polyfit_commands="--save_polyfit --use_weighted_polyfit --poly_order 10 --scale_poly_order";
+polyfit_commands="--save_polyfit --use_weighted_polyfit --poly_order 20 --scale_poly_order";
 #polyfit_commands="";
 for bundle in bundles/sub-026-hc_ses-3/bundles/*;
     do bundle_name=$(basename -- "${bundle%%.*}");
