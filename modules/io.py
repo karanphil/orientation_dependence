@@ -357,3 +357,10 @@ def save_results_as_npz(bins, measure_means, nb_voxels, names, out_path):
     for i in range(measure_means.shape[-1]):
         savez_dict[str(names[i])] = measure_means[..., i]
     np.savez(str(out_path), **savez_dict)
+
+
+def save_polyfits_as_npz(polyfits, names, out_path):
+    savez_dict = dict()
+    for i in range(polyfits.shape[-1]):
+        savez_dict[str(names[i])] = polyfits[..., i]
+    np.savez(str(out_path), **savez_dict)

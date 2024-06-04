@@ -5,10 +5,12 @@ from pathlib import Path
 
 from modules.io import (plot_means, plot_3d_means, plot_multiple_means,
                         save_angle_maps, save_masks_by_angle_bins,
-                        save_results_as_npz, extract_measures)
+                        save_results_as_npz, extract_measures,
+                        save_polyfits_as_npz)
 from modules.orientation_dependence import (compute_three_fibers_means,
                                             compute_two_fibers_means,
-                                            compute_single_fiber_means)
+                                            compute_single_fiber_means,
+                                            fit_single_fiber_results)
 
 
 def _build_arg_parser():
@@ -65,6 +67,18 @@ def _build_arg_parser():
     g.add_argument('--min_nb_voxels', default=1, type=int,
                    help='Value of the minimal number of voxels per bin '
                         '[%(default)s].')
+    
+    g1 = p.add_argument_group(title='Polyfit parameters')
+    g1.add_argument('--save_polyfit', action='store_true',
+                    help='If set, will save the polyfit.')
+    g1.add_argument('--use_weighted_polyfit', action='store_true',
+                   help='If set, use weights when performing the polyfit. '
+                        '[%(default)s].')
+    g1.add_argument('--poly_order', default=10, type=int,
+                   help='Order of the polynome to fit [%(default)s].')
+    g1.add_argument('--scale_poly_order', action='store_true',
+                   help='If set, scale the polynome order to the range of '
+                        'angles where measures are present. [%(default)s].')
     
     s1 = p.add_argument_group(title='Save angle info')
     s1.add_argument('--save_angle_info', action='store_true',
@@ -177,6 +191,23 @@ def main():
                                  nufo=nufo, fa_thr=args.fa_thr,
                                  bin_width=args.angle_mask_bin_width)
         
+    if args.use_weighted_polyfit:
+        weights = np.sqrt(nb_voxels)
+    else:
+        weights = None
+    
+    if args.save_polyfit:
+        print("Fitting the whole brain results.")
+        measures_fit = fit_single_fiber_results(bins,
+                                                measure_means,
+                                                poly_order=args.poly_order,
+                                                is_measures=is_measures,
+                                                weights=weights,
+                                                scale_poly_order=args.scale_poly_order)
+
+        print("Saving polyfit results.")
+        out_path = out_folder / '1f_polyfits'
+        save_polyfits_as_npz(measures_fit, measures_name, out_path)
 
     #---------------------- Crossing fibers section ---------------------------
     print("Computing two-fiber means.")
