@@ -249,22 +249,38 @@ def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
         is_measures = np.ones(means.shape[0])
     if weights is None:
         weights = np.ones(means.shape[0])
-    fits = np.zeros((poly_order + 1, means.shape[-1]))
+    max_poly_order = len(bins) - 1
+    fits = np.zeros((max_poly_order, means.shape[-1]))
     for i in range(means.shape[-1]):
         new_bins, new_means, new_is_measures, new_weights =\
             extend_measure(bins, means[..., i], is_measure=is_measures,
                            weights=weights)
         # mid_bins = (new_bins[:-1] + new_bins[1:]) / 2.
         if scale_poly_order:
-            effective_poly_order = len(new_bins) - 1
-            # effective_poly_order = int(np.floor(poly_order *\
-            #     (new_bins[-2] - new_bins[1]) / (bins[-1] - bins[1])))
+            # effective_poly_order = len(new_bins) - 1
+            effective_poly_order = int(np.floor(poly_order *\
+                (new_bins[-2] - new_bins[1]) / (bins[-1] - bins[1])))
         else:
             effective_poly_order = poly_order
-        print("Polyfit order was set to", effective_poly_order)
-        fits[poly_order - effective_poly_order:, i] =\
+        poly_order_list = np.arange(effective_poly_order - 2, max_poly_order, 1)
+        previous_resi = 10000000
+        for poly_order_l in poly_order_list:
+            print("Trying poly order: ", poly_order_l)
+            output = np.polyfit(new_bins[new_is_measures],
+                                new_means[new_is_measures],
+                                poly_order_l,
+                                w=new_weights[new_is_measures],
+                                full=True)
+            print("Residual: ", output[1])
+            print("% of change: ", abs(output[1] - previous_resi) / previous_resi)
+            if abs(output[1] - previous_resi) / previous_resi <= 0.08:
+                chosen_poly_order = poly_order_l
+                break
+            previous_resi = output[1]
+        print("Polyfit order was set to", chosen_poly_order)
+        fits[max_poly_order - chosen_poly_order - 1:, i] =\
             np.polyfit(new_bins[new_is_measures],
                        new_means[new_is_measures],
-                       effective_poly_order,
+                       chosen_poly_order,
                        w=new_weights[new_is_measures])
     return fits
