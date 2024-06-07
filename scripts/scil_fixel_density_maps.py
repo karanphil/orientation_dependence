@@ -90,8 +90,8 @@ def main():
         fixel_density_masks_abs = fixel_density_maps > args.abs_thr
 
     # Normalizing the density maps
-    voxel_sum = np.sum(np.sum(fixel_density_maps, axis=-1), axis=-1)
     fixel_sum = np.sum(fixel_density_maps, axis=-1)
+    voxel_sum = np.sum(fixel_sum, axis=-1)
 
     for i, bundle in enumerate(bundles):
         bundle_name = Path(bundle).name.split(".")[0]
