@@ -26,9 +26,6 @@ def _build_arg_parser():
                    action='append', required=True,
                    help='Path to the bundle trk for where to analyze.')
     
-    p.add_argument('--in_nufo',
-                   help='Path of the NuFO.')
-    
     p.add_argument('--abs_thr', default=None, type=int,
                    help='Value of density maps threshold to obtain density '
                         'masks, in number of streamlines [%(default)s].')
@@ -72,10 +69,10 @@ def main():
     peaks = peaks_img.get_fdata()
     affine = peaks_img.affine
 
-    nufo_sf = np.ones(peaks.shape[0:3]).astype(bool)
-    if args.in_nufo:
-        nufo = nib.load(args.in_nufo).get_fdata()
-        nufo_sf = nufo == 1
+    # Compute NuFo SF from peaks
+    is_first_peak = np.sum(peaks[..., 0:3], axis=-1) != 0
+    is_second_peak = np.sum(peaks[..., 3:6], axis=-1) == 0
+    nufo_sf = np.logical_and(is_first_peak, is_second_peak)
 
     bundles = []
     for bundle in args.in_bundles[0]:
