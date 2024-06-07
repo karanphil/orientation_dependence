@@ -76,7 +76,7 @@ def main():
 
     bundles = []
     for bundle in args.in_bundles[0]:
-        if "CR" in bundle:
+        if "CR" in bundle: # Remove this for the real scilpy script
             print("Removing bundle ", bundle)
         else:
             bundles.append(bundle)
