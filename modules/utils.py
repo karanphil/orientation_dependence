@@ -1,10 +1,10 @@
 import numpy as np
 
 
-def compute_corrections(polynome, angle, fraction, fraction_factor):
+def compute_corrections(polynome, angle, fraction):
     bins = np.arange(0, 90 + 1, 1)
     max_poly = np.max(polynome(bins))
-    correction = fraction * (max_poly - polynome(angle)) * fraction_factor
+    correction = fraction * (max_poly - polynome(angle))
     return correction
 
 

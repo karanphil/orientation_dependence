@@ -50,14 +50,8 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
 
 
 def correct_measure(peaks, peak_values, measure, affine, wm_mask,
-                    polynome, peak_frac_thr=0, delta_m_max_fct=None,
-                    mask=None):
+                    polynome, peak_frac_thr=0, mask=None):
     peaks_fraction = compute_peaks_fraction(peak_values)
-
-    if delta_m_max_fct is not None:
-        peaks_fraction_factor = nb_peaks_factor(delta_m_max_fct, peaks_fraction[..., 0])
-    else:
-        peaks_fraction_factor = np.ones(peaks_fraction.shape[:3])
     
     # Find the direction of the B0 field
     rot = affine[0:3, 0:3]
@@ -79,8 +73,7 @@ def correct_measure(peaks, peak_values, measure, affine, wm_mask,
 
         corrections[mask, i] = compute_corrections(polynome,
                                                    peaks_angles[mask, i],
-                                                   peaks_fraction[mask, i],
-                                                   peaks_fraction_factor[mask])
+                                                   peaks_fraction[mask, i])
     
     total_corrections = np.sum(corrections, axis=-1)
 
