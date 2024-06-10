@@ -123,13 +123,6 @@ def main():
                                                   axis=-2) > 0, 1, 0)
     # Compute number of bundles per fixel by taking the sum of the mask
     nb_bundles_per_voxel = np.sum(nb_unique_bundles_per_fixel, axis=-1)
-    # Single-fiber single-bundle voxels
-    single_bundle_per_voxel = nb_bundles_per_voxel == 1
-    # Making sure we also have single-fiber voxels only
-    single_bundle_per_voxel *= nufo_sf
-
-    nib.save(nib.Nifti1Image(single_bundle_per_voxel.astype(np.uint8),
-             affine), out_folder / "bundle_mask_only_WM.nii.gz")
 
     for i, bundle in enumerate(bundles):
         bundle_name = Path(bundle).name.split(".")[0]
@@ -137,7 +130,17 @@ def main():
         if args.save_masks:
             nib.save(nib.Nifti1Image(fixel_density_masks[..., i].astype(np.uint8), affine),
                      out_folder / "fixel_density_masks_{}.nii.gz".format(bundle_name))
+
             if args.select_single_bundle:
+                # Single-fiber single-bundle voxels
+                single_bundle_per_voxel = nb_bundles_per_voxel == 1
+                # Making sure we also have single-fiber voxels only
+                single_bundle_per_voxel *= nufo_sf
+
+                nib.save(nib.Nifti1Image(single_bundle_per_voxel.astype(np.uint8),
+                                         affine),
+                         out_folder / "bundle_mask_only_WM.nii.gz")
+
                 bundle_mask = fixel_density_masks[..., 0, i] * single_bundle_per_voxel
                 nib.save(nib.Nifti1Image(bundle_mask.astype(np.uint8), affine),
                          out_folder / "bundle_mask_only_{}.nii.gz".format(bundle_name))
