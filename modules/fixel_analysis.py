@@ -45,7 +45,7 @@ def _compute_fixel_density_parallel(args):
 
             if (cos_theta > min_cos_theta).any():
                 lobe_idx = np.argmax(np.squeeze(cos_theta), axis=0)  # (n_segs)
-                fixel_density_maps[vox_idx][lobe_idx] += 1
+                fixel_density_maps[vox_idx][lobe_idx] += 1 # TODO Change that for commit weight if given
     
     return fixel_density_maps
 
