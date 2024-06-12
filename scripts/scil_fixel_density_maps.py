@@ -120,7 +120,8 @@ def main():
                  out_folder / "fixel_density_maps.nii.gz")
         bundles_idx = np.arange(0, len(bundles_names), 1)
         lookup_table = np.array([bundles_names, bundles_idx])
-        np.savetxt(out_folder / "bundles_lookup_table.txt", lookup_table)
+        np.savetxt(out_folder / "bundles_lookup_table.txt",
+                   lookup_table, fmt='%s')
 
     # This applies a threshold on the normalized density (percentage)
     fixel_density_masks_rel = fixel_density_maps >= args.rel_thr
