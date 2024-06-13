@@ -93,14 +93,17 @@ def main():
     for i, polyfit in enumerate(args.polyfits[0]):
         bundle_name = Path(polyfit).parent.name
         if args.lookuptable:
-            bundle_idx = np.argwhere(lookuptable == bundle_name)
+            if bundle_name in lookuptable:
+                bundle_idx = np.argwhere(lookuptable == bundle_name)
+            else:
+                raise ValueError("Polyfit from bundle not present in lookup table.")
         else:
             bundle_idx = i
         polyfits[..., bundle_idx] = np.load(polyfit)
-        bundles_names[bundle_idx] = Path(polyfit).parent.name
+        bundles_names[bundle_idx] = bundle_name
 
     if (lookuptable[0] != bundles_names).all(): # Remove this after testing!
-        raise ValueError("The order of polyfits and lookup table are not the same!")
+        raise ValueError("The order of polyfits and lookup table are not the same.")
 
     # Compute correction
     corrected_measure = correct_measure(measure, peaks, affine, polyfits,
