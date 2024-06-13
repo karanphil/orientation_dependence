@@ -26,21 +26,24 @@ def _build_arg_parser():
                         'of the scil_fixel_density_maps script, without the '
                         'separate_bundles option. Thus, all the bundles '
                         'be present in the file, as a 5th dimension.')
-    p.add_argument('in_lookuptable',
-                   help='Path of the bundles lookup table, outputed by the '
-                        'scil_fixel_density_maps script.')
     p.add_argument('out_folder',
                    help='Path of the output folder for txt, png, masks and '
                         'measures.')
-
-    p.add_argument('--measure_name', default=None,
-                   help='Name of the measure to correct.')
-
+    
     p.add_argument('--polyfits', nargs='+', default=[],
                    action='append', required=True,
                    help='List of polyfit files. Should be the '
                         'output of the \n'
                         'scil_characterize_orientation_dependence.py script.')
+
+    p.add_argument('--measure_name', default=None,
+                   help='Name of the measure to correct.')
+    
+    p.add_argument('--lookuptable',
+                   help='Path of the bundles lookup table, outputed by the '
+                        'scil_fixel_density_maps script. Allows to make sure '
+                        'the polyfits and fixel_density_maps follow the same '
+                        'order.')    
 
     g = p.add_argument_group(title='Characterization parameters')
     g.add_argument('--min_frac_thr', default=0.1,
@@ -77,7 +80,8 @@ def main():
     fixel_density_maps_img = nib.load(args.in_fixel_density_maps)
     fixel_density_maps = fixel_density_maps_img.get_fdata()
 
-    lookuptable = np.loadtxt(args.in_lookuptable)
+    if args.lookuptable:
+        lookuptable = np.loadtxt(args.lookuptable)[0]
 
     measure_img = nib.load(args.in_measure)
     measure = measure_img.get_fdata()
@@ -85,14 +89,24 @@ def main():
     
     polyfit_shape = np.load(args.polyfits[0][0]).shape
     polyfits = np.ndarray((polyfit_shape) + (len(args.polyfits[0]),))
+    bundles_names = np.zeros(len(args.polyfits[0]))
     for i, polyfit in enumerate(args.polyfits[0]):
-        polyfits[..., i] = np.load(polyfit)
+        bundle_name = Path(polyfit).parent.name
+        if args.lookuptable:
+            bundle_idx = np.argwhere(lookuptable == bundle_name)
+        else:
+            bundle_idx = i
+        polyfits[..., bundle_idx] = np.load(polyfit)
+        bundles_names[bundle_idx] = Path(polyfit).parent.name
 
-    polynome = np.poly1d(polyfits[..., i])
-    corrected_measure = correct_measure(peaks, peak_values,
-                                        measure, affine,
-                                        wm_mask, polynome, mask=roi,
-                                        peak_frac_thr=args.min_frac_thr)
+    if (lookuptable[0] != bundles_names).all(): # Remove this after testing!
+        raise ValueError("The order of polyfits and lookup table are not the same!")
+
+    # Compute correction
+    corrected_measure = correct_measure(measure, peaks, affine, polyfits,
+                                        fixel_density_maps)
+
+    # Save results
     corrected_path = out_folder / str(str(measure_name) + "_corrected.nii.gz")
     nib.save(nib.Nifti1Image(corrected_measure, affine), corrected_path)
     if args.save_differences:

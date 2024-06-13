@@ -49,7 +49,36 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
     return slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins
 
 
-def correct_measure(peaks, peak_values, measure, affine, wm_mask,
+def correct_measure(measure, peaks, affine, polyfits, fixel_density_maps):
+    # Find the direction of the B0 field
+    rot = affine[0:3, 0:3]
+    z_axis = np.array([0, 0, 1])
+    b0_field = np.dot(rot.T, z_axis)
+
+    # Compute the peaks angle map
+    peaks_angles = np.empty((peaks.shape[0:3]) + (5,))
+    # Calculate the angle between e1 and B0 field for each peak
+    for i in range(peaks_angles.shape[-1]):
+        cos_theta = np.dot(peaks[..., i*3:(i+1)*3], b0_field)
+        theta = np.arccos(cos_theta) * 180 / np.pi
+        peaks_angles[..., i] = np.abs(theta//90 * 90 - theta%90) % 180
+
+    # Compute the delta_m for every bundle
+    delta_measures = np.zeros((fixel_density_maps.shape))
+    bins = np.arange(0, 90 + 1, 1)
+    for i in range(polyfits.shape[-1]):
+        polynome = np.poly1d(polyfits[..., i])
+        max_measure = np.max(polynome(bins))
+        delta_measures[..., i] = (max_measure - polynome(peaks_angles))
+
+    all_corrections = fixel_density_maps * delta_measures
+
+    correction = np.sum(all_corrections, axis=(-2,-1))
+
+    return measure + correction # TODO take care of the voxels without any bundle!
+
+
+def old_correct_measure(peaks, peak_values, measure, affine, wm_mask,
                     polynome, peak_frac_thr=0, mask=None):
     peaks_fraction = compute_peaks_fraction(peak_values)
     
