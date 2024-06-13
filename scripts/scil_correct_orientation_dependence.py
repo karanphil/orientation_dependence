@@ -16,37 +16,31 @@ from scilpy.io.utils import (add_overwrite_arg)
 def _build_arg_parser():
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument('in_measure',
+                   help='Path to the measure to correct.')
     p.add_argument('in_peaks',
                    help='Path of the fODF peaks. The peaks are expected to be '
                         'given as unit directions.')
-    p.add_argument('in_peak_values',
-                   help='Path of the fODF peak values. The peak values must '
-                        'not be max-normalized for \neach voxel, but rather '
-                        'they should keep the actual fODF amplitude of the '
-                        'peaks.')
-    p.add_argument('in_wm_mask',
-                   help='Path of the WM mask.')
+    p.add_argument('in_fixel_density_maps',
+                   help='Path of the fixel density maps. This is the output '
+                        'of the scil_fixel_density_maps script, without the '
+                        'separate_bundles option. Thus, all the bundles '
+                        'be present in the file, as a 5th dimension.')
+    p.add_argument('in_lookuptable',
+                   help='Path of the bundles lookup table, outputed by the '
+                        'scil_fixel_density_maps script.')
     p.add_argument('out_folder',
                    help='Path of the output folder for txt, png, masks and '
                         'measures.')
-    
-    p.add_argument('--measures', nargs='+', default=[],
-                   action='append', required=True,
-                   help='List of measures to characterize.')
-    p.add_argument('--measures_names', nargs='+', default=[], action='append',
-                   help='List of names for the measures to characterize.')
 
-    p.add_argument('--in_bundles', nargs='+', default=[],
-                   action='append', required=True,
-                   help='Path to the bundle trk for where to analyze.')
+    p.add_argument('--measure_name', default=None,
+                   help='Name of the measure to correct.')
+
     p.add_argument('--polyfits', nargs='+', default=[],
                    action='append', required=True,
                    help='List of polyfit files. Should be the '
                         'output of the \n'
                         'scil_characterize_orientation_dependence.py script.')
-    
-    p.add_argument('--in_roi',
-                   help='Path to the ROI for where to correct.')
 
     g = p.add_argument_group(title='Characterization parameters')
     g.add_argument('--min_frac_thr', default=0.1,
@@ -77,49 +71,38 @@ def main():
 
     # Load the data
     peaks_img = nib.load(args.in_peaks)
-    peak_values_img = nib.load(args.in_peak_values)
-    wm_mask_img = nib.load(args.in_wm_mask)
-
     peaks = peaks_img.get_fdata()
-    peak_values = peak_values_img.get_fdata()
-    wm_mask = wm_mask_img.get_fdata()
-
     affine = peaks_img.affine
 
-    if args.in_roi:
-        roi_img = nib.load(args.in_roi)
-        roi = roi_img.get_fdata()
-    else:
-        roi = None
+    fixel_density_maps_img = nib.load(args.in_fixel_density_maps)
+    fixel_density_maps = fixel_density_maps_img.get_fdata()
 
-    measures, measures_name = extract_measures(args.measures, wm_mask.shape,
-                                               args.measures_names)
-    
-    bundles = []
-    for bundle in args.in_bundles[0]:
-        bundles.append(bundle)
+    lookuptable = np.loadtxt(args.in_lookuptable)
+
+    measure_img = nib.load(args.in_measure)
+    measure = measure_img.get_fdata()
+    measure_name = args.measure_name if args.measure_name else Path(args.in_measure).name.split(".")[0]
     
     polyfit_shape = np.load(args.polyfits[0][0]).shape
     polyfits = np.ndarray((polyfit_shape) + (len(args.polyfits[0]),))
     for i, polyfit in enumerate(args.polyfits[0]):
         polyfits[..., i] = np.load(polyfit)
 
-    for i in range(measures.shape[-1]):
-        polynome = np.poly1d(polyfits[..., i])
-        corrected_measure = correct_measure(peaks, peak_values,
-                                            measures[..., i], affine,
-                                            wm_mask, polynome, mask=roi,
-                                            peak_frac_thr=args.min_frac_thr)
-        corrected_path = out_folder / str(str(measures_name[i]) + "_corrected.nii.gz")
-        nib.save(nib.Nifti1Image(corrected_measure, affine), corrected_path)
-        if args.save_differences:
-            if args.differences_folder:
-                diff_folder = Path(args.differences_folder)
-            else:
-                diff_folder = out_folder
-            difference = corrected_measure - measures[..., i]
-            difference_path = diff_folder / str(str(measures_name[i]) + "_difference.nii.gz")
-            nib.save(nib.Nifti1Image(difference, affine), difference_path)
+    polynome = np.poly1d(polyfits[..., i])
+    corrected_measure = correct_measure(peaks, peak_values,
+                                        measure, affine,
+                                        wm_mask, polynome, mask=roi,
+                                        peak_frac_thr=args.min_frac_thr)
+    corrected_path = out_folder / str(str(measure_name) + "_corrected.nii.gz")
+    nib.save(nib.Nifti1Image(corrected_measure, affine), corrected_path)
+    if args.save_differences:
+        if args.differences_folder:
+            diff_folder = Path(args.differences_folder)
+        else:
+            diff_folder = out_folder
+        difference = corrected_measure - measure
+        difference_path = diff_folder / str(str(measure_name) + "_difference.nii.gz")
+        nib.save(nib.Nifti1Image(difference, affine), difference_path)
 
 
 if __name__ == "__main__":
