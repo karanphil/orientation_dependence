@@ -36,8 +36,10 @@ def _build_arg_parser():
                         'output of the \n'
                         'scil_characterize_orientation_dependence.py script.')
 
-    p.add_argument('--measure_name', default=None,
-                   help='Name of the measure to correct.')
+    p.add_argument('--measure_name', default=None, required=True,
+                   help='Name of the measure to correct. Most match the name '
+                        'used in the '
+                        'scil_characterize_orientation_dependence.py script')
     
     p.add_argument('--lookuptable',
                    help='Path of the bundles lookup table, outputed by the '
@@ -64,11 +66,6 @@ def _build_arg_parser():
 def main():
     parser = _build_arg_parser()
     args = parser.parse_args()
-        
-    if args.measures_names != [] and\
-        (len(args.measures_names[0]) != len(args.measures[0])):
-        parser.error('When using --measures_names, you need to specify ' +
-                     'the same number of measures as given in --measures.')
 
     out_folder = Path(args.out_folder)
 
@@ -81,28 +78,28 @@ def main():
     fixel_density_maps = fixel_density_maps_img.get_fdata()
 
     if args.lookuptable:
-        lookuptable = np.loadtxt(args.lookuptable)[0]
+        lookuptable = np.loadtxt(args.lookuptable, dtype=str)[0]
 
     measure_img = nib.load(args.in_measure)
     measure = measure_img.get_fdata()
-    measure_name = args.measure_name if args.measure_name else Path(args.in_measure).name.split(".")[0]
+    measure_name = args.measure_name
     
-    polyfit_shape = np.load(args.polyfits[0][0]).shape
+    polyfit_shape = np.load(args.polyfits[0][0])[measure_name].shape
     polyfits = np.ndarray((polyfit_shape) + (len(args.polyfits[0]),))
-    bundles_names = np.zeros(len(args.polyfits[0]))
+    bundles_names = np.empty(len(args.polyfits[0]), dtype=object)
     for i, polyfit in enumerate(args.polyfits[0]):
         bundle_name = Path(polyfit).parent.name
         if args.lookuptable:
             if bundle_name in lookuptable:
-                bundle_idx = np.argwhere(lookuptable == bundle_name)
+                bundle_idx = np.argwhere(lookuptable == bundle_name)[0][0]
             else:
                 raise ValueError("Polyfit from bundle not present in lookup table.")
         else:
             bundle_idx = i
-        polyfits[..., bundle_idx] = np.load(polyfit)
+        polyfits[..., bundle_idx] = np.load(polyfit)[measure_name]
         bundles_names[bundle_idx] = bundle_name
 
-    if (lookuptable[0] != bundles_names).all(): # Remove this after testing!
+    if (lookuptable != bundles_names).all():
         raise ValueError("The order of polyfits and lookup table are not the same.")
 
     # Compute correction
