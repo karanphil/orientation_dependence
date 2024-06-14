@@ -83,8 +83,9 @@ def main():
                                                         args.measures_names)
     
     for measure, measure_name in zip(measures, measures_names):
-        polyfit_shape = np.load(args.polyfits[0][0])[measure_name].shape
+        polyfit_shape = np.load(args.polyfits[0][0])[measure_name + "_polyfit"].shape
         polyfits = np.ndarray((polyfit_shape) + (len(args.polyfits[0]),))
+        maxima = np.zeros(len(args.polyfits[0]))
         bundles_names = np.empty(len(args.polyfits[0]), dtype=object)
         for i, polyfit in enumerate(args.polyfits[0]):
             bundle_name = Path(polyfit).parent.name
@@ -95,7 +96,8 @@ def main():
                     raise ValueError("Polyfit from bundle not present in lookup table.")
             else:
                 bundle_idx = i
-            polyfits[..., bundle_idx] = np.load(polyfit)[measure_name]
+            polyfits[..., bundle_idx] = np.load(polyfit)[measure_name + "_polyfit"]
+            maxima[bundle_idx] = np.load(polyfit)[measure_name + "_maximum"]
             bundles_names[bundle_idx] = bundle_name
 
         if (lookuptable != bundles_names).all():
@@ -103,7 +105,7 @@ def main():
 
         # Compute correction
         corrected_measure, correction = correct_measure(measure, peaks, affine,
-                                                        polyfits,
+                                                        polyfits, maxima,
                                                         fixel_density_maps)
 
         # Save results

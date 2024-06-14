@@ -49,7 +49,8 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
     return slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins
 
 
-def correct_measure(measure, peaks, affine, polyfits, fixel_density_maps):
+def correct_measure(measure, peaks, affine, polyfits, maxima,
+                    fixel_density_maps):
     # Find the direction of the B0 field
     rot = affine[0:3, 0:3]
     z_axis = np.array([0, 0, 1])
@@ -65,11 +66,9 @@ def correct_measure(measure, peaks, affine, polyfits, fixel_density_maps):
 
     # Compute the delta_m for every bundle
     delta_measures = np.zeros((fixel_density_maps.shape))
-    bins = np.arange(0, 90 + 1, 1)
     for i in range(polyfits.shape[-1]):
         polynome = np.poly1d(polyfits[..., i])
-        max_measure = np.max(polynome(bins))
-        delta_measures[..., i] = (max_measure - polynome(peaks_angles))
+        delta_measures[..., i] = (maxima[i] - polynome(peaks_angles))
 
     all_corrections = fixel_density_maps * delta_measures
 
@@ -273,6 +272,7 @@ def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
         weights = np.ones(means.shape[0])
     max_poly_order = len(bins) - 1
     fits = np.zeros((max_poly_order, means.shape[-1]))
+    measures_max = np.zeros((means.shape[-1]))
     for i in range(means.shape[-1]):
         new_bins, new_means, new_is_measures, new_weights =\
             extend_measure(bins, means[..., i], is_measure=is_measures,
@@ -305,4 +305,12 @@ def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
                        new_means[new_is_measures],
                        chosen_poly_order,
                        w=new_weights[new_is_measures])
-    return fits
+        # Compute maximum
+        polynome = np.poly1d(fits[..., i])
+        mid_bins = (bins[:-1] + bins[1:]) / 2
+        bin_width = bins[1] - bins[0]
+        min_angle = np.min(mid_bins[is_measures]) - bin_width / 2
+        max_angle = np.max(mid_bins[is_measures]) + bin_width / 2
+        highres_bins = np.arange(min_angle, max_angle, 0.1)
+        measures_max[i] = np.max(polynome(highres_bins))
+    return fits, measures_max

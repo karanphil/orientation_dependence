@@ -198,7 +198,7 @@ def main():
     
     if args.save_polyfit:
         print("Fitting the whole brain results.")
-        measures_fit = fit_single_fiber_results(bins,
+        measures_fit, measures_max = fit_single_fiber_results(bins,
                                                 measure_means,
                                                 poly_order=args.poly_order,
                                                 is_measures=is_measures,
@@ -207,7 +207,7 @@ def main():
 
         print("Saving polyfit results.")
         out_path = out_folder / '1f_polyfits'
-        save_polyfits_as_npz(measures_fit, measures_name, out_path)
+        save_polyfits_as_npz(measures_fit, measures_max, measures_name, out_path)
 
     #---------------------- Crossing fibers section ---------------------------
     print("Computing two-fiber means.")
