@@ -104,15 +104,13 @@ def main():
             raise ValueError("The order of polyfits and lookup table are not the same.")
 
         # Compute correction
-        corrected_measure, correction = correct_measure(measure, peaks, affine,
-                                                        polyfits, maxima,
-                                                        fixel_density_maps)
+        corrected_measure= correct_measure(measure, peaks, affine,
+                                           polyfits, maxima,
+                                           fixel_density_maps)
 
         # Save results
         corrected_path = out_folder / str(str(measure_name) + "_corrected.nii.gz")
         nib.save(nib.Nifti1Image(corrected_measure, affine), corrected_path)
-        corrected_path = out_folder / str(str(measure_name) + "_correction.nii.gz")
-        nib.save(nib.Nifti1Image(correction, affine), corrected_path)
         if args.save_differences:
             if args.differences_folder:
                 diff_folder = Path(args.differences_folder)

@@ -74,7 +74,7 @@ def correct_measure(measure, peaks, affine, polyfits, maxima,
 
     correction = np.sum(all_corrections, axis=(-2,-1))
 
-    return measure + correction, correction # TODO take care of the voxels without any bundle!
+    return measure + correction # TODO take care of the voxels without any bundle!
 
 
 def old_correct_measure(peaks, peak_values, measure, affine, wm_mask,
