@@ -21,6 +21,17 @@ def extract_measures(measures_arg, data_shape, names_arg=[]):
     return measures, measures_name
 
 
+def extract_measures_as_list(measures_arg, names_arg=[]):
+    measures = []
+    measures_names = []
+    for i, measure in enumerate(measures_arg[0]):
+        measures.append((nib.load(measure)).get_fdata())
+        measures_names.append(Path(measure).name.split(".")[0])
+    if names_arg != []:
+        measures_names = names_arg[0]
+    return measures, measures_names
+
+
 def plot_init(dims=(12.0, 5.0), font_size=12):
     plt.rcParams['axes.grid'] = False
     plt.rcParams['grid.color'] = "darkgrey"

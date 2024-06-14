@@ -3,7 +3,7 @@ import nibabel as nib
 import numpy as np
 from pathlib import Path
 
-from modules.io import (extract_measures)
+from modules.io import (extract_measures_as_list)
 from modules.orientation_dependence import (correct_measure)
 
 from scilpy.io.utils import (add_overwrite_arg)
@@ -16,8 +16,6 @@ from scilpy.io.utils import (add_overwrite_arg)
 def _build_arg_parser():
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument('in_measure',
-                   help='Path to the measure to correct.')
     p.add_argument('in_peaks',
                    help='Path of the fODF peaks. The peaks are expected to be '
                         'given as unit directions.')
@@ -30,15 +28,16 @@ def _build_arg_parser():
                    help='Path of the output folder for txt, png, masks and '
                         'measures.')
     
-    p.add_argument('--polyfits', nargs='+', default=[],
-                   action='append', required=True,
+    p.add_argument('--polyfits', nargs='+', action='append', required=True,
                    help='List of polyfit files. Should be the '
                         'output of the \n'
                         'scil_characterize_orientation_dependence.py script.')
 
-    p.add_argument('--measure_name', default=None, required=True,
-                   help='Name of the measure to correct. Most match the name '
-                        'used in the '
+    p.add_argument('--in_measures', nargs='+', action='append', required=True,
+                   help='Path to the measures to correct.')
+    p.add_argument('--measures_names', nargs='+', action='append', required=True,
+                   help='Name of the measures to correct. Most match the '
+                        'names used in the '
                         'scil_characterize_orientation_dependence.py script')
     
     p.add_argument('--lookuptable',
@@ -80,43 +79,46 @@ def main():
     if args.lookuptable:
         lookuptable = np.loadtxt(args.lookuptable, dtype=str)[0]
 
-    measure_img = nib.load(args.in_measure)
-    measure = measure_img.get_fdata()
-    measure_name = args.measure_name
+    measures, measures_names = extract_measures_as_list(args.in_measures,
+                                                        args.measures_names)
     
-    polyfit_shape = np.load(args.polyfits[0][0])[measure_name].shape
-    polyfits = np.ndarray((polyfit_shape) + (len(args.polyfits[0]),))
-    bundles_names = np.empty(len(args.polyfits[0]), dtype=object)
-    for i, polyfit in enumerate(args.polyfits[0]):
-        bundle_name = Path(polyfit).parent.name
-        if args.lookuptable:
-            if bundle_name in lookuptable:
-                bundle_idx = np.argwhere(lookuptable == bundle_name)[0][0]
+    for measure, measure_name in zip(measures, measures_names):
+        polyfit_shape = np.load(args.polyfits[0][0])[measure_name].shape
+        polyfits = np.ndarray((polyfit_shape) + (len(args.polyfits[0]),))
+        bundles_names = np.empty(len(args.polyfits[0]), dtype=object)
+        for i, polyfit in enumerate(args.polyfits[0]):
+            bundle_name = Path(polyfit).parent.name
+            if args.lookuptable:
+                if bundle_name in lookuptable:
+                    bundle_idx = np.argwhere(lookuptable == bundle_name)[0][0]
+                else:
+                    raise ValueError("Polyfit from bundle not present in lookup table.")
             else:
-                raise ValueError("Polyfit from bundle not present in lookup table.")
-        else:
-            bundle_idx = i
-        polyfits[..., bundle_idx] = np.load(polyfit)[measure_name]
-        bundles_names[bundle_idx] = bundle_name
+                bundle_idx = i
+            polyfits[..., bundle_idx] = np.load(polyfit)[measure_name]
+            bundles_names[bundle_idx] = bundle_name
 
-    if (lookuptable != bundles_names).all():
-        raise ValueError("The order of polyfits and lookup table are not the same.")
+        if (lookuptable != bundles_names).all():
+            raise ValueError("The order of polyfits and lookup table are not the same.")
 
-    # Compute correction
-    corrected_measure = correct_measure(measure, peaks, affine, polyfits,
-                                        fixel_density_maps)
+        # Compute correction
+        corrected_measure, correction = correct_measure(measure, peaks, affine,
+                                                        polyfits,
+                                                        fixel_density_maps)
 
-    # Save results
-    corrected_path = out_folder / str(str(measure_name) + "_corrected.nii.gz")
-    nib.save(nib.Nifti1Image(corrected_measure, affine), corrected_path)
-    if args.save_differences:
-        if args.differences_folder:
-            diff_folder = Path(args.differences_folder)
-        else:
-            diff_folder = out_folder
-        difference = corrected_measure - measure
-        difference_path = diff_folder / str(str(measure_name) + "_difference.nii.gz")
-        nib.save(nib.Nifti1Image(difference, affine), difference_path)
+        # Save results
+        corrected_path = out_folder / str(str(measure_name) + "_corrected.nii.gz")
+        nib.save(nib.Nifti1Image(corrected_measure, affine), corrected_path)
+        corrected_path = out_folder / str(str(measure_name) + "_correction.nii.gz")
+        nib.save(nib.Nifti1Image(correction, affine), corrected_path)
+        if args.save_differences:
+            if args.differences_folder:
+                diff_folder = Path(args.differences_folder)
+            else:
+                diff_folder = out_folder
+            difference = corrected_measure - measure
+            difference_path = diff_folder / str(str(measure_name) + "_difference.nii.gz")
+            nib.save(nib.Nifti1Image(difference, affine), difference_path)
 
 
 if __name__ == "__main__":
