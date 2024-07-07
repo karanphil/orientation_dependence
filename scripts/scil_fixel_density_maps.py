@@ -7,7 +7,6 @@ import logging
 from dipy.io.streamline import load_tractogram
 from scilpy.io.utils import (add_overwrite_arg, add_processes_arg,
                              add_reference_arg)
-from scilpy.tractanalysis.grid_intersections import grid_intersections
 
 from modules.fixel_analysis import compute_fixel_density
 
