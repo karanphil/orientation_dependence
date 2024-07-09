@@ -302,7 +302,7 @@ def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
             if pc_change < best_pc_change:
                 best_poly_order = poly_order_l
                 best_pc_change = pc_change
-            if pc_change <= 0.08:
+            if pc_change <= 0.1:
                 break
             previous_resi = output[1]
         chosen_poly_order = best_poly_order

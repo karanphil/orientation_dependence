@@ -192,10 +192,11 @@ def main():
                                  bin_width=args.angle_mask_bin_width)
         
     if args.use_weighted_polyfit:
-        weights = np.sqrt(nb_voxels)
+        weights = np.sqrt(nb_voxels)  # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
+        # weights = nb_voxels
     else:
         weights = None
-    
+
     if args.save_polyfit:
         print("Fitting the whole brain results.")
         measures_fit, measures_max = fit_single_fiber_results(bins,
