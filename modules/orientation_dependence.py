@@ -285,10 +285,15 @@ def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
                 (new_bins[-2] - new_bins[1]) / (bins[-1] - bins[1])))
         else:
             effective_poly_order = poly_order
-        poly_order_list = np.arange(effective_poly_order - 2,
+        # poly_order_list = np.arange(effective_poly_order - 2,
+        #                             curr_max_poly_order, 1)
+        poly_order_list = np.arange(int(len(new_is_measures) / 5),
                                     curr_max_poly_order, 1)
         previous_resi = 10000000
+        previous_var = 1000000
         best_pc_change = 1
+        best_poly_order = 1
+        print("Nb points: ", len(new_is_measures))
         for poly_order_l in poly_order_list:
             print("Trying poly order: ", poly_order_l)
             output = np.polyfit(new_bins[new_is_measures],
@@ -296,15 +301,27 @@ def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
                                 poly_order_l,
                                 w=new_weights[new_is_measures],
                                 full=True)
+            # print(output)
+            var = output[1] / (len(new_is_measures) - poly_order_l - 1)
+            print("Variance: ", var)
+            # https://autarkaw.wordpress.com/2008/07/05/finding-the-optimum-polynomial-order-to-use-for-regression/
             print("Residual: ", output[1])
-            pc_change = abs(output[1] - previous_resi) / previous_resi
+            # pc_change = abs(output[1] - previous_resi) / previous_resi
+            # print("% of change: ", pc_change)
+            # if pc_change < best_pc_change:
+            #     best_poly_order = poly_order_l
+            #     best_pc_change = pc_change
+            # if pc_change <= 0.1:
+            #     break
+            # previous_resi = output[1]
+            pc_change = (previous_var - var) / previous_var
             print("% of change: ", pc_change)
             if pc_change < best_pc_change:
-                best_poly_order = poly_order_l
+                best_poly_order = poly_order_l - 1
                 best_pc_change = pc_change
-            if pc_change <= 0.1:
+            if pc_change <= 0.01:
                 break
-            previous_resi = output[1]
+            previous_var = var
         chosen_poly_order = best_poly_order
         print("Polyfit order was set to", chosen_poly_order)
         fits[max_poly_order - chosen_poly_order - 1:, i] =\

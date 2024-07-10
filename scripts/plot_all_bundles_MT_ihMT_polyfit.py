@@ -150,10 +150,10 @@ def main():
                                  cmap='Greys', norm=norm, alpha=0.5,
                                  edgecolors=cm.naviaS(cmap_idx[1]), linewidths=1)
 
-            polynome_r = np.poly1d(polyfits[bundle_idx][measures[0]])
+            polynome_r = np.poly1d(polyfits[bundle_idx][measures[0] + "_polyfit"])
             ax[row, col].plot(highres_bins, polynome_r(highres_bins), "--",
                               color=cm.naviaS(cmap_idx[0]))
-            polynome_sat = np.poly1d(polyfits[bundle_idx][measures[1]])
+            polynome_sat = np.poly1d(polyfits[bundle_idx][measures[1] + "_polyfit"])
             ax[row, col + 1].plot(highres_bins, polynome_sat(highres_bins), "--",
                               color=cm.naviaS(cmap_idx[1]))
 

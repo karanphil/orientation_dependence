@@ -153,16 +153,16 @@ def main():
                                  cmap='Greys', norm=norm, alpha=0.5,
                                  edgecolors=cm.naviaS(5), linewidths=1)
 
-            polynome_mtr = np.poly1d(polyfits[bundle_idx]['MTR'])
+            polynome_mtr = np.poly1d(polyfits[bundle_idx]['MTR_polyfit'])
             ax[row, col].plot(highres_bins, polynome_mtr(highres_bins), "--",
                               color=cm.naviaS(2))
-            polynome_mtsat = np.poly1d(polyfits[bundle_idx]['MTsat'])
+            polynome_mtsat = np.poly1d(polyfits[bundle_idx]['MTsat_polyfit'])
             ax[row, col + 1].plot(highres_bins, polynome_mtsat(highres_bins), "--",
                               color=cm.naviaS(3))
-            polynome_ihmtr = np.poly1d(polyfits[bundle_idx]['ihMTR'])
+            polynome_ihmtr = np.poly1d(polyfits[bundle_idx]['ihMTR_polyfit'])
             ax[row, col + 2].plot(highres_bins, polynome_ihmtr(highres_bins), "--",
                               color=cm.naviaS(4))
-            polynome_ihmtsat = np.poly1d(polyfits[bundle_idx]['ihMTsat'])
+            polynome_ihmtsat = np.poly1d(polyfits[bundle_idx]['ihMTsat_polyfit'])
             ax[row, col + 3].plot(highres_bins, polynome_ihmtsat(highres_bins), "--",
                               color=cm.naviaS(5))
 
