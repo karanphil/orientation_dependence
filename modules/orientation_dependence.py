@@ -264,8 +264,7 @@ def compute_single_fiber_means(peaks, fa, wm_mask, affine,
     return bins, measure_means, nb_voxels
 
 
-def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
-                             weights=None, scale_poly_order=False):
+def fit_single_fiber_results(bins, means, is_measures=None, weights=None):
     if is_measures is None:
         is_measures = np.ones(means.shape[0])
     if weights is None:
@@ -279,17 +278,8 @@ def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
                            weights=weights)
         curr_max_poly_order = len(new_is_measures) - 1
         # mid_bins = (new_bins[:-1] + new_bins[1:]) / 2.
-        if scale_poly_order:
-            # effective_poly_order = len(new_bins) - 1
-            effective_poly_order = int(np.floor(poly_order *\
-                (new_bins[-2] - new_bins[1]) / (bins[-1] - bins[1])))
-        else:
-            effective_poly_order = poly_order
-        # poly_order_list = np.arange(effective_poly_order - 2,
-        #                             curr_max_poly_order, 1)
-        poly_order_list = np.arange(int(len(new_is_measures) / 5),
+        poly_order_list = np.arange(int(len(new_is_measures) / 5), # this works well to not start too low, but still depend on the nb of points
                                     curr_max_poly_order, 1)
-        previous_resi = 10000000
         previous_var = 1000000
         best_pc_change = 1
         best_poly_order = 1
@@ -305,15 +295,6 @@ def fit_single_fiber_results(bins, means, poly_order=10, is_measures=None,
             var = output[1] / (len(new_is_measures) - poly_order_l - 1)
             print("Variance: ", var)
             # https://autarkaw.wordpress.com/2008/07/05/finding-the-optimum-polynomial-order-to-use-for-regression/
-            print("Residual: ", output[1])
-            # pc_change = abs(output[1] - previous_resi) / previous_resi
-            # print("% of change: ", pc_change)
-            # if pc_change < best_pc_change:
-            #     best_poly_order = poly_order_l
-            #     best_pc_change = pc_change
-            # if pc_change <= 0.1:
-            #     break
-            # previous_resi = output[1]
             pc_change = (previous_var - var) / previous_var
             print("% of change: ", pc_change)
             if pc_change < best_pc_change:

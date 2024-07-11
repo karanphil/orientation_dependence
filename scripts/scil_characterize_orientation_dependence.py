@@ -74,11 +74,6 @@ def _build_arg_parser():
     g1.add_argument('--use_weighted_polyfit', action='store_true',
                    help='If set, use weights when performing the polyfit. '
                         '[%(default)s].')
-    g1.add_argument('--poly_order', default=10, type=int,
-                   help='Order of the polynome to fit [%(default)s].')
-    g1.add_argument('--scale_poly_order', action='store_true',
-                   help='If set, scale the polynome order to the range of '
-                        'angles where measures are present. [%(default)s].')
     
     s1 = p.add_argument_group(title='Save angle info')
     s1.add_argument('--save_angle_info', action='store_true',
@@ -201,10 +196,8 @@ def main():
         print("Fitting the whole brain results.")
         measures_fit, measures_max = fit_single_fiber_results(bins,
                                                 measure_means,
-                                                poly_order=args.poly_order,
                                                 is_measures=is_measures,
-                                                weights=weights,
-                                                scale_poly_order=args.scale_poly_order)
+                                                weights=weights)
 
         print("Saving polyfit results.")
         out_path = out_folder / '1f_polyfits'
