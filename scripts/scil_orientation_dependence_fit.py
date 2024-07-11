@@ -204,7 +204,6 @@ def main():
         save_polyfits_as_npz(measures_fit, measures_max, measures_name, out_path)
 
     #---------------------- Crossing fibers section ---------------------------
-    # NOTE: This does not make sense if bundles are characterized.
     print("Computing two-fiber means.")
     bins, measure_means, nb_voxels, labels =\
         compute_two_fibers_means(peaks, peak_values,
