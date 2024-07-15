@@ -1,6 +1,7 @@
 import argparse
 import nibabel as nib
 import numpy as np
+import pandas as pd
 from pathlib import Path
 
 from modules.io import (plot_means, plot_3d_means, plot_multiple_means,
@@ -10,7 +11,8 @@ from modules.io import (plot_means, plot_3d_means, plot_multiple_means,
 from modules.orientation_dependence import (compute_three_fibers_means,
                                             compute_two_fibers_means,
                                             compute_single_fiber_means,
-                                            fit_single_fiber_results)
+                                            fit_single_fiber_results,
+                                            where_to_patch)
 
 
 def _build_arg_parser():
@@ -108,74 +110,73 @@ def main():
     bundles = []
     bundles_names = []
     for bundle in args.bundles[0]:
-        bundles.append(bundle)
+        bundles.append(nib.load(bundle).get_fdata())
         bundles_names.append(Path(bundle).name.split(".")[0])
 
     if args.bundles_names:
         bundles_names = args.bundles_names[0]
 
-    for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
-        #----------------------- Single-fiber section -----------------------------
-        print("Computing single-fiber means of bundle {}.".format(bundle_name))
-        bins, measure_means, nb_voxels =\
-            compute_single_fiber_means(peaks, fa,
-                                    wm_mask,
-                                    affine,
-                                    measures,
-                                    nufo=nufo,
-                                    mask=bundle,
-                                    bin_width=args.bin_width_sf,
-                                    fa_thr=args.fa_thr)
+    nb_bundles = len(bundles)
+    nb_measures = measures.shape[-1]
 
-        is_measures = nb_voxels >= min_nb_voxels
-        nb_bins = np.sum(is_measures)
-        if nb_bins == 0:
-            msg = """No angle bin was filled above the required minimum number of
-                voxels. The script was unable to produce a single-fiber
-                characterization of the measures. If --bundles was used, the
-                region of interest probably contains too few single-fiber
-                voxels. Try to carefully reduce the min_nb_voxels."""
+    nb_bins = 90 / args.bin_width_sf
+    measure_means = np.zeros((nb_bundles, nb_bins, nb_measures))
+    nb_voxels = np.zeros((nb_bundles, nb_bins))
+    is_measures = np.zeros((nb_bundles, nb_bins))
+
+    # For every bundle, compute the mean measures
+    for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
+        print("Computing single-fiber means of bundle {}.".format(bundle_name))
+        bins, measure_means[i], nb_voxels[i] =\
+            compute_single_fiber_means(peaks, fa,
+                                       wm_mask,
+                                       affine,
+                                       measures,
+                                       nufo=nufo,
+                                       mask=bundle,
+                                       bin_width=args.bin_width_sf,
+                                       fa_thr=args.fa_thr)
+
+        is_measures[i] = nb_voxels[i] >= min_nb_voxels
+        nb_filled_bins = np.sum(is_measures[i])
+        if nb_filled_bins == 0:
+            msg = """No angle bin was filled above the required minimum number
+                     of voxels. The script was unable to produce a single-fiber
+                     characterization of the measures. If --bundles was used,
+                     the region of interest probably contains too few
+                     single-fiber voxels. Try to carefully reduce the
+                     min_nb_voxels."""
             raise ValueError(msg)
 
-        out_path = out_folder / '1f_results'
-        print("Saving results as npz files.")
-        save_results_as_npz(bins, measure_means, nb_voxels,
-                            measures_name, out_path)
+    # For every measure, compute the correlation between bundles
+    for i in range(nb_measures):
+        to_analyse = measure_means[..., i]
+        to_analyse[np.invert(is_measures)] = np.nan
+        dataset = pd.DataFrame(data=to_analyse.T)
+        corr = dataset.corr()
 
-    if args.use_weighted_polyfit:
-        weights = np.sqrt(nb_voxels)  # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
-        # weights = nb_voxels
-    else:
-        weights = None
+        for j in range(nb_bundles):
+            to_patch = where_to_patch(is_measures[j, ..., i])
+            if np.sum(to_patch) != 0:
+                print("Patching bundle {}".format(bundles_names[j]))
+                bundle_corr = corr[j]
 
-    if args.save_polyfit:
-        print("Fitting the whole brain results.")
-        measures_fit, measures_max = fit_single_fiber_results(bins,
-                                                measure_means,
-                                                is_measures=is_measures,
-                                                weights=weights)
+    # if args.use_weighted_polyfit:
+    #     weights = np.sqrt(nb_voxels)  # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
+    #     # weights = nb_voxels
+    # else:
+    #     weights = None
 
-        print("Saving polyfit results.")
-        out_path = out_folder / '1f_polyfits'
-        save_polyfits_as_npz(measures_fit, measures_max, measures_name, out_path)
+    # if args.save_polyfit:
+    #     print("Fitting the whole brain results.")
+    #     measures_fit, measures_max = fit_single_fiber_results(bins,
+    #                                             measure_means,
+    #                                             is_measures=is_measures,
+    #                                             weights=weights)
 
-    #---------------------- Crossing fibers section ---------------------------
-    print("Computing two-fiber means.")
-    bins, measure_means, nb_voxels, labels =\
-        compute_two_fibers_means(peaks, peak_values,
-                                        wm_mask, affine,
-                                        nufo, measures, roi=roi,
-                                        bin_width=args.bin_width_mf)
-    
-    measure_means_diag = np.diagonal(measure_means, axis1=1, axis2=2)
-    measure_means_diag = np.swapaxes(measure_means_diag, 1, 2)
-    nb_voxels_diag = np.diagonal(nb_voxels, axis1=1, axis2=2)
-    is_measures = nb_voxels_diag >= min_nb_voxels
-
-    print("Saving results as npz files.")
-    out_path = out_folder / "2f_results"
-    save_results_as_npz(bins, measure_means, nb_voxels,
-                        measures_name, out_path)
+    #     print("Saving polyfit results.")
+    #     out_path = out_folder / '1f_polyfits'
+    #     save_polyfits_as_npz(measures_fit, measures_max, measures_name, out_path)
 
 if __name__ == "__main__":
     main()

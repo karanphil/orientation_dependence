@@ -319,3 +319,24 @@ def fit_single_fiber_results(bins, means, is_measures=None, weights=None):
         highres_bins = np.arange(min_angle, max_angle, 0.1)
         measures_max[i] = np.max(polynome(highres_bins))
     return fits, measures_max
+
+
+def where_to_patch(is_measures, max_gap_frac=0.2, distance_sides_frac=0.1):
+    # max_gap_frac is for computing the max_gap as a fraction of the nb of bins
+    # distance_sides_frac is for computing the distance from the sides as a
+    # fraction of the nb of bins
+    is_measures_pos = np.argwhere(is_measures).squeeze()
+    is_measures_pos = np.concatenate(([-1], is_measures_pos,  # If first/last
+                                      [len(is_measures)]))  # point is False
+    gaps = is_measures_pos[1:] - is_measures_pos[:-1] - 1
+    max_gap = np.round(max_gap_frac * is_measures.shape)
+    too_big_gaps = np.argwhere(gaps > max_gap).squeeze()
+    to_patch = np.zeros((is_measures.shape))
+    for patch in too_big_gaps:
+        to_patch[is_measures_pos[patch] + 1:is_measures_pos[patch + 1]] = 1
+    distance_from_sides = np.round(distance_sides_frac * is_measures.shape) 
+    if np.sum(is_measures[0:distance_from_sides]) == 0:
+        to_patch[0:distance_from_sides] = 1
+    if np.sum(is_measures[-distance_from_sides:]) == 0:
+        to_patch[-distance_from_sides:] = 1
+    return to_patch
