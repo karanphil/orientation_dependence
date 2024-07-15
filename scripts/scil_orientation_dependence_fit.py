@@ -39,27 +39,21 @@ def _build_arg_parser():
                    help='List of measures to characterize.')
     p.add_argument('--measures_names', nargs='+', default=[], action='append',
                    help='List of names for the measures to characterize.')
-    
-    p.add_argument('--in_e1',
-                   help='Path to the principal eigenvector of DTI.')
-    p.add_argument('--in_roi',
-                   help='Path to the ROI for where to analyze.')
 
-    p.add_argument('--compute_three_fiber_crossings', action='store_true',
-                   help='If set, will perform the three-fiber crossings '
-                        'analysis.')
+    p.add_argument('--bundles', nargs='+', default=[],
+                   action='append', required=True,
+                   help='Path to the bundles masks for where to analyze.')
+    p.add_argument('--bundles_names', nargs='+', default=[], action='append',
+                   help='List of names for the bundles.')
 
     g = p.add_argument_group(title='Characterization parameters')
     g.add_argument('--fa_thr', default=0.5,
                    help='Value of FA threshold [%(default)s].')
-    g.add_argument('--bin_width_1f', default=1, type=int,
+    g.add_argument('--bin_width_sf', default=1, type=int,
                    help='Value of the bin width for the single-fiber '
                         'characterization [%(default)s].')
-    g.add_argument('--bin_width_2f', default=10, type=int,
-                   help='Value of the bin width for the two-fiber '
-                        'characterization [%(default)s].')
-    g.add_argument('--bin_width_3f', default=30, type=int,
-                   help='Value of the bin width for the three-fiber '
+    g.add_argument('--bin_width_mf', default=10, type=int,
+                   help='Value of the bin width for the multi-fiber '
                         'characterization [%(default)s].')
     g.add_argument('--min_frac_thr', default=0.1,
                    help='Value of the minimal fraction threshold for '
@@ -74,20 +68,6 @@ def _build_arg_parser():
     g1.add_argument('--use_weighted_polyfit', action='store_true',
                    help='If set, use weights when performing the polyfit. '
                         '[%(default)s].')
-    
-    s1 = p.add_argument_group(title='Save angle info')
-    s1.add_argument('--save_angle_info', action='store_true',
-                    help='If set, will save the angle maps and masks.')
-    s1.add_argument('--angle_folder',
-                    help='Output folder of where to save the angle info.')
-    s1.add_argument('--angle_mask_bin_width', default=10, type=int,
-                    help='Bin width used for the angle masks [%(default)s].')
-    
-    s3 = p.add_argument_group(title='Save plots')
-    s3.add_argument('--save_plots', action='store_true',
-                    help='If set, will save the results as plots.')
-    s3.add_argument('--plots_folder',
-                    help='Output folder of where to save the plots.')
 
     return p
 
@@ -121,71 +101,47 @@ def main():
 
     min_nb_voxels = args.min_nb_voxels
 
-    if args.in_e1:
-        e1_img = nib.load(args.in_e1)
-        e1 = e1_img.get_fdata()
-    else:
-        e1 = peaks
-
-    if args.in_roi:
-        roi_img = nib.load(args.in_roi)
-        roi = roi_img.get_fdata()
-    else:
-        roi = None
-
     measures, measures_name = extract_measures(args.measures,
                                                fa.shape,
                                                args.measures_names)
 
-    #----------------------- Single-fiber section -----------------------------
-    print("Computing single-fiber means.")
-    bins, measure_means, nb_voxels =\
-        compute_single_fiber_means(e1, fa,
-                                   wm_mask,
-                                   affine,
-                                   measures,
-                                   nufo=nufo,
-                                   mask=roi,
-                                   bin_width=args.bin_width_1f,
-                                   fa_thr=args.fa_thr)
+    bundles = []
+    bundles_names = []
+    for bundle in args.bundles[0]:
+        bundles.append(bundle)
+        bundles_names.append(Path(bundle).name.split(".")[0])
 
-    is_measures = nb_voxels >= min_nb_voxels
-    nb_bins = np.sum(is_measures)
-    if nb_bins == 0:
-        msg = """No angle bin was filled above the required minimum number of
-              voxels. The script was unable to produce a single-fiber
-              characterization of the measures. If --in_roi was used, the
-              region of interest probably contains too few single-fiber
-              voxels. Try to carefully reduce the min_nb_voxels."""
-        raise ValueError(msg)
+    if args.bundles_names:
+        bundles_names = args.bundles_names[0]
 
-    out_path = out_folder / '1f_results'
-    print("Saving results as npz files.")
-    save_results_as_npz(bins, measure_means, nb_voxels,
-                        measures_name, out_path)
+    for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
+        #----------------------- Single-fiber section -----------------------------
+        print("Computing single-fiber means of bundle {}.".format(bundle_name))
+        bins, measure_means, nb_voxels =\
+            compute_single_fiber_means(peaks, fa,
+                                    wm_mask,
+                                    affine,
+                                    measures,
+                                    nufo=nufo,
+                                    mask=bundle,
+                                    bin_width=args.bin_width_sf,
+                                    fa_thr=args.fa_thr)
 
-    if args.save_plots:
-        if args.plots_folder:
-            plots_folder = Path(args.plots_folder)
-        else:
-            plots_folder = out_folder
-        print("Saving single-fiber results as plots.")
-        plot_means(bins, measure_means, nb_voxels, measures_name,
-                   plots_folder, is_measures=is_measures)
-        
-    if args.save_angle_info:
-        if args.angle_folder:
-            angle_folder = Path(args.angle_folder)
-        else:
-            angle_folder = out_folder
-        print("Saving angle maps.")
-        save_angle_maps(e1, fa, wm_mask, affine, angle_folder,
-                        peaks, peak_values, nufo)
-        print("Saving single-fiber masks.")
-        save_masks_by_angle_bins(e1, fa, wm_mask, affine, angle_folder,
-                                 nufo=nufo, fa_thr=args.fa_thr,
-                                 bin_width=args.angle_mask_bin_width)
-        
+        is_measures = nb_voxels >= min_nb_voxels
+        nb_bins = np.sum(is_measures)
+        if nb_bins == 0:
+            msg = """No angle bin was filled above the required minimum number of
+                voxels. The script was unable to produce a single-fiber
+                characterization of the measures. If --bundles was used, the
+                region of interest probably contains too few single-fiber
+                voxels. Try to carefully reduce the min_nb_voxels."""
+            raise ValueError(msg)
+
+        out_path = out_folder / '1f_results'
+        print("Saving results as npz files.")
+        save_results_as_npz(bins, measure_means, nb_voxels,
+                            measures_name, out_path)
+
     if args.use_weighted_polyfit:
         weights = np.sqrt(nb_voxels)  # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
         # weights = nb_voxels
@@ -209,7 +165,7 @@ def main():
         compute_two_fibers_means(peaks, peak_values,
                                         wm_mask, affine,
                                         nufo, measures, roi=roi,
-                                        bin_width=args.bin_width_2f)
+                                        bin_width=args.bin_width_mf)
     
     measure_means_diag = np.diagonal(measure_means, axis1=1, axis2=2)
     measure_means_diag = np.swapaxes(measure_means_diag, 1, 2)
@@ -220,36 +176,6 @@ def main():
     out_path = out_folder / "2f_results"
     save_results_as_npz(bins, measure_means, nb_voxels,
                         measures_name, out_path)
-    if args.save_plots:
-        print("Saving two-fiber results as plots.")
-        plot_3d_means(bins, measure_means[0, :, :, :], plots_folder,
-                      measures_name)
-        plot_multiple_means(bins, measure_means_diag,
-                            nb_voxels_diag, plots_folder, measures_name,
-                            labels=labels, legend_title=r"Peak$_1$ fraction",
-                            endname="2D_2f", is_measures=is_measures)
-
-    if args.compute_three_fiber_crossings:
-        print("Computing 3 crossing fibers means.")
-        bins, measure_means, nb_voxels, labels =\
-            compute_three_fibers_means(peaks, peak_values, wm_mask, affine,
-                                       nufo, measures,
-                                       bin_width=args.bin_width_3f,
-                                       roi=roi)
-        is_measures = nb_voxels >= min_nb_voxels
-
-        print("Saving results as npz files.")
-        out_path = out_folder / "3f_results"
-        save_results_as_npz(bins, measure_means,
-                            nb_voxels, measures_name, out_path)
-
-        if args.save_plots:
-            print("Saving three-fiber results as plots.")
-            plot_multiple_means(bins, measure_means,
-                                nb_voxels, plots_folder,
-                                measures_name, endname="2D_3f", labels=labels,
-                                legend_title=r"Peak$_1$ fraction",
-                                is_measures=is_measures, color_start=10)
 
 if __name__ == "__main__":
     main()
