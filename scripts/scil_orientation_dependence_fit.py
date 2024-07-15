@@ -160,6 +160,19 @@ def main():
             if np.sum(to_patch) != 0:
                 print("Patching bundle {}".format(bundles_names[j]))
                 bundle_corr = corr[j]
+                argsort_corr = np.argsort(bundle_corr)
+                for idx in argsort_corr:
+                    # curr_is_measures = is_measures[idx]
+                    patchable_pts = np.sum(to_patch * is_measures[idx])
+                    nb_pts_to_patch = np.sum(to_patch)
+                    if patchable_pts / nb_pts_to_patch >= 0.8:
+                        print("Found a bundle for patching: ", bundles_names[idx])
+                        break # does this break only one for loop?
+                    # quand to_patch = 1 -> il faut curr_is_measures = 1
+                    # quand to_patch = 0 -> on se fou de curr_is_measures
+                    # donc sum(to_patch * curr_is_measures) devrait être égal à
+                    # sum(to_patch) pour un patch complet. On doit donc regarder
+                    # pour une proportion de ces sommes.
 
     # if args.use_weighted_polyfit:
     #     weights = np.sqrt(nb_voxels)  # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
