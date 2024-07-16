@@ -167,13 +167,13 @@ def main():
                 bundle_corr = corr[j]
                 argsort_corr = np.argsort(bundle_corr)[::-1]
                 for idx in argsort_corr:
-                    nb_patchable_pts = np.sum(to_patch * is_measures[idx])
+                    patchable_pts = to_patch * is_measures[idx]
+                    nb_patchable_pts = np.sum(patchable_pts)
                     nb_pts_to_patch = np.sum(to_patch)
                     if nb_patchable_pts / nb_pts_to_patch >= 0.8:
                         print("Found a bundle for patching: ", bundles_names[idx])
                         print("Coefficient of correlation is: ", bundle_corr[idx])
-                        # create array of where to patch (similar to nb_patchable_pts)
-                        # copy the measures from bundle idx in the patches to the measures in i,j.
+                        measure_means[j, ..., i] = measure_means[idx, ..., i]
                         # create a way to keep track of the "original" vs "patched" points
                         break
 
