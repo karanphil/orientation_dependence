@@ -147,6 +147,10 @@ def main():
                      single-fiber voxels. Try to carefully reduce the
                      min_nb_voxels."""
             raise ValueError(msg)
+        # out_path = out_folder / (bundle_name + '/1f_results')
+        # print("Saving results as npz files.")
+        # save_results_as_npz(bins, measure_means[i], nb_voxels[i],
+        #                     measures_name, out_path)
 
     # For every measure, compute the correlation between bundles
     for i in range(nb_measures):
@@ -163,18 +167,15 @@ def main():
                 bundle_corr = corr[j]
                 argsort_corr = np.argsort(bundle_corr)[::-1]
                 for idx in argsort_corr:
-                    # curr_is_measures = is_measures[idx]
-                    patchable_pts = np.sum(to_patch * is_measures[idx])
+                    nb_patchable_pts = np.sum(to_patch * is_measures[idx])
                     nb_pts_to_patch = np.sum(to_patch)
-                    if patchable_pts / nb_pts_to_patch >= 0.8:
+                    if nb_patchable_pts / nb_pts_to_patch >= 0.8:
                         print("Found a bundle for patching: ", bundles_names[idx])
                         print("Coefficient of correlation is: ", bundle_corr[idx])
+                        # create array of where to patch (similar to nb_patchable_pts)
+                        # copy the measures from bundle idx in the patches to the measures in i,j.
+                        # create a way to keep track of the "original" vs "patched" points
                         break
-                    # quand to_patch = 1 -> il faut curr_is_measures = 1
-                    # quand to_patch = 0 -> on se fou de curr_is_measures
-                    # donc sum(to_patch * curr_is_measures) devrait être égal à
-                    # sum(to_patch) pour un patch complet. On doit donc regarder
-                    # pour une proportion de ces sommes.
 
     # if args.use_weighted_polyfit:
     #     weights = np.sqrt(nb_voxels)  # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
