@@ -119,10 +119,10 @@ def main():
     nb_bundles = len(bundles)
     nb_measures = measures.shape[-1]
 
-    nb_bins = 90 / args.bin_width_sf
+    nb_bins = int(90 / args.bin_width_sf)
     measure_means = np.zeros((nb_bundles, nb_bins, nb_measures))
     nb_voxels = np.zeros((nb_bundles, nb_bins))
-    is_measures = np.zeros((nb_bundles, nb_bins))
+    is_measures = np.ndarray((nb_bundles, nb_bins), dtype=bool)
 
     # For every bundle, compute the mean measures
     for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
@@ -150,24 +150,26 @@ def main():
 
     # For every measure, compute the correlation between bundles
     for i in range(nb_measures):
+        print("Computing correlation and patching for measure {}.".format(measures_name[i]))
         to_analyse = measure_means[..., i]
         to_analyse[np.invert(is_measures)] = np.nan
         dataset = pd.DataFrame(data=to_analyse.T)
         corr = dataset.corr()
 
         for j in range(nb_bundles):
-            to_patch = where_to_patch(is_measures[j, ..., i])
+            to_patch = where_to_patch(is_measures[j])
             if np.sum(to_patch) != 0:
                 print("Patching bundle {}".format(bundles_names[j]))
                 bundle_corr = corr[j]
-                argsort_corr = np.argsort(bundle_corr)
+                argsort_corr = np.argsort(bundle_corr)[::-1]
                 for idx in argsort_corr:
                     # curr_is_measures = is_measures[idx]
                     patchable_pts = np.sum(to_patch * is_measures[idx])
                     nb_pts_to_patch = np.sum(to_patch)
                     if patchable_pts / nb_pts_to_patch >= 0.8:
                         print("Found a bundle for patching: ", bundles_names[idx])
-                        break # does this break only one for loop?
+                        print("Coefficient of correlation is: ", bundle_corr[idx])
+                        break
                     # quand to_patch = 1 -> il faut curr_is_measures = 1
                     # quand to_patch = 0 -> on se fou de curr_is_measures
                     # donc sum(to_patch * curr_is_measures) devrait être égal à
