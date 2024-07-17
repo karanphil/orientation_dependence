@@ -167,10 +167,10 @@ def main():
                 bundle_idx, patchable_pts = patch_measures(to_patch,
                                                            is_measures,
                                                            corr[j])
-                print("Found a bundle for patching: ",
-                      bundles_names[bundle_idx])
-                print("Coefficient of correlation is: ",
-                      corr[j][bundle_idx])
+                print("Found a bundle for patching: ", bundles_names[bundle_idx])
+                print("Coefficient of correlation is: ", corr[j][bundle_idx])
+                print("Number of points to patch: ", np.sum(to_patch))
+                print("Number of points patched: ", np.sum(patchable_pts))
                 measure_means[j, ..., i][patchable_pts] = measure_means[bundle_idx, ..., i][patchable_pts]
                 pts_origin[j, ..., i][patchable_pts] = bundles_names[bundle_idx]
             out_path = out_folder / (bundles_names[j] + '/1f_results')
