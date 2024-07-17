@@ -359,7 +359,8 @@ def save_masks_by_angle_bins(peaks, fa, wm_mask, affine, output_path,
         nib.save(nib.Nifti1Image(mask.astype(np.uint8), affine), mask_path)
 
 
-def save_results_as_npz(bins, measure_means, nb_voxels, names, out_path):
+def save_results_as_npz(bins, measure_means, nb_voxels, pts_origin, names,
+                        out_path):
     # Save the results to a npz files
     savez_dict = dict()
     savez_dict['Angle_min'] = bins[:-1]
@@ -367,6 +368,7 @@ def save_results_as_npz(bins, measure_means, nb_voxels, names, out_path):
     savez_dict['Nb_voxels'] = nb_voxels
     for i in range(measure_means.shape[-1]):
         savez_dict[str(names[i])] = measure_means[..., i]
+        savez_dict["Origin_" + str(names[i])] = pts_origin[..., i].astype(str)
     np.savez(str(out_path), **savez_dict)
 
 

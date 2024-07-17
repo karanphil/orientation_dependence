@@ -341,3 +341,14 @@ def where_to_patch(is_measures, max_gap_frac=0.2, distance_sides_frac=0.1):
     if np.sum(is_measures[-distance_from_sides:]) == 0:
         to_patch[-distance_from_sides:] = 1
     return to_patch
+
+
+def patch_measures(to_patch, is_measures, bundle_corr):
+    argsort_corr = np.argsort(bundle_corr)[::-1]
+    for idx in argsort_corr:
+        patchable_pts = to_patch * is_measures[idx]
+        patchable_pts = patchable_pts.astype(bool)
+        nb_patchable_pts = np.sum(patchable_pts)
+        nb_pts_to_patch = np.sum(to_patch)
+        if nb_patchable_pts / nb_pts_to_patch >= 0.8:
+            return idx, patchable_pts

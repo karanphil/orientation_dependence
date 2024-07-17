@@ -1,7 +1,7 @@
-# wdir="/home/pkaran/Samsung/data/MT_Diffusion/myelo_inferno";
-wdir="/home/local/USHERBROOKE/karp2601/Samsung/data/MT_Diffusion/myelo_inferno";
-# source_dir="source";
-source_dir="Research/source";
+wdir="/home/pkaran/Samsung/data/MT_Diffusion/myelo_inferno";
+# wdir="/home/local/USHERBROOKE/karp2601/Samsung/data/MT_Diffusion/myelo_inferno";
+source_dir="source";
+# source_dir="Research/source";
 cd $wdir;
 bin_width=5;
 bin_width_dir="${bin_width}_degree_bins";

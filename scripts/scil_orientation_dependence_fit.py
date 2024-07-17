@@ -12,7 +12,8 @@ from modules.orientation_dependence import (compute_three_fibers_means,
                                             compute_two_fibers_means,
                                             compute_single_fiber_means,
                                             fit_single_fiber_results,
-                                            where_to_patch)
+                                            where_to_patch,
+                                            patch_measures)
 
 
 def _build_arg_parser():
@@ -123,6 +124,8 @@ def main():
     measure_means = np.zeros((nb_bundles, nb_bins, nb_measures))
     nb_voxels = np.zeros((nb_bundles, nb_bins))
     is_measures = np.ndarray((nb_bundles, nb_bins), dtype=bool)
+    pts_origin = np.ndarray((nb_bundles, nb_bins, nb_measures), dtype=object)
+    pts_origin.fill("None")
 
     # For every bundle, compute the mean measures
     for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
@@ -138,6 +141,7 @@ def main():
                                        fa_thr=args.fa_thr)
 
         is_measures[i] = nb_voxels[i] >= min_nb_voxels
+        pts_origin[i, is_measures[i]] = bundle_name
         nb_filled_bins = np.sum(is_measures[i])
         if nb_filled_bins == 0:
             msg = """No angle bin was filled above the required minimum number
@@ -147,10 +151,6 @@ def main():
                      single-fiber voxels. Try to carefully reduce the
                      min_nb_voxels."""
             raise ValueError(msg)
-        # out_path = out_folder / (bundle_name + '/1f_results')
-        # print("Saving results as npz files.")
-        # save_results_as_npz(bins, measure_means[i], nb_voxels[i],
-        #                     measures_name, out_path)
 
     # For every measure, compute the correlation between bundles
     for i in range(nb_measures):
@@ -164,18 +164,18 @@ def main():
             to_patch = where_to_patch(is_measures[j])
             if np.sum(to_patch) != 0:
                 print("Patching bundle {}".format(bundles_names[j]))
-                bundle_corr = corr[j]
-                argsort_corr = np.argsort(bundle_corr)[::-1]
-                for idx in argsort_corr:
-                    patchable_pts = to_patch * is_measures[idx]
-                    nb_patchable_pts = np.sum(patchable_pts)
-                    nb_pts_to_patch = np.sum(to_patch)
-                    if nb_patchable_pts / nb_pts_to_patch >= 0.8:
-                        print("Found a bundle for patching: ", bundles_names[idx])
-                        print("Coefficient of correlation is: ", bundle_corr[idx])
-                        measure_means[j, ..., i] = measure_means[idx, ..., i]
-                        # create a way to keep track of the "original" vs "patched" points
-                        break
+                bundle_idx, patchable_pts = patch_measures(to_patch,
+                                                           is_measures,
+                                                           corr[j])
+                print("Found a bundle for patching: ",
+                      bundles_names[bundle_idx])
+                print("Coefficient of correlation is: ",
+                      corr[j][bundle_idx])
+                measure_means[j, ..., i][patchable_pts] = measure_means[bundle_idx, ..., i][patchable_pts]
+                pts_origin[j, ..., i][patchable_pts] = bundles_names[bundle_idx]
+            out_path = out_folder / (bundles_names[j] + '/1f_results')
+            save_results_as_npz(bins, measure_means[j], nb_voxels[j],
+                                pts_origin[j], measures_name, out_path)
 
     # if args.use_weighted_polyfit:
     #     weights = np.sqrt(nb_voxels)  # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
