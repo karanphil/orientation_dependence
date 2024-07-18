@@ -1,13 +1,21 @@
-wdir="/home/pkaran/Samsung/data/MT_Diffusion/myelo_inferno";
-# wdir="/home/local/USHERBROOKE/karp2601/Samsung/data/MT_Diffusion/myelo_inferno";
-source_dir="source";
-# source_dir="Research/source";
+path=$(pwd);
+split_path=$(echo $path | tr "/" "\n");
+divided_path=( ${split_path[0]} );
+location=${divided_path[1]};
+if [ $location = "local" ];
+    then
+    wdir="/home/local/USHERBROOKE/karp2601/Samsung/data/MT_Diffusion/myelo_inferno";
+    source_dir="Research/source";
+fi;
+if [ $location = "pkaran" ];
+    then
+    wdir="/home/pkaran/Samsung/data/MT_Diffusion/myelo_inferno";
+    source_dir="source";
+fi;
 cd $wdir;
 bin_width=5;
 bin_width_dir="${bin_width}_degree_bins";
-# polyfit_commands="--save_polyfit --use_weighted_polyfit --poly_order 10 --scale_poly_order";
 polyfit_commands="--save_polyfit --use_weighted_polyfit";
-# polyfit_commands="";
 for bundle in bundles/sub-026-hc_ses-3/bundles/*;
     do bundle_name=$(basename -- "${bundle%%.*}");
     bundles_names+=$bundle_name;
