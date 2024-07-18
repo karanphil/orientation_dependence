@@ -180,12 +180,13 @@ def main():
             save_results_as_npz(bins, measure_means[j], nb_voxels[j],
                                 pts_origin[j], measures_name, out_path)
 
-    # if args.use_weighted_polyfit:
-    #     weights = np.sqrt(nb_voxels)  # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
-    #     # weights = nb_voxels
-    # else:
-    #     weights = None
+    if args.use_weighted_polyfit:
+        # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
+        weights = np.sqrt(nb_voxels)
+    else:
+        weights = None
 
+    # Adapt this part to the multi-bundle arrays
     # if args.save_polyfit:
     #     print("Fitting the whole brain results.")
     #     measures_fit, measures_max = fit_single_fiber_results(bins,
