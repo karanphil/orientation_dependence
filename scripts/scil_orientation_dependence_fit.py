@@ -4,13 +4,9 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-from modules.io import (plot_means, plot_3d_means, plot_multiple_means,
-                        save_angle_maps, save_masks_by_angle_bins,
-                        save_results_as_npz, extract_measures,
+from modules.io import (save_results_as_npz, extract_measures,
                         save_polyfits_as_npz)
-from modules.orientation_dependence import (compute_three_fibers_means,
-                                            compute_two_fibers_means,
-                                            compute_single_fiber_means,
+from modules.orientation_dependence import (compute_single_fiber_means_new,
                                             fit_single_fiber_results,
                                             where_to_patch,
                                             patch_measures)
@@ -122,7 +118,7 @@ def main():
 
     nb_bins = int(90 / args.bin_width_sf)
     measure_means = np.zeros((nb_bundles, nb_bins, nb_measures))
-    nb_voxels = np.zeros((nb_bundles, nb_bins))
+    nb_voxels = np.zeros((nb_bundles, nb_bins, nb_measures))
     is_measures = np.ndarray((nb_bundles, nb_bins), dtype=bool)
     pts_origin = np.ndarray((nb_bundles, nb_bins, nb_measures), dtype=object)
     pts_origin.fill("None")
@@ -131,16 +127,16 @@ def main():
     for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
         print("Computing single-fiber means of bundle {}.".format(bundle_name))
         bins, measure_means[i], nb_voxels[i] =\
-            compute_single_fiber_means(peaks, fa,
-                                       wm_mask,
-                                       affine,
-                                       measures,
-                                       nufo=nufo,
-                                       mask=bundle,
-                                       bin_width=args.bin_width_sf,
-                                       fa_thr=args.fa_thr)
+            compute_single_fiber_means_new(peaks, fa,
+                                           wm_mask,
+                                           affine,
+                                           measures,
+                                           nufo=nufo,
+                                           mask=bundle,
+                                           bin_width=args.bin_width_sf,
+                                           fa_thr=args.fa_thr)
 
-        is_measures[i] = nb_voxels[i] >= min_nb_voxels
+        is_measures[i] = nb_voxels[i, :, 0] >= min_nb_voxels
         pts_origin[i, is_measures[i]] = bundle_name
         nb_filled_bins = np.sum(is_measures[i])
         if nb_filled_bins == 0:
@@ -161,6 +157,7 @@ def main():
         corr = dataset.corr()
 
         for j in range(nb_bundles):
+            print("Processing bundle {}".format(bundles_names[j]))
             to_patch = where_to_patch(is_measures[j])
             if np.sum(to_patch) != 0:
                 print("Patching bundle {}".format(bundles_names[j]))
@@ -169,9 +166,15 @@ def main():
                                                            corr[j])
                 print("Found a bundle for patching: ", bundles_names[bundle_idx])
                 print("Coefficient of correlation is: ", corr[j][bundle_idx])
-                print("Number of points to patch: ", np.sum(to_patch))
+                print("Number of points to patch: ", int(np.sum(to_patch)))
                 print("Number of points patched: ", np.sum(patchable_pts))
-                measure_means[j, ..., i][patchable_pts] = measure_means[bundle_idx, ..., i][patchable_pts]
+                # Add a line to adjust the points so that the means are equal
+                common_pts = is_measures[j] * is_measures[bundle_idx]
+                curr_bundle_mean = np.mean(measure_means[j, ..., i][common_pts])
+                other_bundle_mean = np.mean(measure_means[bundle_idx, ..., i][common_pts])
+                delta_mean = curr_bundle_mean - other_bundle_mean
+                measure_means[j, ..., i][patchable_pts] = measure_means[bundle_idx, ..., i][patchable_pts] + delta_mean
+                nb_voxels[j, ..., i][patchable_pts] = nb_voxels[bundle_idx, ..., i][patchable_pts]
                 pts_origin[j, ..., i][patchable_pts] = bundles_names[bundle_idx]
             out_path = out_folder / (bundles_names[j] + '/1f_results')
             save_results_as_npz(bins, measure_means[j], nb_voxels[j],

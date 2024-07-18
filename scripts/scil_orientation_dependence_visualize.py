@@ -53,6 +53,14 @@ def main():
 
     bundles_names = args.bundles_names[0]
 
+    if args.measures_type == 'MT':
+        measures = ['MTR', 'MTsat']
+        cmap_idx = [2, 3]
+
+    if args.measures_type == 'ihMT':
+        measures = ['ihMTR', 'ihMTsat']
+        cmap_idx = [4, 5]
+
     results = []
     extracted_bundles = []
     max_count = 0
@@ -62,7 +70,8 @@ def main():
             print("Loading: ", result)
             results.append(np.load(result))
             extracted_bundles.append(str(Path(result).parent))
-            curr_max_count = np.max(results[tmp]['Nb_voxels'])
+            curr_max_count = np.max([np.max(results[tmp]['Nb_voxels_' + measures[0]]),
+                                    np.max(results[tmp]['Nb_voxels_' + measures[1]])])
             if curr_max_count > max_count:
                 max_count = curr_max_count
             tmp += 1
@@ -88,14 +97,6 @@ def main():
     nb_bundles = len(bundles_names)
     nb_rows = int(np.ceil(nb_bundles / 2))
 
-    if args.measures_type == 'MT':
-        measures = ['MTR', 'MTsat']
-        cmap_idx = [2, 3]
-
-    if args.measures_type == 'ihMT':
-        measures = ['ihMTR', 'ihMTsat']
-        cmap_idx = [4, 5]
-
     mid_bins = (results[0]['Angle_min'] + results[0]['Angle_max']) / 2.
     highres_bins = np.arange(0, 90 + 1, 0.5)
 
@@ -116,10 +117,10 @@ def main():
         if bundles_names[i] in extracted_bundles:
             bundle_idx = extracted_bundles.index(bundles_names[i])
             result = results[bundle_idx]
-            is_measures = result['Nb_voxels'] >= min_nb_voxels
-            is_not_measures = np.invert(is_measures)
-            norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
             for j in range(2):
+                is_measures = result['Nb_voxels_' + measures[j]] >= min_nb_voxels
+                is_not_measures = np.invert(is_measures)
+                norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
                 pts_origin = result['Origin_' + measures[j]]
                 is_original = pts_origin == bundles_names[i]
                 is_none = pts_origin == "None"
@@ -127,22 +128,22 @@ def main():
                                             np.invert(is_original))
                 colorbar = ax[row, col + j].scatter(mid_bins[is_original & is_measures],
                                                 result[measures[j]][is_original & is_measures],
-                                                c=result['Nb_voxels'][is_original & is_measures],
+                                                c=result['Nb_voxels_' + measures[j]][is_original & is_measures],
                                                 cmap='Greys', norm=norm,
                                                 edgecolors=cm.naviaS(cmap_idx[j]), linewidths=1)
                 ax[row, col + j].scatter(mid_bins[is_original & is_not_measures],
                                     result[measures[j]][is_original & is_not_measures],
-                                    c=result['Nb_voxels'][is_original & is_not_measures],
+                                    c=result['Nb_voxels_' + measures[j]][is_original & is_not_measures],
                                     cmap='Greys', norm=norm, alpha=0.5,
                                     edgecolors=cm.naviaS(cmap_idx[j]), linewidths=1)
                 ax[row, col + j].scatter(mid_bins[is_patched & is_measures],
                                         result[measures[j]][is_patched & is_measures],
-                                        c=result['Nb_voxels'][is_patched & is_measures],
+                                        c=result['Nb_voxels_' + measures[j]][is_patched & is_measures],
                                         cmap='Greys', norm=norm,
                                         edgecolors="red", linewidths=1)
                 ax[row, col + j].scatter(mid_bins[is_patched & is_not_measures],
                                     result[measures[j]][is_patched & is_not_measures],
-                                    c=result['Nb_voxels'][is_patched & is_not_measures],
+                                    c=result['Nb_voxels_' + measures[j]][is_patched & is_not_measures],
                                     cmap='Greys', norm=norm, alpha=0.5,
                                     edgecolors="red", linewidths=1)
 

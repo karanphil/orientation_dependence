@@ -365,10 +365,10 @@ def save_results_as_npz(bins, measure_means, nb_voxels, pts_origin, names,
     savez_dict = dict()
     savez_dict['Angle_min'] = bins[:-1]
     savez_dict['Angle_max'] = bins[1:]
-    savez_dict['Nb_voxels'] = nb_voxels
     for i in range(measure_means.shape[-1]):
         savez_dict[str(names[i])] = measure_means[..., i]
-        savez_dict["Origin_" + str(names[i])] = pts_origin[..., i].astype(str)
+        savez_dict['Origin_' + str(names[i])] = pts_origin[..., i].astype(str)
+        savez_dict['Nb_voxels_' + str(names[i])] = nb_voxels[..., i]
     np.savez(str(out_path), **savez_dict)
 
 

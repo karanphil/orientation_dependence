@@ -264,6 +264,45 @@ def compute_single_fiber_means(peaks, fa, wm_mask, affine,
     return bins, measure_means, nb_voxels
 
 
+def compute_single_fiber_means_new(peaks, fa, wm_mask, affine,
+                                   measures, nufo=None, mask=None,
+                                   bin_width=1, fa_thr=0.5):
+    # Find the direction of the B0 field
+    rot = affine[0:3, 0:3]
+    z_axis = np.array([0, 0, 1])
+    b0_field = np.dot(rot.T, z_axis)
+
+    bins = np.arange(0, 90 + bin_width, bin_width)
+
+    # Calculate the angle between e1 and B0 field
+    cos_theta = np.dot(peaks[..., :3], b0_field)
+    theta = np.arccos(cos_theta) * 180 / np.pi
+
+    measure_means = np.zeros((len(bins) - 1, measures.shape[-1]))
+    nb_voxels = np.zeros((len(bins) - 1, measures.shape[-1]))
+
+    # Apply the WM mask and FA threshold
+    if nufo is not None:
+        wm_mask_bool = (wm_mask >= 0.9) & (fa > fa_thr) & (nufo == 1)
+    else:
+        wm_mask_bool = (wm_mask >= 0.9) & (fa > fa_thr)
+    if mask is not None:
+        wm_mask_bool = wm_mask_bool & (mask > 0)
+
+    for i in range(len(bins) - 1):
+        angle_mask_0_90 = (theta >= bins[i]) & (theta < bins[i+1]) 
+        angle_mask_90_180 = (180 - theta >= bins[i]) & (180 - theta < bins[i+1])
+        angle_mask = angle_mask_0_90 | angle_mask_90_180
+        mask_total = wm_mask_bool & angle_mask
+        nb_voxels[i, :] = np.sum(mask_total)
+        if np.sum(mask_total) < 1:
+            measure_means[i, :] = None
+        else:
+            measure_means[i] = np.mean(measures[mask_total], axis=0)
+
+    return bins, measure_means, nb_voxels
+
+
 def fit_single_fiber_results(bins, means, is_measures=None, weights=None):
     if is_measures is None:
         is_measures = np.ones(means.shape[0])
@@ -321,7 +360,7 @@ def fit_single_fiber_results(bins, means, is_measures=None, weights=None):
     return fits, measures_max
 
 
-def where_to_patch(is_measures, max_gap_frac=0.2, distance_sides_frac=0.1):
+def where_to_patch(is_measures, max_gap_frac=0.15, distance_sides_frac=0.1):
     # max_gap_frac is for computing the max_gap as a fraction of the nb of bins
     # distance_sides_frac is for computing the distance from the sides as a
     # fraction of the nb of bins
@@ -330,11 +369,10 @@ def where_to_patch(is_measures, max_gap_frac=0.2, distance_sides_frac=0.1):
                                       [len(is_measures)]))  # point is False
     gaps = is_measures_pos[1:] - is_measures_pos[:-1] - 1
     max_gap = np.round(max_gap_frac * len(is_measures))
-    too_big_gaps = np.argwhere(gaps > max_gap).squeeze()
+    too_big_gaps = np.argwhere(gaps > max_gap)[:, 0]
     to_patch = np.zeros((len(is_measures)))
-    if too_big_gaps:
-        for patch in too_big_gaps:
-            to_patch[is_measures_pos[patch] + 1:is_measures_pos[patch + 1]] = 1
+    for patch in too_big_gaps:
+        to_patch[is_measures_pos[patch] + 1:is_measures_pos[patch + 1]] = 1
     distance_from_sides = int(np.round(distance_sides_frac * len(is_measures)))
     if np.sum(is_measures[0:distance_from_sides]) == 0:
         to_patch[0:distance_from_sides] = 1
