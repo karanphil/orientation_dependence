@@ -63,6 +63,9 @@ def _build_arg_parser():
     g.add_argument('--min_corr', default=0.3, type=float,
                    help='Value of the minimal correlation to be eligible for '
                         'patching [%(default)s].')
+    g.add_argument('--min_frac_pts', default=0.8, type=float,
+                   help='Value of the minimal fraction of common points to be '
+                        'eligible for patching [%(default)s].')
     
     g1 = p.add_argument_group(title='Polyfit parameters')
     g1.add_argument('--save_polyfit', action='store_true',
@@ -167,7 +170,8 @@ def main():
                 bundle_idx, patchable_pts = patch_measures(to_patch,
                                                            is_measures,
                                                            corr[j],
-                                                           min_corr=args.min_corr)
+                                                           min_corr=args.min_corr,
+                                                           min_frac_pts=args.min_frac_pts)
                 if bundle_idx == -1:
                     print("WARNING! No bundle found for patching.")
                 else:
