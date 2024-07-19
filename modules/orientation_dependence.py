@@ -379,9 +379,9 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None):
         previous_var = 1000000
         best_pc_change = 1
         best_poly_order = 1
-        print("Nb points: ", len(new_is_measures))
+        # print("Nb points: ", len(new_is_measures))
         for poly_order_l in poly_order_list:
-            print("Trying poly order: ", poly_order_l)
+            # print("Trying poly order: ", poly_order_l)
             output = np.polyfit(new_bins[new_is_measures],
                                 new_means[new_is_measures],
                                 poly_order_l,
@@ -389,10 +389,10 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None):
                                 full=True)
             # print(output)
             var = output[1] / (len(new_is_measures) - poly_order_l - 1)
-            print("Variance: ", var)
+            # print("Variance: ", var)
             # https://autarkaw.wordpress.com/2008/07/05/finding-the-optimum-polynomial-order-to-use-for-regression/
             pc_change = (previous_var - var) / previous_var
-            print("% of change: ", pc_change)
+            # print("% of change: ", pc_change)
             if pc_change < best_pc_change:
                 best_poly_order = poly_order_l - 1
                 best_pc_change = pc_change
@@ -400,7 +400,7 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None):
                 break
             previous_var = var
         chosen_poly_order = best_poly_order
-        print("Polyfit order was set to", chosen_poly_order)
+        # print("Polyfit order was set to", chosen_poly_order)
         fits[max_poly_order - chosen_poly_order - 1:, i] =\
             np.polyfit(new_bins[new_is_measures],
                        new_means[new_is_measures],
@@ -438,9 +438,11 @@ def where_to_patch(is_measures, max_gap_frac=0.15, distance_sides_frac=0.1):
     return to_patch
 
 
-def patch_measures(to_patch, is_measures, bundle_corr):
+def patch_measures(to_patch, is_measures, bundle_corr, min_corr=0.3):
     argsort_corr = np.argsort(bundle_corr)[::-1]
     for idx in argsort_corr:
+        if bundle_corr[idx] < min_corr:
+            return -1, np.zeros((to_patch.shape))
         patchable_pts = to_patch * is_measures[idx]
         patchable_pts = patchable_pts.astype(bool)
         nb_patchable_pts = np.sum(patchable_pts)
