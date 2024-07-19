@@ -7,7 +7,7 @@ from pathlib import Path
 from modules.io import (save_results_as_npz, extract_measures,
                         save_polyfits_as_npz)
 from modules.orientation_dependence import (compute_single_fiber_means_new,
-                                            fit_single_fiber_results,
+                                            fit_single_fiber_results_new,
                                             where_to_patch,
                                             patch_measures)
 
@@ -186,17 +186,18 @@ def main():
     else:
         weights = None
 
-    # Adapt this part to the multi-bundle arrays
-    # if args.save_polyfit:
-    #     print("Fitting the whole brain results.")
-    #     measures_fit, measures_max = fit_single_fiber_results(bins,
-    #                                             measure_means,
-    #                                             is_measures=is_measures,
-    #                                             weights=weights)
+    new_is_measures = nb_voxels >= min_nb_voxels
 
-    #     print("Saving polyfit results.")
-    #     out_path = out_folder / '1f_polyfits'
-    #     save_polyfits_as_npz(measures_fit, measures_max, measures_name, out_path)
+    # For every bundle, fit the polynome
+    if args.save_polyfit:
+        for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
+            print("Fitting the results of bundle {}.".format(bundle_name))
+            measures_fit, measures_max = fit_single_fiber_results_new(bins,
+                                                    measure_means[i],
+                                                    is_measures=new_is_measures[i],
+                                                    weights=weights[i])
+            out_path = out_folder / (bundles_names[i] + '/1f_polyfits')
+            save_polyfits_as_npz(measures_fit, measures_max, measures_name, out_path)
 
 if __name__ == "__main__":
     main()

@@ -360,6 +360,63 @@ def fit_single_fiber_results(bins, means, is_measures=None, weights=None):
     return fits, measures_max
 
 
+def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None):
+    if is_measures is None:
+        is_measures = np.ones(means.shape[0])
+    if weights is None:
+        weights = np.ones(means.shape[0])
+    max_poly_order = len(bins) - 1
+    fits = np.zeros((max_poly_order, means.shape[-1]))
+    measures_max = np.zeros((means.shape[-1]))
+    for i in range(means.shape[-1]):
+        new_bins, new_means, new_is_measures, new_weights =\
+            extend_measure(bins, means[..., i], is_measure=is_measures[..., i],
+                           weights=weights[..., i])
+        curr_max_poly_order = len(new_is_measures) - 1
+        # mid_bins = (new_bins[:-1] + new_bins[1:]) / 2.
+        poly_order_list = np.arange(int(len(new_is_measures) / 5), # this works well to not start too low, but still depend on the nb of points
+                                    curr_max_poly_order, 1)
+        previous_var = 1000000
+        best_pc_change = 1
+        best_poly_order = 1
+        print("Nb points: ", len(new_is_measures))
+        for poly_order_l in poly_order_list:
+            print("Trying poly order: ", poly_order_l)
+            output = np.polyfit(new_bins[new_is_measures],
+                                new_means[new_is_measures],
+                                poly_order_l,
+                                w=new_weights[new_is_measures],
+                                full=True)
+            # print(output)
+            var = output[1] / (len(new_is_measures) - poly_order_l - 1)
+            print("Variance: ", var)
+            # https://autarkaw.wordpress.com/2008/07/05/finding-the-optimum-polynomial-order-to-use-for-regression/
+            pc_change = (previous_var - var) / previous_var
+            print("% of change: ", pc_change)
+            if pc_change < best_pc_change:
+                best_poly_order = poly_order_l - 1
+                best_pc_change = pc_change
+            if pc_change <= 0.01:
+                break
+            previous_var = var
+        chosen_poly_order = best_poly_order
+        print("Polyfit order was set to", chosen_poly_order)
+        fits[max_poly_order - chosen_poly_order - 1:, i] =\
+            np.polyfit(new_bins[new_is_measures],
+                       new_means[new_is_measures],
+                       chosen_poly_order,
+                       w=new_weights[new_is_measures])
+        # Compute maximum
+        polynome = np.poly1d(fits[..., i])
+        mid_bins = (bins[:-1] + bins[1:]) / 2
+        bin_width = bins[1] - bins[0]
+        min_angle = np.min(mid_bins[is_measures[..., i]]) - bin_width / 2
+        max_angle = np.max(mid_bins[is_measures[..., i]]) + bin_width / 2
+        highres_bins = np.arange(min_angle, max_angle, 0.1)
+        measures_max[i] = np.max(polynome(highres_bins))
+    return fits, measures_max
+
+
 def where_to_patch(is_measures, max_gap_frac=0.15, distance_sides_frac=0.1):
     # max_gap_frac is for computing the max_gap as a fraction of the nb of bins
     # distance_sides_frac is for computing the distance from the sides as a
