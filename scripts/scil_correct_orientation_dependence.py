@@ -21,8 +21,8 @@ def _build_arg_parser():
                         'given as unit directions.')
     p.add_argument('in_fixel_density_maps',
                    help='Path of the fixel density maps. This is the output '
-                        'of the scil_fixel_density_maps script, without the '
-                        'separate_bundles option. Thus, all the bundles '
+                        'of the scil_bundle_fixel_analysis script, without '
+                        'the split_bundles option. Thus, all the bundles '
                         'be present in the file, as a 5th dimension.')
     p.add_argument('out_folder',
                    help='Path of the output folder for txt, png, masks and '
