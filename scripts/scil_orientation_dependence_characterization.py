@@ -60,17 +60,22 @@ def _build_arg_parser():
     g.add_argument('--min_nb_voxels', default=1, type=int,
                    help='Value of the minimal number of voxels per bin '
                         '[%(default)s].')
-    g.add_argument('--min_corr', default=0.3, type=float,
-                   help='Value of the minimal correlation to be eligible for '
-                        'patching [%(default)s].')
-    g.add_argument('--min_frac_pts', default=0.8, type=float,
-                   help='Value of the minimal fraction of common points to be '
-                        'eligible for patching [%(default)s].')
+
+    g1 = p.add_argument_group(title='Patching parameters')
+    g1.add_argument('--patch', action='store_true',
+                    help='If set, will performing patching of the orientation '
+                         'dependence points in order to fill the holes.')
+    g1.add_argument('--min_corr', default=0.3, type=float,
+                    help='Value of the minimal correlation to be eligible for '
+                         'patching [%(default)s].')
+    g1.add_argument('--min_frac_pts', default=0.8, type=float,
+                    help='Value of the minimal fraction of common points to '
+                         'be eligible for patching [%(default)s].')
     
-    g1 = p.add_argument_group(title='Polyfit parameters')
-    g1.add_argument('--save_polyfit', action='store_true',
+    g2 = p.add_argument_group(title='Polyfit parameters')
+    g2.add_argument('--save_polyfit', action='store_true',
                     help='If set, will save the polyfit.')
-    g1.add_argument('--use_weighted_polyfit', action='store_true',
+    g2.add_argument('--use_weighted_polyfit', action='store_true',
                    help='If set, use weights when performing the polyfit. '
                         '[%(default)s].')
 
@@ -155,40 +160,44 @@ def main():
             raise ValueError(msg)
 
     # For every measure, compute the correlation between bundles
-    for i in range(nb_measures):
-        print("Computing correlation and patching for measure {}.".format(measures_name[i]))
-        to_analyse = measure_means[..., i]
-        to_analyse[np.invert(is_measures)] = np.nan
-        dataset = pd.DataFrame(data=to_analyse.T)
-        corr = dataset.corr()
+    if args.patch:
+        for i in range(nb_measures):
+            print("Computing correlation and patching for measure {}.".format(measures_name[i]))
+            to_analyse = measure_means[..., i]
+            to_analyse[np.invert(is_measures)] = np.nan
+            dataset = pd.DataFrame(data=to_analyse.T)
+            corr = dataset.corr()
 
-        for j in range(nb_bundles):
-            print("Processing bundle {}".format(bundles_names[j]))
-            to_patch = where_to_patch(is_measures[j])
-            if np.sum(to_patch) != 0:
-                print("Patching bundle {}".format(bundles_names[j]))
-                bundle_idx, patchable_pts = patch_measures(to_patch,
-                                                           is_measures,
-                                                           corr[j],
-                                                           min_corr=args.min_corr,
-                                                           min_frac_pts=args.min_frac_pts)
-                if bundle_idx == -1:
-                    print("WARNING! No bundle found for patching.")
-                else:
-                    print("Found a bundle for patching: ", bundles_names[bundle_idx])
-                    print("Coefficient of correlation is: ", corr[j][bundle_idx])
-                    print("Number of points to patch: ", int(np.sum(to_patch)))
-                    print("Number of points patched: ", np.sum(patchable_pts))
-                    common_pts = is_measures[j] * is_measures[bundle_idx]
-                    curr_bundle_mean = np.mean(measure_means[j, ..., i][common_pts])
-                    other_bundle_mean = np.mean(measure_means[bundle_idx, ..., i][common_pts])
-                    delta_mean = curr_bundle_mean - other_bundle_mean
-                    measure_means[j, ..., i][patchable_pts] = measure_means[bundle_idx, ..., i][patchable_pts] + delta_mean
-                    nb_voxels[j, ..., i][patchable_pts] = nb_voxels[bundle_idx, ..., i][patchable_pts]
-                    pts_origin[j, ..., i][patchable_pts] = bundles_names[bundle_idx]
-            out_path = out_folder / (bundles_names[j] + '/1f_results')
-            save_results_as_npz(bins, measure_means[j], nb_voxels[j],
-                                pts_origin[j], measures_name, out_path)
+            for j in range(nb_bundles):
+                print("Processing bundle {}".format(bundles_names[j]))
+                to_patch = where_to_patch(is_measures[j])
+                if np.sum(to_patch) != 0:
+                    print("Patching bundle {}".format(bundles_names[j]))
+                    bundle_idx, patchable_pts = patch_measures(to_patch,
+                                                            is_measures,
+                                                            corr[j],
+                                                            min_corr=args.min_corr,
+                                                            min_frac_pts=args.min_frac_pts)
+                    if bundle_idx == -1:
+                        print("WARNING! No bundle found for patching.")
+                    else:
+                        print("Found a bundle for patching: ", bundles_names[bundle_idx])
+                        print("Coefficient of correlation is: ", corr[j][bundle_idx])
+                        print("Number of points to patch: ", int(np.sum(to_patch)))
+                        print("Number of points patched: ", np.sum(patchable_pts))
+                        common_pts = is_measures[j] * is_measures[bundle_idx]
+                        curr_bundle_mean = np.mean(measure_means[j, ..., i][common_pts])
+                        other_bundle_mean = np.mean(measure_means[bundle_idx, ..., i][common_pts])
+                        delta_mean = curr_bundle_mean - other_bundle_mean
+                        measure_means[j, ..., i][patchable_pts] = measure_means[bundle_idx, ..., i][patchable_pts] + delta_mean
+                        nb_voxels[j, ..., i][patchable_pts] = nb_voxels[bundle_idx, ..., i][patchable_pts]
+                        pts_origin[j, ..., i][patchable_pts] = bundles_names[bundle_idx]
+    
+    # Saving the results of orientation dependence characterization
+    for i in range(nb_bundles):
+        out_path = out_folder / (bundles_names[i] + '/1f_results')
+        save_results_as_npz(bins, measure_means[i], nb_voxels[i],
+                            pts_origin[i], measures_name, out_path)
 
     if args.use_weighted_polyfit:
         # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
