@@ -1,8 +1,11 @@
 import argparse
 import nibabel as nib
 import numpy as np
+import logging
 import pandas as pd
 from pathlib import Path
+
+from scilpy.io.utils import add_verbose_arg
 
 from modules.io import (save_results_as_npz, extract_measures,
                         save_polyfits_as_npz)
@@ -78,6 +81,8 @@ def _build_arg_parser():
     g2.add_argument('--use_weighted_polyfit', action='store_true',
                    help='If set, use weights when performing the polyfit. '
                         '[%(default)s].')
+    
+    add_verbose_arg(p)
 
     return p
 
@@ -85,6 +90,7 @@ def _build_arg_parser():
 def main():
     parser = _build_arg_parser()
     args = parser.parse_args()
+    logging.getLogger().setLevel(logging.getLevelName(args.verbose))
 
     nb_measures = len(args.measures[0])
     if args.measures_names != [] and\
@@ -136,7 +142,7 @@ def main():
 
     # For every bundle, compute the mean measures
     for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
-        print("Computing single-fiber means of bundle {}.".format(bundle_name))
+        logging.info("Computing single-fiber means of bundle {}.".format(bundle_name))
         bins, measure_means[i], nb_voxels[i] =\
             compute_single_fiber_means_new(peaks, fa,
                                            wm_mask,
@@ -162,29 +168,29 @@ def main():
     # For every measure, compute the correlation between bundles
     if args.patch:
         for i in range(nb_measures):
-            print("Computing correlation and patching for measure {}.".format(measures_name[i]))
+            logging.info("Computing correlation and patching for measure {}.".format(measures_name[i]))
             to_analyse = measure_means[..., i]
             to_analyse[np.invert(is_measures)] = np.nan
             dataset = pd.DataFrame(data=to_analyse.T)
             corr = dataset.corr()
 
             for j in range(nb_bundles):
-                print("Processing bundle {}".format(bundles_names[j]))
+                logging.info("Processing bundle {}".format(bundles_names[j]))
                 to_patch = where_to_patch(is_measures[j])
                 if np.sum(to_patch) != 0:
-                    print("Patching bundle {}".format(bundles_names[j]))
+                    logging.info("Patching bundle {}".format(bundles_names[j]))
                     bundle_idx, patchable_pts = patch_measures(to_patch,
                                                             is_measures,
                                                             corr[j],
                                                             min_corr=args.min_corr,
                                                             min_frac_pts=args.min_frac_pts)
                     if bundle_idx == -1:
-                        print("WARNING! No bundle found for patching.")
+                        logging.warning("WARNING! No bundle found for patching bundle {}.".format(bundles_names[j]))
                     else:
-                        print("Found a bundle for patching: ", bundles_names[bundle_idx])
-                        print("Coefficient of correlation is: ", corr[j][bundle_idx])
-                        print("Number of points to patch: ", int(np.sum(to_patch)))
-                        print("Number of points patched: ", np.sum(patchable_pts))
+                        logging.info("Found a bundle for patching: {}".format(bundles_names[bundle_idx]))
+                        logging.info("Coefficient of correlation is: {}".format(corr[j][bundle_idx]))
+                        logging.info("Number of points to patch: {}".format(int(np.sum(to_patch))))
+                        logging.info("Number of points patched: {}".format(np.sum(patchable_pts)))
                         common_pts = is_measures[j] * is_measures[bundle_idx]
                         curr_bundle_mean = np.mean(measure_means[j, ..., i][common_pts])
                         other_bundle_mean = np.mean(measure_means[bundle_idx, ..., i][common_pts])
@@ -210,13 +216,15 @@ def main():
     # For every bundle, fit the polynome
     if args.save_polyfit:
         for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
-            print("Fitting the results of bundle {}.".format(bundle_name))
+            logging.info("Fitting the results of bundle {}.".format(bundle_name))
             measures_fit, measures_max = fit_single_fiber_results_new(bins,
                                                     measure_means[i],
                                                     is_measures=new_is_measures[i],
                                                     weights=weights[i])
             out_path = out_folder / (bundles_names[i] + '/1f_polyfits')
             save_polyfits_as_npz(measures_fit, measures_max, measures_name, out_path)
+
+    # TODO Add two-fiber and three-fiber characterization with ifs.
 
 if __name__ == "__main__":
     main()
