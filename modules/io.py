@@ -10,25 +10,25 @@ from modules.utils import compute_peaks_fraction
 
 
 def extract_measures(measures_arg, data_shape, names_arg=[]):
-    measures = np.ndarray((data_shape) + (len(measures_arg[0]),))
-    measures_name = np.ndarray((len(measures_arg[0]),), dtype=object)
-    for i, measure in enumerate(measures_arg[0]):
+    measures = np.ndarray((data_shape) + (len(measures_arg),))
+    measures_name = np.ndarray((len(measures_arg),), dtype=object)
+    for i, measure in enumerate(measures_arg):
         measures[..., i] = (nib.load(measure)).get_fdata()
         # measures[..., i] = np.clip(measures[..., i], 0, None)
         measures_name[i] = Path(measure).name.split(".")[0]
     if names_arg != []:
-        measures_name = np.array(names_arg[0])
+        measures_name = np.array(names_arg)
     return measures, measures_name
 
 
 def extract_measures_as_list(measures_arg, names_arg=[]):
     measures = []
     measures_names = []
-    for i, measure in enumerate(measures_arg[0]):
+    for i, measure in enumerate(measures_arg):
         measures.append((nib.load(measure)).get_fdata())
         measures_names.append(Path(measure).name.split(".")[0])
     if names_arg != []:
-        measures_names = names_arg[0]
+        measures_names = names_arg
     return measures, measures_names
 
 

@@ -28,14 +28,14 @@ def _build_arg_parser():
                    help='Path of the output folder for txt, png, masks and '
                         'measures.')
     
-    p.add_argument('--polyfits', nargs='+', action='append', required=True,
+    p.add_argument('--polyfits', nargs='+', required=True,
                    help='List of polyfit files. Should be the '
                         'output of the \n'
                         'scil_characterize_orientation_dependence.py script.')
 
-    p.add_argument('--in_measures', nargs='+', action='append', required=True,
+    p.add_argument('--in_measures', nargs='+', required=True,
                    help='Path to the measures to correct.')
-    p.add_argument('--measures_names', nargs='+', action='append', required=True,
+    p.add_argument('--measures_names', nargs='+', required=True,
                    help='Name of the measures to correct. Most match the '
                         'names used in the '
                         'scil_characterize_orientation_dependence.py script')
@@ -83,11 +83,11 @@ def main():
                                                         args.measures_names)
     
     for measure, measure_name in zip(measures, measures_names):
-        polyfit_shape = np.load(args.polyfits[0][0])[measure_name + "_polyfit"].shape
-        polyfits = np.ndarray((polyfit_shape) + (len(args.polyfits[0]),))
-        maxima = np.zeros(len(args.polyfits[0]))
-        bundles_names = np.empty(len(args.polyfits[0]), dtype=object)
-        for i, polyfit in enumerate(args.polyfits[0]):
+        polyfit_shape = np.load(args.polyfits[0])[measure_name + "_polyfit"].shape
+        polyfits = np.ndarray((polyfit_shape) + (len(args.polyfits),))
+        maxima = np.zeros(len(args.polyfits))
+        bundles_names = np.empty(len(args.polyfits), dtype=object)
+        for i, polyfit in enumerate(args.polyfits):
             bundle_name = Path(polyfit).parent.name
             if args.lookuptable:
                 if bundle_name in lookuptable:

@@ -36,16 +36,14 @@ def _build_arg_parser():
                    help='Path of the output folder for txt, png, masks and '
                         'measures.')
     
-    p.add_argument('--measures', nargs='+', default=[],
-                   action='append', required=True,
+    p.add_argument('--measures', nargs='+', default=[], required=True,
                    help='List of measures to characterize.')
-    p.add_argument('--measures_names', nargs='+', default=[], action='append',
+    p.add_argument('--measures_names', nargs='+', default=[],
                    help='List of names for the measures to characterize.')
 
-    p.add_argument('--bundles', nargs='+', default=[],
-                   action='append', required=True,
+    p.add_argument('--bundles', nargs='+', default=[], required=True,
                    help='Path to the bundles masks for where to analyze.')
-    p.add_argument('--bundles_names', nargs='+', default=[], action='append',
+    p.add_argument('--bundles_names', nargs='+', default=[],
                    help='List of names for the bundles.')
 
     g = p.add_argument_group(title='Characterization parameters')
@@ -92,9 +90,9 @@ def main():
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.getLevelName(args.verbose))
 
-    nb_measures = len(args.measures[0])
+    nb_measures = len(args.measures)
     if args.measures_names != [] and\
-        (len(args.measures_names[0]) != nb_measures):
+        (len(args.measures_names) != nb_measures):
         parser.error('When using --measures_names, you need to specify ' +
                      'the same number of measures as given in --measures.')
 
@@ -123,12 +121,12 @@ def main():
 
     bundles = []
     bundles_names = []
-    for bundle in args.bundles[0]:
+    for bundle in args.bundles:
         bundles.append(nib.load(bundle).get_fdata())
         bundles_names.append(Path(bundle).name.split(".")[0])
 
     if args.bundles_names:
-        bundles_names = args.bundles_names[0]
+        bundles_names = args.bundles_names
 
     nb_bundles = len(bundles)
     nb_measures = measures.shape[-1]
