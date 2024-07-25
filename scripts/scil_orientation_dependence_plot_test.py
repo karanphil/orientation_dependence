@@ -120,6 +120,7 @@ def main():
     if args.in_whole_wm and "WM" not in bundles_order:
         bundles_order.append("WM")
 
+    # TODO : comment gérer si je veux juste un fit pour certains sets?...
     if args.polyfits:
         polyfits = []
         for i, polyfit in enumerate(args.polyfits[0]):
@@ -127,6 +128,7 @@ def main():
                 print("Loading: ", polyfit)
                 polyfits.append(np.load(polyfit))
 
+    # TODO : modif pour sets
     if args.whole_WM:
         print("Loading: ", args.whole_WM)
         whole_wm = np.load(args.whole_WM)
