@@ -93,6 +93,9 @@ def main():
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.getLevelName(args.verbose))
 
+    measures = args.measures
+    nb_measures = len(measures)
+
     # Load all results
     sets = []
     all_nb_bundles = []
@@ -108,7 +111,7 @@ def main():
             bundles.append(result)
             bundles_names.append(Path(bundle).name.split(".")[0])
             max_count = 0
-            for measure in args.measures:
+            for measure in measures:
                 curr_max_count = np.max(result['Nb_voxels_' + measure])
                 if curr_max_count > max_count:
                     max_count = curr_max_count
@@ -141,6 +144,12 @@ def main():
         bundles_names = args.in_bundles_names
 
     bundles_order = args.bundles_order
+    nb_bundles_to_plot = len(bundles_order)
+    # Verify that all bundles in bundles_order are present in bundles_names
+    if not all(bundle in bundles_names for bundle in bundles_order):
+        parser.error("Some bundles given in --bundles_order do not match"
+                     "the names in --in_bundles_names or extracted from the"
+                     "filenames.")
     # Compute max voxel count with only bundles in bundles_order
     max_count = 0
     for max_counts in all_max_counts:
@@ -168,18 +177,15 @@ def main():
             parser.error("--in_polyfits must contain the same number of "
                          "sets as --in_bundles.")
 
-    min_nb_voxels = args.min_nb_voxels
-    nb_measures = len(args.measures)
-
     # Verify the dimensions of the plot
-    if (nb_bundles > args.max_nb_bundles / 2 and
+    if (nb_bundles_to_plot > args.max_nb_bundles / 2 and
         nb_measures > args.max_nb_measures / 2):
         parser.error("Too many bundles and measures were given at the same"
                      "time. Try reducing the number of bundles to {} or less,"
                      "or the number of measures to {} or less."
                      .format(int(args.max_nb_bundles / 2),
                              int(args.max_nb_measures / 2)))
-    if nb_bundles > args.max_nb_bundles:
+    if nb_bundles_to_plot > args.max_nb_bundles:
         parser.error("Too many bundles were given. Try reducing the number"
                      "of bundles below {}".format(args.max_nb_bundles + 1))
     if nb_measures > args.max_nb_measures:
@@ -188,18 +194,15 @@ def main():
 
     # Compute the configuration of the plot
     if nb_measures > args.max_nb_measures / 2:
-        nb_rows = nb_bundles
+        nb_rows = nb_bundles_to_plot
         nb_columns = nb_measures
     else:
-        nb_rows = int(np.ceil(nb_bundles / 2))
+        nb_rows = int(np.ceil(nb_bundles_to_plot / 2))
         nb_columns = nb_measures * 2
 
-    # TODO: Loop over the sets. Do the plot.
+    min_nb_voxels = args.min_nb_voxels
 
-    # Put bins in the loop so that we can have various bin width in the same plot
-    mid_bins = (results[0]['Angle_min'] + results[0]['Angle_max']) / 2.
-    highres_bins = np.arange(0, 90 + 1, 0.5)
-
+    # Set up the plot parameters. TODO clean this.
     plot_init(dims=(8, 8), font_size=10)
     plt.rcParams['legend.fontsize'] = 8
     plt.rcParams['ytick.labelsize'] = 8
@@ -207,118 +210,124 @@ def main():
     plt.rcParams['lines.linewidth'] = 0.5
     plt.rcParams['lines.markersize'] = 3
     plt.rcParams['axes.titlesize'] = 10
+
+    # Put bins in the loop so that we can have various bin width in the same plot
+    mid_bins = (results[0]['Angle_min'] + results[0]['Angle_max']) / 2.
+    highres_bins = np.arange(0, 90 + 1, 0.5)
+
     fig, ax = plt.subplots(nb_rows, nb_columns, layout='constrained')
-    for i in range(nb_bundles):
-        col = i % 2
-        if col == 1:
-            col = 2
-        row = i // 2
-        if bundles_names[i] in extracted_bundles:
-            bundle_idx = extracted_bundles.index(bundles_names[i])
-            result = results[bundle_idx]
-            for j in range(2):
-                is_measures = result['Nb_voxels_' + measures[j]] >= min_nb_voxels
-                is_not_measures = np.invert(is_measures)
-                norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
-                pts_origin = result['Origin_' + measures[j]]
-                is_original = pts_origin == bundles_names[i]
-                is_none = pts_origin == "None"
-                is_patched = np.logical_and(np.invert(is_none),
-                                            np.invert(is_original))
-                colorbar = ax[row, col + j].scatter(mid_bins[is_original & is_measures],
-                                                result[measures[j]][is_original & is_measures],
-                                                c=result['Nb_voxels_' + measures[j]][is_original & is_measures],
-                                                cmap='Greys', norm=norm,
-                                                edgecolors=cm.naviaS(cmap_idx[j]), linewidths=1)
-                ax[row, col + j].scatter(mid_bins[is_original & is_not_measures],
-                                    result[measures[j]][is_original & is_not_measures],
-                                    c=result['Nb_voxels_' + measures[j]][is_original & is_not_measures],
-                                    cmap='Greys', norm=norm, alpha=0.5,
-                                    edgecolors=cm.naviaS(cmap_idx[j]), linewidths=1)
-                ax[row, col + j].scatter(mid_bins[is_patched & is_measures],
-                                        result[measures[j]][is_patched & is_measures],
-                                        c=result['Nb_voxels_' + measures[j]][is_patched & is_measures],
-                                        cmap='Greys', norm=norm,
+    for i, set in enumerate(sets):
+        for j in range(nb_bundles_to_plot):
+            col = j % 2 # Adjust this for both configs
+            if col == 1:
+                col = 2
+            row = j // 2
+            if bundles_order[j] in bundles_names:
+                bundle_idx = bundles_names.index(bundles_order[j])
+                result = set[bundle_idx]
+                for k in range(2): # Adjust this for both configs
+                    is_measures = result['Nb_voxels_' + measures[k]] >= min_nb_voxels
+                    is_not_measures = np.invert(is_measures)
+                    norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
+                    pts_origin = result['Origin_' + measures[k]]
+                    is_original = pts_origin == bundles_names[j]
+                    is_none = pts_origin == "None"
+                    is_patched = np.logical_and(np.invert(is_none),
+                                                np.invert(is_original))
+                    colorbar = ax[row, col + k].scatter(mid_bins[is_original & is_measures],
+                                                    result[measures[k]][is_original & is_measures],
+                                                    c=result['Nb_voxels_' + measures[k]][is_original & is_measures],
+                                                    cmap='Greys', norm=norm,
+                                                    edgecolors=cm.naviaS(cmap_idx[k]), linewidths=1)
+                    ax[row, col + k].scatter(mid_bins[is_original & is_not_measures],
+                                        result[measures[k]][is_original & is_not_measures],
+                                        c=result['Nb_voxels_' + measures[k]][is_original & is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
+                                        edgecolors=cm.naviaS(cmap_idx[k]), linewidths=1)
+                    ax[row, col + k].scatter(mid_bins[is_patched & is_measures],
+                                            result[measures[k]][is_patched & is_measures],
+                                            c=result['Nb_voxels_' + measures[k]][is_patched & is_measures],
+                                            cmap='Greys', norm=norm,
+                                            edgecolors="red", linewidths=1)
+                    ax[row, col + k].scatter(mid_bins[is_patched & is_not_measures],
+                                        result[measures[k]][is_patched & is_not_measures],
+                                        c=result['Nb_voxels_' + measures[k]][is_patched & is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
                                         edgecolors="red", linewidths=1)
-                ax[row, col + j].scatter(mid_bins[is_patched & is_not_measures],
-                                    result[measures[j]][is_patched & is_not_measures],
-                                    c=result['Nb_voxels_' + measures[j]][is_patched & is_not_measures],
-                                    cmap='Greys', norm=norm, alpha=0.5,
-                                    edgecolors="red", linewidths=1)
 
-            if args.polyfits:
-                polynome_r = np.poly1d(polyfits[bundle_idx][measures[0] + "_polyfit"])
-                ax[row, col].plot(highres_bins, polynome_r(highres_bins), "--",
-                                color=cm.naviaS(cmap_idx[0]))
-                polynome_sat = np.poly1d(polyfits[bundle_idx][measures[1] + "_polyfit"])
-                ax[row, col + 1].plot(highres_bins, polynome_sat(highres_bins), "--",
-                                color=cm.naviaS(cmap_idx[1]))
+                if args.polyfits:
+                    polynome_r = np.poly1d(polyfits[bundle_idx][measures[0] + "_polyfit"])
+                    ax[row, col].plot(highres_bins, polynome_r(highres_bins), "--",
+                                    color=cm.naviaS(cmap_idx[0]))
+                    polynome_sat = np.poly1d(polyfits[bundle_idx][measures[1] + "_polyfit"])
+                    ax[row, col + 1].plot(highres_bins, polynome_sat(highres_bins), "--",
+                                    color=cm.naviaS(cmap_idx[1]))
 
-            ax[row, col].set_ylim(0.975 * np.nanmin(result[measures[0]]),
-                                  1.025 * np.nanmax(result[measures[0]]))
-            ax[row, col].set_yticks([np.round(np.nanmin(result[measures[0]]), decimals=1),
-                                     np.round(np.nanmax(result[measures[0]]), decimals=1)])
-            ax[row, col].set_xlim(0, 90)
-            # ax[row, col].tick_params(axis='y', labelcolor="C0")
-            ax[row, col + 1].set_ylim(0.975 * np.nanmin(result[measures[1]]),
-                                      1.025 * np.nanmax(result[measures[1]]))
-            ax[row, col + 1].set_yticks([np.round(np.nanmin(result[measures[1]]), decimals=1),
-                                         np.round(np.nanmax(result[measures[1]]), decimals=1)])
-            ax[row, col + 1].set_xlim(0, 90)
+                ax[row, col].set_ylim(0.975 * np.nanmin(result[measures[0]]),
+                                    1.025 * np.nanmax(result[measures[0]]))
+                ax[row, col].set_yticks([np.round(np.nanmin(result[measures[0]]), decimals=1),
+                                        np.round(np.nanmax(result[measures[0]]), decimals=1)])
+                ax[row, col].set_xlim(0, 90)
+                # ax[row, col].tick_params(axis='y', labelcolor="C0")
+                ax[row, col + 1].set_ylim(0.975 * np.nanmin(result[measures[1]]),
+                                        1.025 * np.nanmax(result[measures[1]]))
+                ax[row, col + 1].set_yticks([np.round(np.nanmin(result[measures[1]]), decimals=1),
+                                            np.round(np.nanmax(result[measures[1]]), decimals=1)])
+                ax[row, col + 1].set_xlim(0, 90)
 
-            bundle_idx += 1
-        else:
-            is_measures = whole_wm['Nb_voxels'] >= min_nb_voxels
-            is_not_measures = np.invert(is_measures)
-            for j in range(2):
-                ax[row, col + j].scatter(whole_mid_bins[is_measures],
-                                    whole_wm[measures[j]][is_measures],
-                                    c=whole_wm['Nb_voxels'][is_measures],
-                                    cmap='Greys', norm=norm,
-                                    edgecolors=cm.naviaS(cmap_idx[j]), linewidths=1)
-                ax[row, col + j].scatter(whole_mid_bins[is_not_measures],
-                                    whole_wm[measures[j]][is_not_measures],
-                                    c=whole_wm['Nb_voxels'][is_not_measures],
-                                    cmap='Greys', norm=norm, alpha=0.5,
-                                    edgecolors=cm.naviaS(cmap_idx[j]), linewidths=1)
+                bundle_idx += 1
+            else:
+                is_measures = whole_wm['Nb_voxels'] >= min_nb_voxels
+                is_not_measures = np.invert(is_measures)
+                for k in range(2):
+                    ax[row, col + k].scatter(whole_mid_bins[is_measures],
+                                        whole_wm[measures[k]][is_measures],
+                                        c=whole_wm['Nb_voxels'][is_measures],
+                                        cmap='Greys', norm=norm,
+                                        edgecolors=cm.naviaS(cmap_idx[k]), linewidths=1)
+                    ax[row, col + k].scatter(whole_mid_bins[is_not_measures],
+                                        whole_wm[measures[k]][is_not_measures],
+                                        c=whole_wm['Nb_voxels'][is_not_measures],
+                                        cmap='Greys', norm=norm, alpha=0.5,
+                                        edgecolors=cm.naviaS(cmap_idx[k]), linewidths=1)
 
-                ax[row, col + j].set_ylim(0.975 * np.nanmin(whole_wm[measures[j]]),
-                                    1.025 * np.nanmax(whole_wm[measures[j]]))
-                ax[row, col + j].set_yticks([np.round(np.nanmin(whole_wm[measures[j]]), decimals=1),
-                                        np.round(np.nanmax(whole_wm[measures[j]]), decimals=1)])
-                ax[row, col + j].set_xlim(0, 90)
+                    ax[row, col + k].set_ylim(0.975 * np.nanmin(whole_wm[measures[k]]),
+                                        1.025 * np.nanmax(whole_wm[measures[k]]))
+                    ax[row, col + k].set_yticks([np.round(np.nanmin(whole_wm[measures[k]]), decimals=1),
+                                            np.round(np.nanmax(whole_wm[measures[k]]), decimals=1)])
+                    ax[row, col + k].set_xlim(0, 90)
 
-        ax[row, col + 1].yaxis.set_label_position("right")
-        ax[row, col + 1].yaxis.tick_right()
+            ax[row, col + 1].yaxis.set_label_position("right")
+            ax[row, col + 1].yaxis.tick_right()
 
-        # if col == 0:
-        #     ax[row, col + 1].legend(handles=[colorbar], labels=[bundles_names[i]],
-        #                         loc='center left', bbox_to_anchor=(1.0, 0.5),
-        #                         markerscale=0, handletextpad=-2.0, handlelength=2)
-        # if col == 0:
-        #     ax[row, col].legend(handles=[colorbar], labels=[bundles_names[i]],
-        #                         loc='center left', bbox_to_anchor=(-0.6, 0.5),
-        #                         markerscale=0, handletextpad=-2.0, handlelength=2)
-        if row != nb_rows - 1:
-            ax[row, col].get_xaxis().set_ticks([])
-            ax[row, col + 1].get_xaxis().set_ticks([])
+            # if col == 0:
+            #     ax[row, col + 1].legend(handles=[colorbar], labels=[bundles_names[i]],
+            #                         loc='center left', bbox_to_anchor=(1.0, 0.5),
+            #                         markerscale=0, handletextpad=-2.0, handlelength=2)
+            # if col == 0:
+            #     ax[row, col].legend(handles=[colorbar], labels=[bundles_names[i]],
+            #                         loc='center left', bbox_to_anchor=(-0.6, 0.5),
+            #                         markerscale=0, handletextpad=-2.0, handlelength=2)
+            if row != nb_rows - 1:
+                ax[row, col].get_xaxis().set_ticks([])
+                ax[row, col + 1].get_xaxis().set_ticks([])
 
-        if row == 0:
-            ax[row, col].title.set_text(measures[0])
-            ax[row, col + 1].title.set_text(measures[1])
+            if row == 0:
+                ax[row, col].title.set_text(measures[0])
+                ax[row, col + 1].title.set_text(measures[1])
 
-        if bundles_names[i].split('_')[0] == 'SLF':
-            fontsize = 7
-        else:
-            fontsize = 9
-        ax[row, col].set_ylabel(bundles_names[i], labelpad=10, fontsize=fontsize)
-        # if row == (nb_rows - 1) / 2 and col == 0:
-        #     ax[row, col].set_ylabel('MTR', color="C0")
-        #     ax[row, col + 1].set_ylabel('ihMTR', color="C2")
-        #     ax[row, col].yaxis.set_label_coords(-0.2, 0.5)
-        # if row == (nb_rows - 1) / 2 and col == 0:
-        #     axt.set_ylabel('MTsat', color="C1")
-        #     axt2.set_ylabel('ihMTsat', color="C4")
+            if bundles_names[j].split('_')[0] == 'SLF':
+                fontsize = 7
+            else:
+                fontsize = 9
+            ax[row, col].set_ylabel(bundles_names[j], labelpad=10, fontsize=fontsize)
+            # if row == (nb_rows - 1) / 2 and col == 0:
+            #     ax[row, col].set_ylabel('MTR', color="C0")
+            #     ax[row, col + 1].set_ylabel('ihMTR', color="C2")
+            #     ax[row, col].yaxis.set_label_coords(-0.2, 0.5)
+            # if row == (nb_rows - 1) / 2 and col == 0:
+            #     axt.set_ylabel('MTsat', color="C1")
+            #     axt2.set_ylabel('ihMTsat', color="C4")
     fig.colorbar(colorbar, ax=ax[:, -1], location='right',
                  label="Voxel count", aspect=100)
     ax[nb_rows - 1, 0].set_xlabel(r'$\theta_a$')
