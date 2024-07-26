@@ -236,42 +236,45 @@ def main():
                 is_measures = result['Nb_voxels_' + measures[k]] >= min_nb_voxels
                 is_not_measures = np.invert(is_measures)
                 norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
+                color = cm.naviaS(cmap_idx[i + (nb_sets > 1) * k]) # TODO: add something to take any matplotlib colormap (parser argument)
                 pts_origin = result['Origin_' + measures[k]]
                 is_original = pts_origin == bundles_names[j]
                 is_none = pts_origin == "None"
                 is_patched = np.logical_and(np.invert(is_none),
                                             np.invert(is_original))
                 colorbar = ax[row, col + k].scatter(mid_bins[is_original & is_measures],
-                                                result[measures[k]][is_original & is_measures],
-                                                c=result['Nb_voxels_' + measures[k]][is_original & is_measures],
-                                                cmap='Greys', norm=norm,
-                                                edgecolors=cm.naviaS(cmap_idx[k]), linewidths=1)
+                                                    result[measures[k]][is_original & is_measures],
+                                                    c=result['Nb_voxels_' + measures[k]][is_original & is_measures],
+                                                    cmap='Greys', norm=norm,
+                                                    edgecolors=color,
+                                                    linewidths=1)
                 ax[row, col + k].scatter(mid_bins[is_original & is_not_measures],
-                                    result[measures[k]][is_original & is_not_measures],
-                                    c=result['Nb_voxels_' + measures[k]][is_original & is_not_measures],
-                                    cmap='Greys', norm=norm, alpha=0.5,
-                                    edgecolors=cm.naviaS(cmap_idx[k]), linewidths=1)
+                                         result[measures[k]][is_original & is_not_measures],
+                                         c=result['Nb_voxels_' + measures[k]][is_original & is_not_measures],
+                                         cmap='Greys', norm=norm, alpha=0.5,
+                                         edgecolors=color, linewidths=1)
                 ax[row, col + k].scatter(mid_bins[is_patched & is_measures],
-                                        result[measures[k]][is_patched & is_measures],
-                                        c=result['Nb_voxels_' + measures[k]][is_patched & is_measures],
-                                        cmap='Greys', norm=norm, markers="x",
-                                        edgecolors=cm.naviaS(cmap_idx[k]), linewidths=1)
+                                         result[measures[k]][is_patched & is_measures],
+                                         c=result['Nb_voxels_' + measures[k]][is_patched & is_measures],
+                                         cmap='Greys', norm=norm, markers="x",
+                                         edgecolors=color, linewidths=1)
                 ax[row, col + k].scatter(mid_bins[is_patched & is_not_measures],
-                                    result[measures[k]][is_patched & is_not_measures],
-                                    c=result['Nb_voxels_' + measures[k]][is_patched & is_not_measures],
-                                    cmap='Greys', norm=norm, markers="x", alpha=0.5,
-                                    edgecolors=cm.naviaS(cmap_idx[k]), linewidths=1)
+                                         result[measures[k]][is_patched & is_not_measures],
+                                         c=result['Nb_voxels_' + measures[k]][is_patched & is_not_measures],
+                                         cmap='Greys', norm=norm, markers="x",
+                                         alpha=0.5, edgecolors=color,
+                                         linewidths=1)
 
                 if args.polyfits:
                     polyfits = all_polyfits[i]
                     polynome_r = np.poly1d(polyfits[bundle_idx][measures[k] + "_polyfit"])
-                    ax[row, col + k].plot(highres_bins, polynome_r(highres_bins), "--",
-                                    color=cm.naviaS(cmap_idx[k]))
+                    ax[row, col + k].plot(highres_bins, polynome_r(highres_bins),
+                                          "--", color=color)
 
                 ax[row, col + k].set_ylim(0.975 * np.nanmin(result[measures[k]]),
-                                            1.025 * np.nanmax(result[measures[k]]))
+                                          1.025 * np.nanmax(result[measures[k]]))
                 ax[row, col + k].set_yticks([np.round(np.nanmin(result[measures[k]]), decimals=1),
-                                                np.round(np.nanmax(result[measures[k]]), decimals=1)])
+                                             np.round(np.nanmax(result[measures[k]]), decimals=1)])
                 ax[row, col + k].set_xlim(0, 90)
 
                 if (col + k) % 2 != 0:
