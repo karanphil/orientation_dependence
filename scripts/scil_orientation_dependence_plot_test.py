@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Pro tip: There is no more --whole_wm argument. Simply pass the whole WM
+characterization (and polyfit) as a bundle with name WM and put WM last in
+--bundles_order.
+"""
+
 import argparse
 from cmcrameri import cm
 import matplotlib as mpl
@@ -23,8 +31,9 @@ def _build_arg_parser():
                         'of all bundles results. \nHowever, to plot multiple '
                         'sets of results, repeat the argument --in_bundles '
                         'for each set. \nFor instance with an original and a '
-                        'corrected dataset: --in_bundles original/*.trk '
-                        '--in_bundles corrected/*.trk '
+                        'corrected dataset: \n--in_bundles '
+                        'original/*/results.npz --in_bundles '
+                        'corrected/*/results.npz '
                         '\nMake sure that each set has the same number of '
                         'bundles.')
     
@@ -36,19 +45,23 @@ def _build_arg_parser():
     
     p.add_argument('--bundles_order', nargs='+',
                    help='Order in which to plot the bundles. This does not '
-                        'have to be the same length as --in_bundles_names. '
+                        'have to be the same length \nas --in_bundles_names. '
                         'Thus, it can be used to select only a few bundles. '
-                        'If whole WM results are given (--in_whole_WM), use '
-                        'the name WM to locate it in the bundles order. If no '
-                        'WM name is in the list but --in_whole_wm is used, it '
-                        'will be put at the end. By default, will follow the '
-                        'order given by --in_bundles.')
+                        '\nBy default, will follow the order given by '
+                        '--in_bundles.')
     
     p.add_argument('--in_polyfits', nargs='+', action='append',
-                   help='List of characterization polyfits.')
-
-    p.add_argument('--in_whole_wm', action='append',
-                   help='Path to the whole WM characterization.')
+                   help='Polyfits results for all bundles. \nShould '
+                        'be the output of '
+                        'scil_orientation_dependence_characterization.py. '
+                        '\nIf multiple sets were given for --in_bundles, '
+                        'there should be an equal number of sets for this '
+                        'argument too. \nFor instance with an '
+                        'original and a corrected dataset: \n--in_polyfits '
+                        'original/*/polyfits.npz --in_polyfits '
+                        'corrected/*/polyfits.npz '
+                        '\nMake sure that each set has the same number of '
+                        'bundles.')
     
     p.add_argument('--measures', nargs='+',
                    help='List of measures to plot.')
@@ -70,6 +83,7 @@ def main():
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.getLevelName(args.verbose))
 
+    # Load all results
     sets = []
     all_nb_bundles = []
     all_bundles_names = []
@@ -84,7 +98,7 @@ def main():
             bundles.append(result)
             bundles_names.append(Path(bundle).name.split(".")[0])
             max_count = 0
-            for measure in args.measures:
+            for measure in args.measures:  # This will not work if multiple plots are produced
                 curr_max_count = np.max(result['Nb_voxels_' + measure])
                 if curr_max_count > max_count:
                     max_count = curr_max_count
@@ -115,25 +129,17 @@ def main():
                          "elements as in each set of --in_bundles.")
         bundles_names = args.in_bundles_names
 
-    # Add WM name if not in bundles order and whole WM results are given
-    bundles_order = args.bundles_order
-    if args.in_whole_wm and "WM" not in bundles_order:
-        bundles_order.append("WM")
-
-    # TODO : comment gérer si je veux juste un fit pour certains sets?...
+    # Load all polyfits
     if args.polyfits:
-        polyfits = []
-        for i, polyfit in enumerate(args.polyfits[0]):
-            if str(Path(polyfit).parent) in bundles_names:
-                print("Loading: ", polyfit)
+        all_polyfits = []
+        for set in args.polyfits:
+            polyfits = []
+            for polyfit in set:
+                logging.info("Loading: {}".format(polyfit))
                 polyfits.append(np.load(polyfit))
+            all_polyfits.append(polyfits)
 
-    # TODO : modif pour sets
-    if args.whole_WM:
-        print("Loading: ", args.whole_WM)
-        whole_wm = np.load(args.whole_WM)
-        whole_mid_bins = (whole_wm['Angle_min'] + whole_wm['Angle_max']) / 2.
-
+    bundles_order = args.bundles_order
     min_nb_voxels = args.min_nb_voxels
 
     # TODO la suite
