@@ -32,6 +32,20 @@ def extract_measures_as_list(measures_arg, names_arg=[]):
     return measures, measures_names
 
 
+def initialize_plot(args):
+    plt.rcParams['axes.grid'] = False
+    plt.rcParams['figure.figsize'] = (args.figsize[0], args.figsize[1]) or (12.0, 5.0)
+    plt.rcParams['font.size'] = args.font_size or 10
+    plt.rcParams['axes.labelsize'] = args.axes_labelsize or args.font_size
+    plt.rcParams['axes.titlesize'] = args.axes_titlesize or 1.2 * args.font_size
+    plt.rcParams['legend.fontsize'] = args.legend_fontsize or args.font_size
+    plt.rcParams['xtick.labelsize'] = args.xtick_labelsize or args.font_size
+    plt.rcParams['ytick.labelsize'] = args.ytick_labelsize or args.font_size
+    plt.rcParams['axes.linewidth'] = args.axes_linewidth or 1
+    plt.rcParams['lines.linewidth'] = args.lines_linewidth or 0.5
+    plt.rcParams['lines.markersize'] = args.lines_markersize or 3
+
+
 def plot_init(dims=(12.0, 5.0), font_size=12):
     plt.rcParams['axes.grid'] = False
     plt.rcParams['grid.color'] = "darkgrey"

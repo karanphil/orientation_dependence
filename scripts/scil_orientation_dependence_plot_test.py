@@ -18,7 +18,7 @@ from scilpy.io.utils import (add_verbose_arg, assert_inputs_exist,
                              assert_outputs_exist, add_overwrite_arg)
 from scilpy.viz.color import get_lookup_table
 
-from modules.io import plot_init
+from modules.io import initialize_plot
 
 
 def _build_arg_parser():
@@ -91,6 +91,38 @@ def _build_arg_parser():
                         'separeted by a - to create your own colormap. '
                         '\nBy default, will use the naviaS colormap from the '
                         'cmcrameri library.')
+
+    g = p.add_argument_group(title="Plot parameters")
+
+    g.add_argument("--figsize", default=[8, 8], nargs=2,
+                   help='rcParams figure.figsize [%(default)s].')
+
+    g.add_argument("--font_size", default=10, type=int,
+                   help='rcParams font.size [%(default)s].')
+
+    g.add_argument("--axes_labelsize", default=10, type=int,
+                   help='rcParams axes.labelsize [%(default)s].')
+
+    g.add_argument("--axes_titlesize", default=10, type=int,
+                   help='rcParams axes.titlesize [%(default)s].')
+
+    g.add_argument("--legend_fontsize", default=8, type=int,
+                   help='rcParams legend.fontsize [%(default)s].')
+
+    g.add_argument("--xtick_labelsize", default=8, type=int,
+                   help='rcParams xtick.labelsize [%(default)s].')
+
+    g.add_argument("--ytick_labelsize", default=8, type=int,
+                   help='rcParams ytick.labelsize [%(default)s].')
+
+    g.add_argument("--axes_linewidth", default=1, type=float,
+                   help='rcParams axes.linewidth [%(default)s].')
+
+    g.add_argument("--lines_linewidth", default=0.5, type=float,
+                   help='rcParams lines.linewidth [%(default)s].')
+
+    g.add_argument("--lines_markersize", default=3, type=float,
+                   help='rcParams lines.markersize [%(default)s].')
 
     add_overwrite_arg(p)
     add_verbose_arg(p)
@@ -227,16 +259,10 @@ def main():
         cmap = cm.naviaS
         cmap_idx = np.arange(2, 20, 1)
 
-    # Set up the plot parameters. TODO clean this.
-    plot_init(dims=(8, 8), font_size=10)
-    plt.rcParams['legend.fontsize'] = 8
-    plt.rcParams['ytick.labelsize'] = 8
-    plt.rcParams['xtick.labelsize'] = 8
-    plt.rcParams['lines.linewidth'] = 0.5
-    plt.rcParams['lines.markersize'] = 3
-    plt.rcParams['axes.titlesize'] = 10
-
+    initialize_plot(args)
     fig, ax = plt.subplots(nb_rows, nb_columns, layout='constrained')
+    min_measures = np.ones((nb_bundles_to_plot, nb_measures)) * 10000000
+    max_measures = np.zeros((nb_bundles_to_plot, nb_measures))
     for i, set in enumerate(sets):
         for j in range(nb_bundles_to_plot):
             # for nb_measures <= args.max_nb_measures / 2
@@ -290,11 +316,16 @@ def main():
                     ax[row, col + k].plot(highres_bins, polynome_r(highres_bins),
                                           "--", color=color)
 
-                # TODO: This does not work between sets!!!
-                ax[row, col + k].set_ylim(0.975 * np.nanmin(result[measures[k]]),
-                                          1.025 * np.nanmax(result[measures[k]]))
-                ax[row, col + k].set_yticks([np.round(np.nanmin(result[measures[k]]), decimals=1),
-                                             np.round(np.nanmax(result[measures[k]]), decimals=1)])
+                if 0.975 * np.nanmin(result[measures[k]]) < min_measures[j, k]:
+                    min_measures[j, k] = 0.975 * np.nanmin(result[measures[k]])
+                if 1.025 * np.nanmax(result[measures[k]]) > max_measures[j, k]:
+                    max_measures[j, k] = 1.025 * np.nanmax(result[measures[k]])
+                ax[row, col + k].set_ylim(min_measures[j, k],
+                                          max_measures[j, k])
+                ax[row, col + k].set_yticks([np.round(min_measures[j, k],
+                                                      decimals=1),
+                                             np.round(max_measures[j, k],
+                                                      decimals=1)])
                 ax[row, col + k].set_xlim(0, 90)
 
                 if (col + k) % 2 != 0:
@@ -321,12 +352,6 @@ def main():
     fig.colorbar(colorbar, ax=ax[:, -1], location='right',
                  label="Voxel count", aspect=100)
     fig.get_layout_engine().set(h_pad=0, hspace=0)
-    # if 'MTR' in measures:
-    #     line = plt.Line2D([0.455, 0.455], [0.035,0.985], transform=fig.transFigure, color="black", linestyle=(0, (5, 5)), alpha=0.7)
-    # if 'ihMTR' in measures:
-    #     line = plt.Line2D([0.458, 0.458], [0.035,0.985], transform=fig.transFigure, color="black", linestyle=(0, (5, 5)), alpha=0.7)
-    # fig.add_artist(line)
-    # plt.show()
     plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
     plt.close()
 
