@@ -73,6 +73,16 @@ def _build_arg_parser():
                    help='Value of the minimal number of voxels per bin '
                         '[%(default)s].')
 
+    p.add_argument('--max_nb_bundles', default=34, type=int,
+                   help='Maximum number of bundles that can be plotted '
+                        '\nIt is not recommended to change this value '
+                        '[%(default)s].')
+    
+    p.add_argument('--max_nb_measures', default=4, type=int,
+                   help='Maximum number of measures that can be plotted. '
+                        '\nIt is not recommended to change this value '
+                        '[%(default)s].')
+
     add_verbose_arg(p)
 
     return p
@@ -98,7 +108,7 @@ def main():
             bundles.append(result)
             bundles_names.append(Path(bundle).name.split(".")[0])
             max_count = 0
-            for measure in args.measures:  # This will not work if multiple plots are produced
+            for measure in args.measures:
                 curr_max_count = np.max(result['Nb_voxels_' + measure])
                 if curr_max_count > max_count:
                     max_count = curr_max_count
@@ -107,6 +117,7 @@ def main():
         all_nb_bundles.append(len(set))
         all_bundles_names.append(bundles_names)
         all_max_counts.append(max_counts)
+    nb_sets = len(sets)
 
     # Verify that all sets have the same dimension
     if all(nb_bundles == all_nb_bundles[0] for nb_bundles in all_nb_bundles):
@@ -129,6 +140,15 @@ def main():
                          "elements as in each set of --in_bundles.")
         bundles_names = args.in_bundles_names
 
+    bundles_order = args.bundles_order
+    # Compute max voxel count with only bundles in bundles_order
+    max_count = 0
+    for max_counts in all_max_counts:
+        for bundle in bundles_order:
+            bundle_idx = bundles_names.index(bundle)
+            if max_counts[bundle_idx] > max_count:
+                max_count = max_counts[bundle_idx]
+
     # Load all polyfits
     if args.polyfits:
         all_polyfits = []
@@ -139,22 +159,47 @@ def main():
                 polyfits.append(np.load(polyfit))
             all_polyfits.append(polyfits)
 
-    bundles_order = args.bundles_order
+            # Verify that number of polyfits equals number of bundles
+            if len(polyfits) != nb_bundles:
+                parser.error("--in_polyfits must contain the same number of "
+                             "elements as in each set of --in_bundles.")
+        # Verify that polyfits and bundles have same number of sets
+        if len(all_polyfits) != nb_sets:
+            parser.error("--in_polyfits must contain the same number of "
+                         "sets as --in_bundles.")
+
     min_nb_voxels = args.min_nb_voxels
+    nb_measures = len(args.measures)
 
-    # TODO la suite
+    # Verify the dimensions of the plot
+    if (nb_bundles > args.max_nb_bundles / 2 and
+        nb_measures > args.max_nb_measures / 2):
+        parser.error("Too many bundles and measures were given at the same"
+                     "time. Try reducing the number of bundles to {} or less,"
+                     "or the number of measures to {} or less."
+                     .format(int(args.max_nb_bundles / 2),
+                             int(args.max_nb_measures / 2)))
+    if nb_bundles > args.max_nb_bundles:
+        parser.error("Too many bundles were given. Try reducing the number"
+                     "of bundles below {}".format(args.max_nb_bundles + 1))
+    if nb_measures > args.max_nb_measures:
+        parser.error("Too many measures were given. Try reducing the number"
+                     "of measures below {}".format(args.max_nb_measures + 1))
 
-    # TODO compute max count depending of plot configuration
-    # For plot configure, add an argument for the dimension of the plot. If the
-    # number of bundles and number of measures don't fit: parser.error? or split into two plots?
+    # Compute the configuration of the plot
+    if nb_measures > args.max_nb_measures / 2:
+        nb_rows = nb_bundles
+        nb_columns = nb_measures
+    else:
+        nb_rows = int(np.ceil(nb_bundles / 2))
+        nb_columns = nb_measures * 2
 
-    nb_bundles = len(bundles_names)
-    nb_rows = int(np.ceil(nb_bundles / 2))
+    # TODO: Loop over the sets. Do the plot.
 
+    # Put bins in the loop so that we can have various bin width in the same plot
     mid_bins = (results[0]['Angle_min'] + results[0]['Angle_max']) / 2.
     highres_bins = np.arange(0, 90 + 1, 0.5)
 
-    out_path1 = out_folder / args.out_name
     plot_init(dims=(8, 8), font_size=10)
     plt.rcParams['legend.fontsize'] = 8
     plt.rcParams['ytick.labelsize'] = 8
@@ -162,7 +207,7 @@ def main():
     plt.rcParams['lines.linewidth'] = 0.5
     plt.rcParams['lines.markersize'] = 3
     plt.rcParams['axes.titlesize'] = 10
-    fig, ax = plt.subplots(nb_rows, 4, layout='constrained')
+    fig, ax = plt.subplots(nb_rows, nb_columns, layout='constrained')
     for i in range(nb_bundles):
         col = i % 2
         if col == 1:
@@ -297,7 +342,7 @@ def main():
         line = plt.Line2D([0.458, 0.458], [0.035,0.985], transform=fig.transFigure, color="black", linestyle=(0, (5, 5)), alpha=0.7)
     fig.add_artist(line)
     # plt.show()
-    plt.savefig(out_path1, dpi=500, bbox_inches='tight')
+    plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
     plt.close()
 
 
