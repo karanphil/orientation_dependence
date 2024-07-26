@@ -243,7 +243,7 @@ def main():
             if split_columns:
                 col = j % 2
                 if col == 1:
-                    col = 2
+                    col = int(nb_columns / 2)
                 row = j // 2
             # for nb_measures > args.max_nb_measures / 2
             else:
