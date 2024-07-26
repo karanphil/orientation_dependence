@@ -14,7 +14,9 @@ import numpy as np
 import logging
 from pathlib import Path
 
-from scilpy.io.utils import add_verbose_arg
+from scilpy.io.utils import (add_verbose_arg, assert_inputs_exist,
+                             assert_outputs_exist, add_overwrite_arg)
+from scilpy.viz.color import get_lookup_table
 
 from modules.io import plot_init
 
@@ -22,6 +24,9 @@ from modules.io import plot_init
 def _build_arg_parser():
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+    
+    p.add_argument('--measures', nargs='+', required=True,
+                   help='List of measures to plot.')
     
     p.add_argument('--in_bundles', nargs='+', action='append', required=True,
                    help='Characterization results for all bundles. \nShould '
@@ -41,7 +46,7 @@ def _build_arg_parser():
                    help='List of the names of the bundles, in the same order '
                         'as they were given. \nIf this argument is not used, '
                         'the script assumes that the name of the bundle \nis '
-                        'its filename without extensions.')
+                        'the name of the parent folder.')
     
     p.add_argument('--bundles_order', nargs='+',
                    help='Order in which to plot the bundles. This does not '
@@ -62,9 +67,6 @@ def _build_arg_parser():
                         'corrected/*/polyfits.npz '
                         '\nMake sure that each set has the same number of '
                         'bundles.')
-    
-    p.add_argument('--measures', nargs='+',
-                   help='List of measures to plot.')
 
     p.add_argument('--out_filename', default='orientation_dependence_plot.png',
                    help='Path and name of the output file.')
@@ -82,7 +84,15 @@ def _build_arg_parser():
                    help='Maximum number of measures that can be plotted. '
                         '\nIt is not recommended to change this value '
                         '[%(default)s].')
+    
+    p.add_argument('--colormap',
+                   help='Select the colormap for colored trk (dps/dpp) '
+                        '[%(default)s].\nUse two Matplotlib named color '
+                        'separeted by a - to create your own colormap. '
+                        '\nBy default, will use the naviaS colormap from the '
+                        'cmcrameri library.')
 
+    add_overwrite_arg(p)
     add_verbose_arg(p)
 
     return p
@@ -92,6 +102,11 @@ def main():
     parser = _build_arg_parser()
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.getLevelName(args.verbose))
+
+    # This does not work since the inputs are lists of lists.
+    # I would have to adjust assert_inputs_exist in scilpy
+    # assert_inputs_exist(parser, args.in_bundles, args.in_polyfits)
+    assert_outputs_exist(parser, args, args.out_filename)
 
     measures = args.measures
     nb_measures = len(measures)
@@ -109,7 +124,7 @@ def main():
             logging.info("Loading: {}".format(bundle))
             result = np.load(bundle)
             bundles.append(result)
-            bundles_names.append(Path(bundle).name.split(".")[0])
+            bundles_names.append(Path(bundle).parent.name)
             max_count = 0
             for measure in measures:
                 curr_max_count = np.max(result['Nb_voxels_' + measure])
@@ -131,7 +146,7 @@ def main():
 
     if not args.in_bundles_names:
         # Verify that all extracted bundle names are the same between sets
-        if all(name == all_bundles_names[0] for name in all_bundles_names):
+        if not all(name == all_bundles_names[0] for name in all_bundles_names):
             parser.error("Bundles extracted from different sets do not seem "
                          "to be the same. Use --in_bundles_names if the "
                          "naming of files is not consistent across sets.")
@@ -159,9 +174,9 @@ def main():
                 max_count = max_counts[bundle_idx]
 
     # Load all polyfits
-    if args.polyfits:
+    if args.in_polyfits:
         all_polyfits = []
-        for set in args.polyfits:
+        for set in args.in_polyfits:
             polyfits = []
             for polyfit in set:
                 logging.info("Loading: {}".format(polyfit))
@@ -204,7 +219,13 @@ def main():
 
     min_nb_voxels = args.min_nb_voxels
     highres_bins = np.arange(0, 90 + 1, 0.5)
-    cmap_idx = np.arange(2, 20, 1)
+    # Set colormap
+    if args.colormap:
+        cmap = get_lookup_table(args.colormap)
+        cmap_idx = np.arange(0, 18, 1)
+    else:
+        cmap = cm.naviaS
+        cmap_idx = np.arange(2, 20, 1)
 
     # Set up the plot parameters. TODO clean this.
     plot_init(dims=(8, 8), font_size=10)
@@ -227,7 +248,7 @@ def main():
             # for nb_measures > args.max_nb_measures / 2
             else:
                 col = 0
-                row = i
+                row = j
 
             bundle_idx = bundles_names.index(bundles_order[j])
             result = set[bundle_idx]
@@ -236,9 +257,9 @@ def main():
                 is_measures = result['Nb_voxels_' + measures[k]] >= min_nb_voxels
                 is_not_measures = np.invert(is_measures)
                 norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
-                color = cm.naviaS(cmap_idx[i + (nb_sets > 1) * k]) # TODO: add something to take any matplotlib colormap (parser argument)
+                color = cmap(cmap_idx[i + (nb_sets == 1) * k])
                 pts_origin = result['Origin_' + measures[k]]
-                is_original = pts_origin == bundles_names[j]
+                is_original = pts_origin == bundles_order[j]
                 is_none = pts_origin == "None"
                 is_patched = np.logical_and(np.invert(is_none),
                                             np.invert(is_original))
@@ -256,21 +277,22 @@ def main():
                 ax[row, col + k].scatter(mid_bins[is_patched & is_measures],
                                          result[measures[k]][is_patched & is_measures],
                                          c=result['Nb_voxels_' + measures[k]][is_patched & is_measures],
-                                         cmap='Greys', norm=norm, markers="x",
+                                         cmap='Greys', norm=norm, marker="s",
                                          edgecolors=color, linewidths=1)
                 ax[row, col + k].scatter(mid_bins[is_patched & is_not_measures],
                                          result[measures[k]][is_patched & is_not_measures],
                                          c=result['Nb_voxels_' + measures[k]][is_patched & is_not_measures],
-                                         cmap='Greys', norm=norm, markers="x",
+                                         cmap='Greys', norm=norm, marker="s",
                                          alpha=0.5, edgecolors=color,
                                          linewidths=1)
 
-                if args.polyfits:
+                if args.in_polyfits:
                     polyfits = all_polyfits[i]
                     polynome_r = np.poly1d(polyfits[bundle_idx][measures[k] + "_polyfit"])
                     ax[row, col + k].plot(highres_bins, polynome_r(highres_bins),
                                           "--", color=color)
 
+                # TODO: This does not work between sets!!!
                 ax[row, col + k].set_ylim(0.975 * np.nanmin(result[measures[k]]),
                                           1.025 * np.nanmax(result[measures[k]]))
                 ax[row, col + k].set_yticks([np.round(np.nanmin(result[measures[k]]), decimals=1),
@@ -291,11 +313,11 @@ def main():
                 if row == 0:
                     ax[row, col + k].title.set_text(measures[k])
 
-            if len(bundles_names[j]) > 5:
+            if len(bundles_order[j]) > 6:
                 fontsize = 7
             else:
                 fontsize = 9
-            ax[row, col].set_ylabel(bundles_names[j], labelpad=10,
+            ax[row, col].set_ylabel(bundles_order[j], labelpad=10,
                                     fontsize=fontsize)
 
     fig.colorbar(colorbar, ax=ax[:, -1], location='right',
