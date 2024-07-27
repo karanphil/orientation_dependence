@@ -265,12 +265,10 @@ def main():
     max_measures = np.zeros((nb_bundles_to_plot, nb_measures))
     for i, set in enumerate(sets):
         for j in range(nb_bundles_to_plot):
-            # for nb_measures <= args.max_nb_measures / 2
-            if split_columns:
+            if split_columns:  # for nb_measures <= args.max_nb_measures / 2
                 col = (j % 2) * int(nb_columns / 2)
                 row = j // 2
-            # for nb_measures > args.max_nb_measures / 2
-            else:
+            else:  # for nb_measures > args.max_nb_measures / 2
                 col = 0
                 row = j
 
