@@ -374,7 +374,7 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None):
             extend_measure(bins, means[..., i], is_measure=is_measures[..., i],
                            weights=weights[..., i])
         # Ensure that we don't have the "perfect" fit with nb_points - 1
-        curr_max_poly_order = int(len(new_is_measures) * 0.5)
+        curr_max_poly_order = int(np.ceil(len(new_is_measures) * 0.5))
         min_poly_order = 1
         poly_order_list = np.arange(min_poly_order,
                                     curr_max_poly_order + 1, 1)
