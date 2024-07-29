@@ -16,7 +16,6 @@ cd $wdir;
 bin_width=5;
 bin_width_dir="${bin_width}_degree_bins";
 polyfit_commands="--save_polyfit --use_weighted_polyfit";
-#polyfit_commands="";
 for bundle in bundles/sub-026-hc_ses-3/bundles/*;
     do bundle_name=$(basename -- "${bundle%%.*}");
     bundles_names+=$bundle_name;
