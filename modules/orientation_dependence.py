@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 
 from scipy.stats import (shapiro, kstest)
@@ -372,35 +373,34 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None):
         new_bins, new_means, new_is_measures, new_weights =\
             extend_measure(bins, means[..., i], is_measure=is_measures[..., i],
                            weights=weights[..., i])
-        curr_max_poly_order = len(new_is_measures) - 1
-        # mid_bins = (new_bins[:-1] + new_bins[1:]) / 2.
-        poly_order_list = np.arange(int(len(new_is_measures) / 5), # this works well to not start too low, but still depend on the nb of points
-                                    curr_max_poly_order, 1)
+        # Ensure that we don't have the "perfect" fit with nb_points - 1
+        curr_max_poly_order = int(len(new_is_measures) * 0.5)
+        min_poly_order = 1
+        poly_order_list = np.arange(min_poly_order,
+                                    curr_max_poly_order + 1, 1)
         previous_var = 1000000
-        best_pc_change = 1
-        best_poly_order = 1
-        # print("Nb points: ", len(new_is_measures))
-        for poly_order_l in poly_order_list:
-            # print("Trying poly order: ", poly_order_l)
+        vars = np.ones((len(poly_order_list))) * 10000
+        pc_change = np.ones((len(poly_order_list)))
+        logging.info("Nb points: {}".format(len(new_is_measures)))
+        for j, poly_order_l in enumerate(poly_order_list):
+            logging.info("Trying poly order: {}".format(poly_order_l))
             output = np.polyfit(new_bins[new_is_measures],
                                 new_means[new_is_measures],
                                 poly_order_l,
                                 w=new_weights[new_is_measures],
                                 full=True)
-            # print(output)
-            var = output[1] / (len(new_is_measures) - poly_order_l - 1)
-            # print("Variance: ", var)
+            vars[j] = output[1] / (len(new_is_measures) - poly_order_l - 1)
+            logging.info("Variance: {}".format(vars[j]))
             # https://autarkaw.wordpress.com/2008/07/05/finding-the-optimum-polynomial-order-to-use-for-regression/
-            pc_change = (previous_var - var) / previous_var
-            # print("% of change: ", pc_change)
-            if pc_change < best_pc_change:
-                best_poly_order = poly_order_l - 1
-                best_pc_change = pc_change
-            if pc_change <= 0.01:
+            pc_change[j] = (previous_var - vars[j]) / previous_var
+            logging.info("% of change: {}".format(pc_change[j]))
+            if np.all(np.abs(pc_change[j - 2:j + 1]) <= 0.08) and j > 1:
+                logging.info("Found convergence, stopping poly-order search.")
                 break
-            previous_var = var
-        chosen_poly_order = best_poly_order
-        # print("Polyfit order was set to", chosen_poly_order)
+            previous_var = vars[j]
+        min_idx = np.argmin(vars)
+        chosen_poly_order = poly_order_list[min_idx]
+        logging.info("Polyfit order was set to {}".format(chosen_poly_order))
         fits[max_poly_order - chosen_poly_order - 1:, i] =\
             np.polyfit(new_bins[new_is_measures],
                        new_means[new_is_measures],
