@@ -79,7 +79,10 @@ def _build_arg_parser():
     g2.add_argument('--use_weighted_polyfit', action='store_true',
                    help='If set, use weights when performing the polyfit. '
                         '[%(default)s].')
-    
+    g2.add_argument('--stop_crit', default=0.06, type=float,
+                   help='Stopping criteria for the search of polynomial order '
+                        '[%(default)s].')
+
     add_verbose_arg(p)
 
     return p
@@ -218,7 +221,8 @@ def main():
             measures_fit, measures_max = fit_single_fiber_results_new(bins,
                                                     measure_means[i],
                                                     is_measures=new_is_measures[i],
-                                                    weights=weights[i])
+                                                    weights=weights[i],
+                                                    stop_crit=args.stop_crit)
             out_path = out_folder / (bundles_names[i] + '/1f_polyfits')
             save_polyfits_as_npz(measures_fit, measures_max, measures_name, out_path)
 

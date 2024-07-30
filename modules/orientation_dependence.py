@@ -361,7 +361,8 @@ def fit_single_fiber_results(bins, means, is_measures=None, weights=None):
     return fits, measures_max
 
 
-def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None):
+def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None,
+                                 stop_crit=0.08):
     if is_measures is None:
         is_measures = np.ones(means.shape[0])
     if weights is None:
@@ -394,7 +395,7 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None):
             # https://autarkaw.wordpress.com/2008/07/05/finding-the-optimum-polynomial-order-to-use-for-regression/
             pc_change[j] = (previous_var - vars[j]) / previous_var
             logging.info("% of change: {}".format(pc_change[j]))
-            if np.all(np.abs(pc_change[j - 2:j + 1]) <= 0.08) and j > 1:
+            if np.all(np.abs(pc_change[j - 2:j + 1]) <= stop_crit) and j > 1:
                 logging.info("Found convergence, stopping poly-order search.")
                 break
             previous_var = vars[j]
