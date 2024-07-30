@@ -64,9 +64,17 @@ if $do_bundles;
     then
     for bundle in bundles/${data}/bundles/*.trk;
         do base_name=$(basename $bundle);
-        # TODO add filtering of bundle here.
+        filtered_bundle="bundles/${data}/bundles/${base_name}_filtered.trk";
+        scil_tractogram_remove_invalid.py $bundle $filtered_bundle --remove_single_point --remove_overlapping_points -f;
+        scil_tractogram_detect_loops.py $filtered_bundle $filtered_bundle --display_counts --processes 8 -f;
+        scil_tractogram_cut_streamlines.py $filtered_bundle $filtered_bundle --mask tissue_masks/wm_gm_mask.nii.gz --processes 8 --trim_endpoints -f;
+        scil_tractogram_filter_by_roi.py $filtered_bundle $filtered_bundle --drawn_roi tissue_masks/gm_mask_dilated.nii.gz 'either_end' 'include' --display_counts -f;
+        scil_tractogram_filter_by_length.py $filtered_bundle $filtered_bundle --minL 30 --maxL 200 --display_counts -f;
+
         weighted_bundle="bundles/${data}/bundles/${base_name}_weighted.trk";
-        scil_tractogram_math.py intersection $weighted_trk $bundle $weighted_bundle -p 3 -f; 
+        scil_tractogram_math.py intersection $weighted_trk $filtered_bundle $weighted_bundle -p 3 -f; 
+
+        rm $filtered_bundle;
     done;
 
 fi;
