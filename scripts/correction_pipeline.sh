@@ -2,13 +2,20 @@
 # measures on a single subject/session. This HAS TO be launched from the
 # myelo_inferno directory.
 
-data=$1;  # The only input of the script is the subject/session ID.
+data=$1;  # The first input of the script is the subject/session ID.
+source=$2;  # The second input of the script is the source directory.
 
 # All steps:
 
 do_filter_trk=true;
 do_sift2=true;
 do_bundles=true;
+do_fixel_density=true;
+do_characterize_original=true;
+do_plot_original=true;
+do_correction=true;
+do_characterize_corrected=true;
+do_plot_corrected=true;
 
 #---------------------------------- FIRST STEP --------------------------------
 # Filter tractogram from Imeka (which is messy).
@@ -78,3 +85,119 @@ if $do_bundles;
     done;
 
 fi;
+
+#---------------------------------- FOURTH STEP -------------------------------
+# Compute fixel density maps.
+
+weighted_bundles="bundles/${data}/bundles";
+fixel_analysis="fixel_analysis/${data}/";
+
+if $do_fixel_density;
+    then
+    mkdir -p $fixel_analysis;
+    scil_bundle_fixel_analysis.py FODF_metrics/${data}/new_peaks/peaks.nii.gz --in_bundles ${weighted_bundles}/*_weighted.trk --dps_key sift2 --split_bundles --out_dir $fixel_analysis --rel_thr 0.1 --abs_thr 1.5 --processes 8 -f;
+
+    rm ${fixel_analysis}/fixel_density_mask*;
+    rm ${fixel_analysis}/nb_bundles*;
+    rm ${fixel_analysis}/voxel_density_map*;
+    rm ${fixel_analysis}/voxel_density_masks.nii.gz;
+    rm ${fixel_analysis}/fixel_density_map_*;
+
+fi;
+
+#---------------------------------- FIFTH STEP --------------------------------
+# Characterize the bundles on original measures.
+
+bundles_masks="${fixel_analysis}/voxel_density_mask_*.nii.gz";
+bin_width=5;
+bin_width_dir="${bin_width}_degree_bins";
+out_original="characterization/${bin_width_dir}/";
+
+for bundle in bundles/${data}/bundles/*.trk;
+    do bundle_name=$(basename -- "${bundle%%.*}");
+    bundles_names+=$bundle_name;
+    bundles_names+=" ";
+    if $do_characterize_original;
+        then
+        mkdir -p ${out_original}/${bundle_name};
+
+    fi;
+
+done;
+
+if $do_characterize_original;
+    then
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz FODF_metrics/${data}/new_peaks/peak_values.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_original --measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles $bundles_masks --bundles_names $bundles_names --bin_width_sf $bin_width --min_nb_voxels 1 --min_frac_pts 0.75 --patch --stop_crit 0.06 --save_polyfit --use_weighted_polyfit;
+
+    scil_volume_math.py union ${fixel_analysis}/voxel_density_mask_*.nii.gz ${fixel_analysis}/voxel_density_mask_WM.nii.gz -f;
+    mkdir -p ${out_original}/WM;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz FODF_metrics/${data}/new_peaks/peak_values.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_original --measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles ${fixel_analysis}/voxel_density_mask_WM.nii.gz --bundles_names WM --bin_width_sf $bin_width --min_nb_voxels 1 --stop_crit 0.06 --save_polyfit --use_weighted_polyfit;
+
+fi;
+
+#---------------------------------- SIXTH STEP --------------------------------
+# Plot the characterization of the original measures.
+
+if $do_plot_original;
+    then
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat --in_bundles ${out_original}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_original}/orientation_dependence_MT.png --in_polyfits ${out_original}/*/1f_polyfits.npz;
+
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures ihMTR ihMTsat --in_bundles ${out_original}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_original}/orientation_dependence_ihMT.png --in_polyfits ${out_original}/*/1f_polyfits.npz;
+
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat ihMTR ihMTsat --in_bundles ${out_original}/*/1f_results.npz --bundles_order AF_L AF_R CC_3 CC_4 CG_L CG_R CST_L CST_R IFOF_L IFOF_R OR_L OR_R WM -f --in_polyfits ${out_original}/*/1f_polyfits.npz --out_filename ${out_original}/orientation_dependence.png;
+
+fi;
+
+#---------------------------------- SEVENTH STEP ------------------------------
+# Correct the original measures.
+
+if $do_correction;
+    then
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps.nii.gz ihMT/${data}/ --polyfits ${out_original}/!(WM)/1f_polyfits.npz --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt;
+
+fi;
+
+#---------------------------------- EIGHTH STEP -------------------------------
+# Characterize the bundles on corrected measures.
+
+out_corrected="characterization/${bin_width_dir}/";
+
+if $do_characterize_corrected;
+    then
+    for bundle in bundles/${data}/bundles/*.trk;
+        do bundle_name=$(basename -- "${bundle%%.*}");
+        mkdir -p ${out_original}/${bundle_name};
+
+    done;
+
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz FODF_metrics/${data}/new_peaks/peak_values.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_corrected.nii.gz ihMT/${data}/ihMTR_corrected.nii.gz ihMT/${data}/MTsat_corrected.nii.gz ihMT/${data}/ihMTsat_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles $bundles_masks --bundles_names $bundles_names --bin_width_sf $bin_width --min_nb_voxels 1 --min_frac_pts 0.75 --patch --stop_crit 0.06 --save_polyfit --use_weighted_polyfit;
+
+    mkdir -p ${out_corrected}/WM;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz FODF_metrics/${data}/new_peaks/peak_values.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_corrected.nii.gz ihMT/${data}/ihMTR_corrected.nii.gz ihMT/${data}/MTsat_corrected.nii.gz ihMT/${data}/ihMTsat_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles ${fixel_analysis}/voxel_density_mask_WM.nii.gz --bundles_names WM --bin_width_sf $bin_width --min_nb_voxels 1 --stop_crit 0.06 --save_polyfit --use_weighted_polyfit;
+
+fi;
+
+
+#---------------------------------- NINTH STEP --------------------------------
+# Plot the characterization of the corrected measures.
+
+if $do_plot_corrected;
+    then
+    # Corrected only
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_corrected}/orientation_dependence_MT.png --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
+
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures ihMTR ihMTsat --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_corrected}/orientation_dependence_MT.png --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
+
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat ihMTR ihMTsat --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_3 CC_4 CG_L CG_R CST_L CST_R IFOF_L IFOF_R OR_L OR_R WM -f --in_polyfits ${out_corrected}/*/1f_polyfits.npz --out_filename ${out_corrected}/orientation_dependence.png;
+
+    # Corrected and original
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat --in_bundles ${out_original}/*/1f_results.npz --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_corrected}/orientation_dependence_comparison_MT.png --in_polyfits ${out_original}/*/1f_polyfits.npz --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
+
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures ihMTR ihMTsat --in_bundles ${out_original}/*/1f_results.npz --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_corrected}/orientation_dependence_comparison_ihMT.png --in_polyfits ${out_original}/*/1f_polyfits.npz --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
+
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat ihMTR ihMTsat --in_bundles ${out_original}/*/1f_results.npz --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_3 CC_4 CG_L CG_R CST_L CST_R IFOF_L IFOF_R OR_L OR_R WM -f --in_polyfits ${out_original}/*/1f_polyfits.npz --in_polyfits ${out_corrected}/*/1f_polyfits.npz --out_filename ${out_corrected}/orientation_dependence_comparison.png;
+
+fi;
+
+#---------------------------------- TENTH STEP --------------------------------
+# Do the tractometry!
