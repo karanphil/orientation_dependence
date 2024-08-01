@@ -16,6 +16,7 @@ do_plot_original=true;
 do_correction=true;
 do_characterize_corrected=true;
 do_plot_corrected=true;
+do_tractometry=false;
 
 #---------------------------------- FIRST STEP --------------------------------
 # Filter tractogram from Imeka (which is messy).
@@ -201,3 +202,11 @@ fi;
 
 #---------------------------------- TENTH STEP --------------------------------
 # Do the tractometry!
+
+# This has to be done outside this script, on all bundles. Also, change the input path.
+
+if $do_tractometry;
+    then
+    nextflow run ${source}/my_scripts/tractometry_flow_modify_light/main.nf --input ../input/ --nb_points 10 --processes 8 --use_provided_centroids true -resume
+
+fi;
