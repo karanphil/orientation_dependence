@@ -20,6 +20,7 @@ do_tractometry=false;
 
 #---------------------------------- FIRST STEP --------------------------------
 # Filter tractogram from Imeka (which is messy).
+echo "FIRST STEP";
 
 initial_trk="tractograms/${data}/${data}__whole_brain_ensemble_tracts_comp.trk";
 filtered_trk="tractograms/${data}/filtered_tracts.trk";
@@ -45,6 +46,7 @@ fi;
 
 #---------------------------------- SECOND STEP -------------------------------
 # Run SIFT2 on the filtered tractogram.
+echo "SECOND STEP";
 
 d_fodf=FODF_metrics/${data}/${data}_fodf.nii.gz;
 t_fodf=FODF_metrics/${data}/fodf_tournier.nii.gz
@@ -67,6 +69,7 @@ fi;
 
 #---------------------------------- THIRD STEP --------------------------------
 # Extract bundles from weighted tractogram.
+echo "THIRD STEP";
 
 if $do_bundles;
     then
@@ -89,6 +92,7 @@ fi;
 
 #---------------------------------- FOURTH STEP -------------------------------
 # Compute fixel density maps.
+echo "FOURTH STEP";
 
 weighted_bundles="bundles/${data}/bundles";
 fixel_analysis="fixel_analysis/${data}/";
@@ -108,6 +112,7 @@ fi;
 
 #---------------------------------- FIFTH STEP --------------------------------
 # Characterize the bundles on original measures.
+echo "FIFTH STEP";
 
 bundles_masks="${fixel_analysis}/voxel_density_mask_*.nii.gz";
 bin_width=5;
@@ -138,6 +143,7 @@ fi;
 
 #---------------------------------- SIXTH STEP --------------------------------
 # Plot the characterization of the original measures.
+echo "SIXTH STEP";
 
 if $do_plot_original;
     then
@@ -151,6 +157,7 @@ fi;
 
 #---------------------------------- SEVENTH STEP ------------------------------
 # Correct the original measures.
+echo "SEVENTH STEP";
 
 if $do_correction;
     then
@@ -160,6 +167,7 @@ fi;
 
 #---------------------------------- EIGHTH STEP -------------------------------
 # Characterize the bundles on corrected measures.
+echo "EIGHTH STEP";
 
 out_corrected="characterization/${bin_width_dir}/";
 
@@ -181,6 +189,7 @@ fi;
 
 #---------------------------------- NINTH STEP --------------------------------
 # Plot the characterization of the corrected measures.
+echo "NINTH STEP";
 
 if $do_plot_corrected;
     then
