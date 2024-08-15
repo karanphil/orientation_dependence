@@ -61,7 +61,7 @@ if $do_sift2;
     tcksift2 $converted_trk $t_fodf $weights;
     scil_tractogram_add_dps.py $filtered_trk $weights sift2 $weighted_trk;
 
-    rm $converted_trk $t_fodf $trk;
+    rm $converted_trk $t_fodf $filtered_trk;
 
 fi;
 
