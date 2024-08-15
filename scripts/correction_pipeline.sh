@@ -50,7 +50,7 @@ d_fodf=FODF_metrics/${data}/${data}_fodf.nii.gz;
 t_fodf=FODF_metrics/${data}/fodf_tournier.nii.gz
 converted_trk="tractograms/${data}/filtered_tracts.tck";
 weights="tractograms/${data}/sift2_weights.txt";
-weighted_trk="tractograms/${data}/weighted_tracts.tck";
+weighted_trk="tractograms/${data}/weighted_tracts.trk";
 
 if $do_sift2;
     then
@@ -205,8 +205,8 @@ fi;
 
 # This has to be done outside this script, on all bundles. Also, change the input path.
 
-if $do_tractometry;
-    then
-    nextflow run ${source}/my_scripts/tractometry_flow_modify_light/main.nf --input ../input/ --nb_points 10 --processes 8 --use_provided_centroids true -resume
+# if $do_tractometry;
+#     then
+#     nextflow run ${source}/my_scripts/tractometry_flow_modify_light/main.nf --input ../input/ --nb_points 10 --processes 8 --use_provided_centroids true -resume
 
-fi;
+# fi;
