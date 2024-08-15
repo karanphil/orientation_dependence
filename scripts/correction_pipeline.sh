@@ -30,6 +30,8 @@ if $do_filter_trk;
     scil_tractogram_remove_invalid.py $initial_trk $filtered_trk --remove_single_point --remove_overlapping_points -f;
     scil_tractogram_detect_loops.py $filtered_trk $filtered_trk --display_counts --processes 8 -f;
 
+    # TODO : add tissue_masks directory!!!
+
     scil_volume_math.py addition tissue_masks/${data}__wm_mask.nii.gz tissue_masks/${data}__gm_mask.nii.gz tissue_masks/wm_gm_map.nii.gz -f;
     scil_volume_math.py lower_threshold_eq tissue_masks/wm_gm_map.nii.gz 0.1 tissue_masks/wm_gm_mask.nii.gz -f;
     scil_volume_math.py convert tissue_masks/wm_gm_mask.nii.gz tissue_masks/wm_gm_mask.nii.gz --data_type uint8 -f;
