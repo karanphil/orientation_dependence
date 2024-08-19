@@ -415,6 +415,9 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None,
         max_angle = np.max(mid_bins[is_measures[..., i]]) + bin_width / 2
         highres_bins = np.arange(min_angle, max_angle, 0.1)
         measures_max[i] = np.max(polynome(highres_bins))
+        # Line to ensure the max is not a high value because of the fit.
+        # measures_max[i] = np.min(np.max(new_means[new_is_measures]),
+        #                          np.max(polynome(highres_bins)))
     return fits, measures_max
 
 
@@ -442,7 +445,7 @@ def where_to_patch(is_measures, max_gap_frac=0.15, distance_sides_frac=0.1):
 def patch_measures(to_patch, is_measures, bundle_corr, min_corr=0.3,
                    min_frac_pts=0.8):
     argsort_corr = np.argsort(bundle_corr)[::-1]
-    for idx in argsort_corr:
+    for idx in argsort_corr[argsort_corr >= 0]:
         if bundle_corr[idx] < min_corr:
             return -1, np.zeros((to_patch.shape))
         patchable_pts = to_patch * is_measures[idx]
