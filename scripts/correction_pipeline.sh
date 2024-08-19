@@ -7,7 +7,7 @@ source=$2;  # The second input of the script is the source directory.
 
 # All steps:
 
-do_filter_trk=true;
+do_filter_trk=false;
 do_sift2=true;
 do_bundles=true;
 do_fixel_density=true;
@@ -48,7 +48,7 @@ fi;
 # Run SIFT2 on the filtered tractogram.
 echo "SECOND STEP";
 
-d_fodf=FODF_metrics/${data}/${data}_fodf.nii.gz;
+d_fodf=FODF_metrics/${data}/${data}__fodf.nii.gz;
 t_fodf=FODF_metrics/${data}/fodf_tournier.nii.gz
 converted_trk="tractograms/${data}/filtered_tracts.tck";
 weights="tractograms/${data}/sift2_weights.txt";
