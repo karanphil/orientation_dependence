@@ -73,6 +73,7 @@ echo "THIRD STEP";
 
 if $do_bundles;
     then
+    mkdir -p bundles/${data}/bundles_weighted;
     for bundle in bundles/${data}/bundles/*.trk;
         do base_name=$(basename -- "${bundle%%.*}");
         filtered_bundle="bundles/${data}/bundles/${base_name}_filtered.trk";
@@ -82,7 +83,7 @@ if $do_bundles;
         scil_tractogram_filter_by_roi.py $filtered_bundle $filtered_bundle --drawn_roi tissue_segmentation/${data}/gm_mask_dilated.nii.gz 'either_end' 'include' --display_counts -f;
         scil_tractogram_filter_by_length.py $filtered_bundle $filtered_bundle --minL 30 --maxL 200 --display_counts -f;
 
-        weighted_bundle="bundles/${data}/bundles/${base_name}_weighted.trk";
+        weighted_bundle="bundles/${data}/bundles_weighted/${base_name}.trk";
         scil_tractogram_math.py intersection $weighted_trk $filtered_bundle $weighted_bundle -p 3 -f; 
 
         rm $filtered_bundle;
@@ -94,13 +95,13 @@ fi;
 # Compute fixel density maps.
 echo "FOURTH STEP";
 
-weighted_bundles="bundles/${data}/bundles";
+weighted_bundles="bundles/${data}/bundles_weighted";
 fixel_analysis="fixel_analysis/${data}/";
 
 if $do_fixel_density;
     then
     mkdir -p $fixel_analysis;
-    scil_bundle_fixel_analysis.py FODF_metrics/${data}/new_peaks/peaks.nii.gz --in_bundles ${weighted_bundles}/*_weighted.trk --dps_key sift2 --split_bundles --out_dir $fixel_analysis --rel_thr 0.1 --abs_thr 1.5 --processes 8 -f;
+    scil_bundle_fixel_analysis.py FODF_metrics/${data}/new_peaks/peaks.nii.gz --in_bundles ${weighted_bundles}/*.trk --dps_key sift2 --split_bundles --out_dir $fixel_analysis --rel_thr 0.1 --abs_thr 1.5 --processes 8 -f;
 
     rm ${fixel_analysis}/fixel_density_mask*;
     rm ${fixel_analysis}/nb_bundles*;
@@ -119,7 +120,7 @@ bin_width=5;
 bin_width_dir="${bin_width}_degree_bins";
 out_original="characterization/${bin_width_dir}/";
 
-for bundle in bundles/${data}/bundles/*.trk;
+for bundle in bundles/${data}/bundles_weighted/*.trk;
     do bundle_name=$(basename -- "${bundle%%.*}");
     bundles_names+=$bundle_name;
     bundles_names+=" ";
