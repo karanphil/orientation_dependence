@@ -175,7 +175,7 @@ if $do_characterize_corrected;
     then
     for bundle in bundles/${data}/bundles/*.trk;
         do bundle_name=$(basename -- "${bundle%%.*}");
-        mkdir -p ${out_original}/${bundle_name};
+        mkdir -p ${out_corrected}/${bundle_name};
 
     done;
 
