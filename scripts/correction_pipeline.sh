@@ -8,7 +8,7 @@ source=$2;  # The second input of the script is the source directory.
 # All steps:
 
 do_filter_trk=false;
-do_sift2=true;
+do_sift2=false;
 do_bundles=true;
 do_fixel_density=true;
 do_characterize_original=true;
@@ -74,7 +74,7 @@ echo "THIRD STEP";
 if $do_bundles;
     then
     for bundle in bundles/${data}/bundles/*.trk;
-        do base_name=$(basename $bundle);
+        do base_name=$(basename -- "${bundle%%.*}");
         filtered_bundle="bundles/${data}/bundles/${base_name}_filtered.trk";
         scil_tractogram_remove_invalid.py $bundle $filtered_bundle --remove_single_point --remove_overlapping_points -f;
         scil_tractogram_detect_loops.py $filtered_bundle $filtered_bundle --display_counts --processes 8 -f;
