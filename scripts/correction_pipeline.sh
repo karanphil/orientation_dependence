@@ -30,17 +30,15 @@ if $do_filter_trk;
     scil_tractogram_remove_invalid.py $initial_trk $filtered_trk --remove_single_point --remove_overlapping_points -f;
     scil_tractogram_detect_loops.py $filtered_trk $filtered_trk --display_counts --processes 8 -f;
 
-    # TODO : add tissue_masks directory!!!
+    scil_volume_math.py addition tissue_segmentation/${data}/${data}__wm_mask.nii.gz tissue_segmentation/${data}/${data}__gm_mask.nii.gz tissue_segmentation/${data}/wm_gm_map.nii.gz -f;
+    scil_volume_math.py lower_threshold_eq tissue_segmentation/${data}/wm_gm_map.nii.gz 0.1 tissue_segmentation/${data}/wm_gm_mask.nii.gz -f;
+    scil_volume_math.py convert tissue_segmentation/${data}/wm_gm_mask.nii.gz tissue_segmentation/${data}/wm_gm_mask.nii.gz --data_type uint8 -f;
+    scil_tractogram_cut_streamlines.py $filtered_trk $filtered_trk --mask tissue_segmentation/${data}/wm_gm_mask.nii.gz --processes 8 --trim_endpoints -f;
 
-    scil_volume_math.py addition tissue_masks/${data}__wm_mask.nii.gz tissue_masks/${data}__gm_mask.nii.gz tissue_masks/wm_gm_map.nii.gz -f;
-    scil_volume_math.py lower_threshold_eq tissue_masks/wm_gm_map.nii.gz 0.1 tissue_masks/wm_gm_mask.nii.gz -f;
-    scil_volume_math.py convert tissue_masks/wm_gm_mask.nii.gz tissue_masks/wm_gm_mask.nii.gz --data_type uint8 -f;
-    scil_tractogram_cut_streamlines.py $filtered_trk $filtered_trk --mask tissue_masks/wm_gm_mask.nii.gz --processes 8 --trim_endpoints -f;
-
-    scil_volume_math.py lower_threshold_eq tissue_masks/${data}__gm_mask.nii.gz 0.1 tissue_masks/gm_mask.nii.gz -f;
-    scil_volume_math.py dilation tissue_masks/gm_mask.nii.gz 1 tissue_masks/gm_mask_dilated.nii.gz -f;
-    scil_volume_math.py convert tissue_masks/gm_mask_dilated.nii.gz tissue_masks/gm_mask_dilated.nii.gz --data_type uint8 -f;
-    scil_tractogram_filter_by_roi.py $filtered_trk $filtered_trk --drawn_roi tissue_masks/gm_mask_dilated.nii.gz 'either_end' 'include' --display_counts -f;
+    scil_volume_math.py lower_threshold_eq tissue_segmentation/${data}/${data}__gm_mask.nii.gz 0.1 tissue_segmentation/${data}/gm_mask.nii.gz -f;
+    scil_volume_math.py dilation tissue_segmentation/${data}/gm_mask.nii.gz 1 tissue_segmentation/${data}/gm_mask_dilated.nii.gz -f;
+    scil_volume_math.py convert tissue_segmentation/${data}/gm_mask_dilated.nii.gz tissue_segmentation/${data}/gm_mask_dilated.nii.gz --data_type uint8 -f;
+    scil_tractogram_filter_by_roi.py $filtered_trk $filtered_trk --drawn_roi tissue_segmentation/${data}/gm_mask_dilated.nii.gz 'either_end' 'include' --display_counts -f;
 
     scil_tractogram_filter_by_length.py $filtered_trk $filtered_trk --minL 30 --maxL 200 --display_counts -f;
 
@@ -80,8 +78,8 @@ if $do_bundles;
         filtered_bundle="bundles/${data}/bundles/${base_name}_filtered.trk";
         scil_tractogram_remove_invalid.py $bundle $filtered_bundle --remove_single_point --remove_overlapping_points -f;
         scil_tractogram_detect_loops.py $filtered_bundle $filtered_bundle --display_counts --processes 8 -f;
-        scil_tractogram_cut_streamlines.py $filtered_bundle $filtered_bundle --mask tissue_masks/wm_gm_mask.nii.gz --processes 8 --trim_endpoints -f;
-        scil_tractogram_filter_by_roi.py $filtered_bundle $filtered_bundle --drawn_roi tissue_masks/gm_mask_dilated.nii.gz 'either_end' 'include' --display_counts -f;
+        scil_tractogram_cut_streamlines.py $filtered_bundle $filtered_bundle --mask tissue_segmentation/${data}/wm_gm_mask.nii.gz --processes 8 --trim_endpoints -f;
+        scil_tractogram_filter_by_roi.py $filtered_bundle $filtered_bundle --drawn_roi tissue_segmentation/${data}/gm_mask_dilated.nii.gz 'either_end' 'include' --display_counts -f;
         scil_tractogram_filter_by_length.py $filtered_bundle $filtered_bundle --minL 30 --maxL 200 --display_counts -f;
 
         weighted_bundle="bundles/${data}/bundles/${base_name}_weighted.trk";
