@@ -8,13 +8,13 @@ source=$2;  # The second input of the script is the source directory.
 
 # All steps:
 
-do_filter_trk=false;
-do_sift2=false;
-do_bundles=false;
-do_fixel_density=false;
-do_characterize_original=false;
-do_plot_original=false;
-do_correction=false;
+do_filter_trk=true;
+do_sift2=true;
+do_bundles=true;
+do_fixel_density=true;
+do_characterize_original=true;
+do_plot_original=true;
+do_correction=true;
 do_characterize_corrected=true;
 do_plot_corrected=true;
 do_tractometry=false;
