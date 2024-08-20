@@ -170,7 +170,7 @@ if $do_correction;
 
     polyfits=$(find ${out_original}/*/1f_polyfits.npz ! -path '*WM*');
 
-    echo python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps.nii.gz ihMT/${data}/ --polyfits $polyfits --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt;
+    python python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps.nii.gz ihMT/${data}/ --polyfits $polyfits --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt;
 
     python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps.nii.gz ihMT/${data}/ --polyfits $polyfits --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt;
 
