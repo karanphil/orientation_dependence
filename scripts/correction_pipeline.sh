@@ -12,9 +12,9 @@ do_filter_trk=false;
 do_sift2=false;
 do_bundles=false;
 do_fixel_density=false;
-do_characterize_original=false;
-do_plot_original=false;
-do_correction=false;
+do_characterize_original=true;
+do_plot_original=true;
+do_correction=true;
 do_characterize_corrected=true;
 do_plot_corrected=true;
 do_tractometry=false;
@@ -179,7 +179,7 @@ fi;
 #---------------------------------- EIGHTH STEP -------------------------------
 # Characterize the bundles on corrected measures.
 
-out_corrected="characterization/${data}/${bin_width_dir}/";
+out_corrected="correction/${data}/${bin_width_dir}/";
 
 if $do_characterize_corrected;
     then
