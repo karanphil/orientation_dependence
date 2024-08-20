@@ -179,7 +179,7 @@ fi;
 #---------------------------------- EIGHTH STEP -------------------------------
 # Characterize the bundles on corrected measures.
 
-out_corrected="characterization/${bin_width_dir}/";
+out_corrected="characterization/${data}/${bin_width_dir}/";
 
 if $do_characterize_corrected;
     then
@@ -192,7 +192,7 @@ if $do_characterize_corrected;
 
     python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz FODF_metrics/${data}/new_peaks/peak_values.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_corrected.nii.gz ihMT/${data}/ihMTR_corrected.nii.gz ihMT/${data}/MTsat_corrected.nii.gz ihMT/${data}/ihMTsat_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles $bundles_masks --bundles_names $bundles_names --bin_width_sf $bin_width --min_nb_voxels 1 --min_frac_pts 0.75 --stop_crit 0.06 --save_polyfit --use_weighted_polyfit;
 
-    mkdir -p ${out_corrected}/WM;
+    mkdir -p ${out_corrected}/${data}/WM;
     python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz FODF_metrics/${data}/new_peaks/peak_values.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_corrected.nii.gz ihMT/${data}/ihMTR_corrected.nii.gz ihMT/${data}/MTsat_corrected.nii.gz ihMT/${data}/ihMTsat_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles ${fixel_analysis}/voxel_density_mask_WM.nii.gz --bundles_names WM --bin_width_sf $bin_width --min_nb_voxels 1 --stop_crit 0.06 --save_polyfit --use_weighted_polyfit;
 
 fi;
