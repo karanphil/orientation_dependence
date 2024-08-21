@@ -61,8 +61,8 @@ if $do_sift2;
     scil_sh_convert.py $d_fodf $t_fodf descoteaux07_legacy tournier07 -f;
     scil_tractogram_convert.py $filtered_trk $converted_trk -f;
 
-    tcksift2 $converted_trk $t_fodf $weights;
-    scil_tractogram_add_dps.py $filtered_trk $weights sift2 $weighted_trk;
+    tcksift2 $converted_trk $t_fodf $weights -force;
+    scil_tractogram_add_dps.py $filtered_trk $weights sift2 $weighted_trk -f;
 
     rm $converted_trk $t_fodf $filtered_trk;
 
