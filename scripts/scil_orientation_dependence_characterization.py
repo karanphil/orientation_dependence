@@ -226,7 +226,6 @@ def main():
             out_path = out_folder / (bundles_names[i] + '/1f_polyfits')
             save_polyfits_as_npz(measures_fit, measures_max, measures_name, out_path)
 
-    # TODO Add two-fiber and three-fiber characterization with ifs.
 
 if __name__ == "__main__":
     main()
