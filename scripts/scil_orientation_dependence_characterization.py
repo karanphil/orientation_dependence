@@ -21,11 +21,6 @@ def _build_arg_parser():
     p.add_argument('in_peaks',
                    help='Path of the fODF peaks. The peaks are expected to be '
                         'given as unit directions.')
-    p.add_argument('in_peak_values',
-                   help='Path of the fODF peak values. The peak values must '
-                        'not be max-normalized for \neach voxel, but rather '
-                        'they should keep the actual fODF amplitude of the '
-                        'peaks.')
     p.add_argument('in_fa',
                    help='Path of the FA.')
     p.add_argument('in_nufo',
@@ -103,13 +98,11 @@ def main():
 
     # Load the data
     peaks_img = nib.load(args.in_peaks)
-    peak_values_img = nib.load(args.in_peak_values)
     fa_img = nib.load(args.in_fa)
     nufo_img = nib.load(args.in_nufo)
     wm_mask_img = nib.load(args.in_wm_mask)
 
     peaks = peaks_img.get_fdata()
-    peak_values = peak_values_img.get_fdata()
     fa = fa_img.get_fdata()
     nufo = nufo_img.get_fdata()
     wm_mask = wm_mask_img.get_fdata()
