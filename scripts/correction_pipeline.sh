@@ -28,7 +28,8 @@ filtered_trk="tractograms/${data}/filtered_tracts.trk";
 if $do_filter_trk;
     then
     echo "FIRST STEP";
-    scil_tractogram_remove_invalid.py $initial_trk $filtered_trk --remove_single_point --remove_overlapping_points -f;
+    # scil_tractogram_remove_invalid.py $initial_trk $filtered_trk --remove_single_point --remove_overlapping_points -f;
+    cp $initial_trk $filtered_trk;
     scil_tractogram_detect_loops.py $filtered_trk $filtered_trk --display_counts --processes 8 -f;
 
     scil_volume_math.py addition tissue_segmentation/${data}/${data}__wm_mask.nii.gz tissue_segmentation/${data}/${data}__gm_mask.nii.gz tissue_segmentation/${data}/wm_gm_map.nii.gz -f;
