@@ -2,7 +2,6 @@ import argparse
 import pandas as pd
 
 
-
 def _build_arg_parser():
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
@@ -10,7 +9,6 @@ def _build_arg_parser():
                    help='Path of the input CSV file.')
     p.add_argument('out_csv',
                    help='Path of the output CSV file.')
-
 
     return p
 
