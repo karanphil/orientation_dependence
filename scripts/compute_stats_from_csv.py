@@ -50,8 +50,26 @@ def main():
             all_std_mean_ratio[i, j] = std_mean_ori / std_mean_cor
             # print(measure, all_std_mean_ratio[i, j])
         # print(np.mean(all_std_mean_ratio[i]))
-    # print(np.mean(all_std_mean_ratio))
+    print(np.mean(all_std_mean_ratio))
 
+    # Average of the variation of std of mean between original and corrected per subject
+    df[['Subject', 'Session']] = df['Sid'].str.split(pat="_", expand=True, regex=True)
+    all_std_mean_ratio = np.zeros((len(df['Subject'].unique()), len(df['Bundles'].unique()), 4))
+    for k, sub in enumerate(df['Subject'].unique()):
+        # print(sub)
+        for i, bundle in enumerate(df['Bundles'].unique()):
+            # print(bundle)
+            for j, measure in enumerate(['MTR', 'MTsat', 'ihMTR', 'ihMTsat']):
+                df_mean_ori = df[(df['Statistics'] == 'mean') & (df['Measures'] == measure) & (df['Type'] == 'original') & (df['Bundles'] == bundle) & (df['Subject'] == sub)]
+                df_mean_cor = df[(df['Statistics'] == 'mean') & (df['Measures'] == measure) & (df['Type'] == 'corrected') & (df['Bundles'] == bundle) & (df['Subject'] == sub)]
+
+                std_mean_ori = np.std(df_mean_ori['Value'])
+                std_mean_cor = np.std(df_mean_cor['Value'])
+                all_std_mean_ratio[k, i, j] = std_mean_ori / std_mean_cor
+                # print(measure, all_std_mean_ratio[i, j])
+            # print(np.mean(all_std_mean_ratio[i]))
+        # print(np.mean(all_std_mean_ratio[k]))
+    print(np.mean(all_std_mean_ratio))
 
 if __name__ == "__main__":
     main()
