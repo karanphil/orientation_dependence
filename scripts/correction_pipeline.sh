@@ -232,6 +232,6 @@ fi;
 
 # if $do_tractometry;
 #     then
-#     nextflow run ${source}/my_scripts/tractometry_flow_modify_light/main.nf --input ../input/ --nb_points 10 --processes 8 --use_provided_centroids true -resume
+#     nextflow run ${source}/my_scripts/tractometry_flow_modify_light/main.nf --input ../input/ --nb_points 10 --processes 8 --use_provided_centroids false
 
 # fi;
