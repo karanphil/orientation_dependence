@@ -423,7 +423,7 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
         if ref_type == "max":
             references[i] = np.max(polynome(highres_bins))
         elif ref_type == "mean":
-            references[i] = np.dot(nb_voxels * means) / np.sum(nb_voxels)
+            references[i] = np.nansum(nb_voxels[..., i] * means[..., i], axis=0) / np.nansum(nb_voxels[..., i])
         else:
             logging.error("Reference type does not exist.")
     return fits, references
