@@ -192,18 +192,12 @@ def main():
                         measure_means[j, ..., i][patchable_pts] = measure_means[bundle_idx, ..., i][patchable_pts] + delta_mean
                         nb_voxels[j, ..., i][patchable_pts] = nb_voxels[bundle_idx, ..., i][patchable_pts]
                         pts_origin[j, ..., i][patchable_pts] = bundles_names[bundle_idx]
-    
+
     # Saving the results of orientation dependence characterization
     for i in range(nb_bundles):
         out_path = out_folder / (bundles_names[i] + '/1f_results')
         save_results_as_npz(bins, measure_means[i], nb_voxels[i],
                             pts_origin[i], measures_name, out_path)
-
-    if args.use_weighted_polyfit:
-        # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
-        weights = np.sqrt(nb_voxels)
-    else:
-        weights = None
 
     new_is_measures = nb_voxels >= min_nb_voxels
 
@@ -211,13 +205,14 @@ def main():
     if args.save_polyfit:
         for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
             logging.info("Fitting the results of bundle {}.".format(bundle_name))
-            measures_fit, measures_max = fit_single_fiber_results_new(bins,
+            measures_fit, measures_ref = fit_single_fiber_results_new(bins,
                                                     measure_means[i],
                                                     is_measures=new_is_measures[i],
-                                                    weights=weights[i],
-                                                    stop_crit=args.stop_crit)
+                                                    nb_voxels=nb_voxels[i],
+                                                    stop_crit=args.stop_crit,
+                                                    use_weighted_polyfit=args.use_weighted_polyfit)
             out_path = out_folder / (bundles_names[i] + '/1f_polyfits')
-            save_polyfits_as_npz(measures_fit, measures_max, measures_name, out_path)
+            save_polyfits_as_npz(measures_fit, measures_ref, measures_name, out_path)
 
 
 if __name__ == "__main__":

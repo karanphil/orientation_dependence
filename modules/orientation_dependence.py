@@ -50,7 +50,7 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
     return slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins
 
 
-def correct_measure(measure, peaks, affine, polyfits, maxima,
+def correct_measure(measure, peaks, affine, polyfits, reference,
                     fixel_density_maps):
     # Find the direction of the B0 field
     rot = affine[0:3, 0:3]
@@ -69,13 +69,13 @@ def correct_measure(measure, peaks, affine, polyfits, maxima,
     delta_measures = np.zeros((fixel_density_maps.shape))
     for i in range(polyfits.shape[-1]):
         polynome = np.poly1d(polyfits[..., i])
-        delta_measures[..., i] = (maxima[i] - polynome(peaks_angles))
+        delta_measures[..., i] = (reference[i] - polynome(peaks_angles))
 
     all_corrections = fixel_density_maps * delta_measures
 
     correction = np.sum(all_corrections, axis=(-2,-1))
 
-    return measure + correction # TODO take care of the voxels without any bundle!
+    return measure + correction
 
 
 def old_correct_measure(peaks, peak_values, measure, affine, wm_mask,
@@ -361,15 +361,21 @@ def fit_single_fiber_results(bins, means, is_measures=None, weights=None):
     return fits, measures_max
 
 
-def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None,
-                                 stop_crit=0.08):
+def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
+                                 stop_crit=0.08, ref_type="mean",
+                                 use_weighted_polyfit=True):
     if is_measures is None:
         is_measures = np.ones(means.shape[0])
-    if weights is None:
+
+    if use_weighted_polyfit:
+        # Why sqrt(n): https://stackoverflow.com/questions/19667877/what-are-the-weight-values-to-use-in-numpy-polyfit-and-what-is-the-error-of-the
+        weights = np.sqrt(nb_voxels)
+    else:
         weights = np.ones(means.shape[0])
+
     max_poly_order = len(bins) - 1
     fits = np.zeros((max_poly_order, means.shape[-1]))
-    measures_max = np.zeros((means.shape[-1]))
+    references = np.zeros((means.shape[-1]))
     for i in range(means.shape[-1]):
         new_bins, new_means, new_is_measures, new_weights =\
             extend_measure(bins, means[..., i], is_measure=is_measures[..., i],
@@ -414,11 +420,13 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, weights=None,
         min_angle = np.min(mid_bins[is_measures[..., i]]) - bin_width / 2
         max_angle = np.max(mid_bins[is_measures[..., i]]) + bin_width / 2
         highres_bins = np.arange(min_angle, max_angle, 0.1)
-        measures_max[i] = np.max(polynome(highres_bins))
-        # Line to ensure the max is not a high value because of the fit.
-        # measures_max[i] = np.min(np.max(new_means[new_is_measures]),
-        #                          np.max(polynome(highres_bins)))
-    return fits, measures_max
+        if ref_type == "max":
+            references[i] = np.max(polynome(highres_bins))
+        elif ref_type == "mean":
+            references[i] = np.dot(nb_voxels * means) / np.sum(nb_voxels)
+        else:
+            logging.error("Reference type does not exist.")
+    return fits, references
 
 
 def where_to_patch(is_measures, max_gap_frac=0.15, distance_sides_frac=0.1):

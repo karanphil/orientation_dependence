@@ -386,9 +386,9 @@ def save_results_as_npz(bins, measure_means, nb_voxels, pts_origin, names,
     np.savez(str(out_path), **savez_dict)
 
 
-def save_polyfits_as_npz(polyfits, measures_max, names, out_path):
+def save_polyfits_as_npz(polyfits, measures_ref, names, out_path):
     savez_dict = dict()
     for i in range(polyfits.shape[-1]):
         savez_dict[str(names[i]) + "_polyfit"] = polyfits[..., i]
-        savez_dict[str(names[i]) + "_maximum"] = measures_max[i]
+        savez_dict[str(names[i]) + "_reference"] = measures_ref[i]
     np.savez(str(out_path), **savez_dict)

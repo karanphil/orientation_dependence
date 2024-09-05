@@ -85,7 +85,7 @@ def main():
     for measure, measure_name in zip(measures, measures_names):
         polyfit_shape = np.load(args.polyfits[0])[measure_name + "_polyfit"].shape
         polyfits = np.ndarray((polyfit_shape) + (len(args.polyfits),))
-        maxima = np.zeros(len(args.polyfits))
+        references = np.zeros(len(args.polyfits))
         bundles_names = np.empty(len(args.polyfits), dtype=object)
         for i, polyfit in enumerate(args.polyfits):
             bundle_name = Path(polyfit).parent.name
@@ -97,7 +97,7 @@ def main():
             else:
                 bundle_idx = i
             polyfits[..., bundle_idx] = np.load(polyfit)[measure_name + "_polyfit"]
-            maxima[bundle_idx] = np.load(polyfit)[measure_name + "_maximum"]
+            references[bundle_idx] = np.load(polyfit)[measure_name + "_reference"]
             bundles_names[bundle_idx] = bundle_name
 
         if (lookuptable != bundles_names).all():
@@ -105,7 +105,7 @@ def main():
 
         # Compute correction
         corrected_measure= correct_measure(measure, peaks, affine,
-                                           polyfits, maxima,
+                                           polyfits, references,
                                            fixel_density_maps)
 
         # Save results
