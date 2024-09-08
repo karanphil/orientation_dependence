@@ -161,7 +161,7 @@ def main():
             raise ValueError(msg)
         averages[i] = np.ma.average(np.ma.MaskedArray(measure_means[i],
                                                       mask=np.isnan(measure_means[i])),
-                                    weights=nb_voxels[i], axis=1)
+                                    weights=nb_voxels[i], axis=0)
 
     # For every measure, compute the correlation between bundles
     if args.patch:
