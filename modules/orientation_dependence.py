@@ -362,8 +362,7 @@ def fit_single_fiber_results(bins, means, is_measures=None, weights=None):
 
 
 def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
-                                 stop_crit=0.08, ref_type="mean",
-                                 use_weighted_polyfit=True):
+                                 stop_crit=0.08, use_weighted_polyfit=True):
     if is_measures is None:
         is_measures = np.ones(means.shape[0])
 
@@ -375,7 +374,7 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
 
     max_poly_order = len(bins) - 1
     fits = np.zeros((max_poly_order, means.shape[-1]))
-    references = np.zeros((means.shape[-1]))
+    # references = np.zeros((means.shape[-1]))
     for i in range(means.shape[-1]):
         new_bins, new_means, new_is_measures, new_weights =\
             extend_measure(bins, means[..., i], is_measure=is_measures[..., i],
@@ -420,13 +419,9 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
         min_angle = np.min(mid_bins[is_measures[..., i]]) - bin_width / 2
         max_angle = np.max(mid_bins[is_measures[..., i]]) + bin_width / 2
         highres_bins = np.arange(min_angle, max_angle, 0.1)
-        if ref_type == "max":
-            references[i] = np.max(polynome(highres_bins))
-        elif ref_type == "mean":
-            references[i] = np.nansum(nb_voxels[..., i] * means[..., i], axis=0) / np.nansum(nb_voxels[..., i])
-        else:
-            logging.error("Reference type does not exist.")
-    return fits, references
+        # if ref_type == "max":
+        #     references[i] = np.max(polynome(highres_bins))
+    return fits
 
 
 def where_to_patch(is_measures, max_gap_frac=0.15, distance_sides_frac=0.1):

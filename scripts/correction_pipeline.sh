@@ -145,7 +145,7 @@ if $do_characterize_original;
     then
     echo "FIFTH STEP";
 
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_original --measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles $bundles_masks --bundles_names $bundles_names --bin_width_sf $bin_width --min_nb_voxels 1 --min_frac_pts 0.75 --stop_crit 0.055 --save_polyfit --use_weighted_polyfit;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_original --measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles $bundles_masks --bundles_names $bundles_names --bin_width_sf $bin_width --min_nb_voxels 1 --min_frac_pts 0.75 --stop_crit 0.055 --save_polyfit --use_weighted_polyfit --patch;
 
     scil_volume_math.py union ${fixel_analysis}/voxel_density_mask_*.nii.gz ${fixel_analysis}/voxel_density_mask_WM.nii.gz -f;
     mkdir -p ${out_original}/WM;

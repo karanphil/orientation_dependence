@@ -131,6 +131,7 @@ def main():
     measure_means = np.zeros((nb_bundles, nb_bins, nb_measures))
     nb_voxels = np.zeros((nb_bundles, nb_bins, nb_measures))
     is_measures = np.ndarray((nb_bundles, nb_bins), dtype=bool)
+    averages = np.zeros((nb_bundles, nb_measures))
     pts_origin = np.ndarray((nb_bundles, nb_bins, nb_measures), dtype=object)
     pts_origin.fill("None")
 
@@ -158,6 +159,9 @@ def main():
                      single-fiber voxels. Try to carefully reduce the
                      min_nb_voxels."""
             raise ValueError(msg)
+        averages[i] = np.ma.average(np.ma.MaskedArray(measure_means[i],
+                                                      mask=np.isnan(measure_means[i])),
+                                    weights=nb_voxels[i], axis=1)
 
     # For every measure, compute the correlation between bundles
     if args.patch:
@@ -186,8 +190,13 @@ def main():
                         logging.info("Number of points to patch: {}".format(int(np.sum(to_patch))))
                         logging.info("Number of points patched: {}".format(np.sum(patchable_pts)))
                         common_pts = is_measures[j] * is_measures[bundle_idx]
-                        curr_bundle_mean = np.mean(measure_means[j, ..., i][common_pts])
-                        other_bundle_mean = np.mean(measure_means[bundle_idx, ..., i][common_pts])
+                        # Old method, does not take voxel count into account.
+                        # curr_bundle_mean = np.mean(measure_means[j, ..., i][common_pts])
+                        # other_bundle_mean = np.mean(measure_means[bundle_idx, ..., i][common_pts])
+                        curr_bundle_mean = np.average(measure_means[j, ..., i][common_pts],
+                                                      weights=nb_voxels[j, ..., i][common_pts])
+                        other_bundle_mean = np.average(measure_means[bundle_idx, ..., i][common_pts],
+                                                       weights=nb_voxels[bundle_idx, ..., i][common_pts])
                         delta_mean = curr_bundle_mean - other_bundle_mean
                         measure_means[j, ..., i][patchable_pts] = measure_means[bundle_idx, ..., i][patchable_pts] + delta_mean
                         nb_voxels[j, ..., i][patchable_pts] = nb_voxels[bundle_idx, ..., i][patchable_pts]
@@ -205,14 +214,14 @@ def main():
     if args.save_polyfit:
         for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
             logging.info("Fitting the results of bundle {}.".format(bundle_name))
-            measures_fit, measures_ref = fit_single_fiber_results_new(bins,
-                                                    measure_means[i],
-                                                    is_measures=new_is_measures[i],
-                                                    nb_voxels=nb_voxels[i],
-                                                    stop_crit=args.stop_crit,
-                                                    use_weighted_polyfit=args.use_weighted_polyfit)
+            measures_fit = fit_single_fiber_results_new(bins,
+                                                        measure_means[i],
+                                                        is_measures=new_is_measures[i],
+                                                        nb_voxels=nb_voxels[i],
+                                                        stop_crit=args.stop_crit,
+                                                        use_weighted_polyfit=args.use_weighted_polyfit)
             out_path = out_folder / (bundles_names[i] + '/1f_polyfits')
-            save_polyfits_as_npz(measures_fit, measures_ref, measures_name, out_path)
+            save_polyfits_as_npz(measures_fit, averages[i], measures_name, out_path)
 
 
 if __name__ == "__main__":
