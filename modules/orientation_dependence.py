@@ -437,11 +437,12 @@ def where_to_patch(is_measures, max_gap_frac=0.15, distance_sides_frac=0.1):
     to_patch = np.zeros((len(is_measures)))
     for patch in too_big_gaps:
         to_patch[is_measures_pos[patch] + 1:is_measures_pos[patch + 1]] = 1
-    distance_from_sides = int(np.round(distance_sides_frac * len(is_measures)))
-    if np.sum(is_measures[0:distance_from_sides]) == 0:
-        to_patch[0:distance_from_sides] = 1
-    if np.sum(is_measures[-distance_from_sides:]) == 0:
-        to_patch[-distance_from_sides:] = 1
+    # Try without the sides checks, since we do not use the maximum anymore.
+    # distance_from_sides = int(np.round(distance_sides_frac * len(is_measures)))
+    # if np.sum(is_measures[0:distance_from_sides]) == 0:
+    #     to_patch[0:distance_from_sides] = 1
+    # if np.sum(is_measures[-distance_from_sides:]) == 0:
+    #     to_patch[-distance_from_sides:] = 1
     return to_patch
 
 
