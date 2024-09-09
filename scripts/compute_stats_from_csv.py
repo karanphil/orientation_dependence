@@ -22,6 +22,8 @@ def main():
         df=df[df['Section'].isnull()]
         df.drop('Section', axis=1, inplace=True)
 
+    major_bundles = np.array([1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0])
+
     # Average of the ratio of mean STD between original and corrected
     all_mean_std_ratio = np.zeros((len(df['Bundles'].unique()), 4))
     for i, bundle in enumerate(df['Bundles'].unique()):
@@ -35,13 +37,14 @@ def main():
             all_mean_std_ratio[i, j] = mean_std_ori / mean_std_cor
             # print(measure, all_mean_std_ratio[i, j])
         # print(np.mean(all_mean_std_ratio[i]))
-    # print(np.mean(all_mean_std_ratio))
+    print(np.mean(all_mean_std_ratio[major_bundles]))
 
     # Average of the variation of std of mean between original and corrected
     all_std_mean_ratio = np.zeros((len(df['Bundles'].unique()), 4))
     for i, bundle in enumerate(df['Bundles'].unique()):
-        print(bundle)
+        # print(bundle)
         for j, measure in enumerate(['MTR', 'MTsat', 'ihMTR', 'ihMTsat']):
+            # print(measure)
             df_mean_ori = df[(df['Statistics'] == 'mean') & (df['Measures'] == measure) & (df['Type'] == 'original') & (df['Bundles'] == bundle)]
             df_mean_cor = df[(df['Statistics'] == 'mean') & (df['Measures'] == measure) & (df['Type'] == 'corrected') & (df['Bundles'] == bundle)]
 
@@ -49,8 +52,8 @@ def main():
             std_mean_cor = np.std(df_mean_cor['Value'])
             all_std_mean_ratio[i, j] = std_mean_ori / std_mean_cor
             # print(measure, all_std_mean_ratio[i, j])
-        print(np.mean(all_std_mean_ratio[i]))
-    print(np.mean(all_std_mean_ratio))
+        # print(np.mean(all_std_mean_ratio[i]))
+    print(np.mean(all_std_mean_ratio[major_bundles]))
 
     # Average of the variation of std of mean between original and corrected per subject
     df[['Subject', 'Session']] = df['Sid'].str.split(pat="_", expand=True, regex=True)
@@ -69,7 +72,7 @@ def main():
                 # print(measure, all_std_mean_ratio[i, j])
             # print(np.mean(all_std_mean_ratio[i]))
         # print(np.mean(all_std_mean_ratio[k]))
-    print(np.mean(all_std_mean_ratio))
+    print(np.mean(all_std_mean_ratio[:, major_bundles]))
 
 if __name__ == "__main__":
     main()
