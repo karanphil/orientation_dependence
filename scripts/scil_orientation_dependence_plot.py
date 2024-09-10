@@ -281,10 +281,10 @@ def main():
     # Set colormap
     if args.colormap:
         cmap = get_lookup_table(args.colormap)
-        cmap_idx = np.arange(0, 18, 1)
+        cmap_idx = np.arange(0, 100, 1)
     else:
         cmap = cm.naviaS
-        cmap_idx = np.arange(2, 20, 1)
+        cmap_idx = np.arange(2, 100, 1)
 
     initialize_plot(args)
     fig, ax = plt.subplots(nb_rows, nb_columns, layout='constrained')

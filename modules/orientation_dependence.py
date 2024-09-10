@@ -395,9 +395,9 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
                                 poly_order_l,
                                 w=new_weights[new_is_measures],
                                 full=True)
+            # https://autarkaw.wordpress.com/2008/07/05/finding-the-optimum-polynomial-order-to-use-for-regression/
             vars[j] = output[1] / (len(new_is_measures) - poly_order_l - 1)
             logging.info("Variance: {}".format(vars[j]))
-            # https://autarkaw.wordpress.com/2008/07/05/finding-the-optimum-polynomial-order-to-use-for-regression/
             pc_change[j] = (previous_var - vars[j]) / previous_var
             logging.info("% of change: {}".format(pc_change[j]))
             if np.all(np.abs(pc_change[j - 2:j + 1]) <= stop_crit) and j > 1:
@@ -413,12 +413,12 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
                        chosen_poly_order,
                        w=new_weights[new_is_measures])
         # Compute maximum
-        polynome = np.poly1d(fits[..., i])
-        mid_bins = (bins[:-1] + bins[1:]) / 2
-        bin_width = bins[1] - bins[0]
-        min_angle = np.min(mid_bins[is_measures[..., i]]) - bin_width / 2
-        max_angle = np.max(mid_bins[is_measures[..., i]]) + bin_width / 2
-        highres_bins = np.arange(min_angle, max_angle, 0.1)
+        # polynome = np.poly1d(fits[..., i])
+        # mid_bins = (bins[:-1] + bins[1:]) / 2
+        # bin_width = bins[1] - bins[0]
+        # min_angle = np.min(mid_bins[is_measures[..., i]]) - bin_width / 2
+        # max_angle = np.max(mid_bins[is_measures[..., i]]) + bin_width / 2
+        # highres_bins = np.arange(min_angle, max_angle, 0.1)
         # if ref_type == "max":
         #     references[i] = np.max(polynome(highres_bins))
     return fits
