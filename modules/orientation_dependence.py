@@ -414,9 +414,14 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
                 min_idx_lb = j
                 break
             previous_var = vars[j]
-        chosen_poly_order = max(poly_order_list[min_idx_lb],
-                                poly_order_list[min_idx],
-                                poly_order_list[min_idx_ub])
+        if min_idx_lb != 0:
+            chosen_poly_order = poly_order_list[min_idx_lb]
+        elif min_idx != 0:
+            chosen_poly_order = poly_order_list[min_idx]
+        elif min_idx_ub != 0:
+            chosen_poly_order = poly_order_list[min_idx_ub]
+        else:
+            chosen_poly_order = curr_max_poly_order
         logging.info("Polyfit order was set to {}".format(chosen_poly_order))
         fits[max_poly_order - chosen_poly_order - 1:, i] =\
             np.polyfit(new_bins[new_is_measures],
