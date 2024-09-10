@@ -387,6 +387,9 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
         previous_var = 1000000
         vars = np.ones((len(poly_order_list))) * 10000
         pc_change = np.ones((len(poly_order_list)))
+        min_idx_lb = 0
+        min_idx = 0
+        min_idx_ub = 0
         logging.info("Nb points: {}".format(len(new_is_measures)))
         for j, poly_order_l in enumerate(poly_order_list):
             logging.info("Trying poly order: {}".format(poly_order_l))
@@ -400,12 +403,20 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
             logging.info("Variance: {}".format(vars[j]))
             pc_change[j] = (previous_var - vars[j]) / previous_var
             logging.info("% of change: {}".format(pc_change[j]))
-            if np.all(np.abs(pc_change[j - 2:j + 1]) <= stop_crit) and j > 1:
-                logging.info("Found convergence, stopping poly-order search.")
+            if np.all(np.abs(pc_change[j - 2:j + 1]) <= stop_crit + 0.005) and j > 1 and min_idx_ub == 0:
+                logging.info("Found convergence for upper-bound stopping criterion.")
+                min_idx_ub = j
+            if np.all(np.abs(pc_change[j - 2:j + 1]) <= stop_crit) and j > 1 and min_idx == 0:
+                logging.info("Found convergence for stopping criterion.")
+                min_idx = j
+            if np.all(np.abs(pc_change[j - 2:j + 1]) <= stop_crit - 0.005) and j > 1 and min_idx_lb == 0:
+                logging.info("Found convergence for lower-bound stopping criterion.")
+                min_idx_lb = j
                 break
             previous_var = vars[j]
-        min_idx = np.argmin(vars)
-        chosen_poly_order = poly_order_list[min_idx]
+        chosen_poly_order = max(poly_order_list[min_idx_lb],
+                                poly_order_list[min_idx],
+                                poly_order_list[min_idx_ub])
         logging.info("Polyfit order was set to {}".format(chosen_poly_order))
         fits[max_poly_order - chosen_poly_order - 1:, i] =\
             np.polyfit(new_bins[new_is_measures],
