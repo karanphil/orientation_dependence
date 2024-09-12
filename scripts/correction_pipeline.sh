@@ -131,7 +131,8 @@ bin_width=5;
 bin_width_dir="${bin_width}_degree_bins";
 out_original="characterization/${data}/${bin_width_dir}";
 
-for bundle in bundles/${data}/bundles_weighted/*.trk;
+# for bundle in bundles/${data}/bundles_weighted/*.trk;
+for bundle in $bundle_subset;
     do bundle_name=$(basename -- "${bundle%%.*}");
     bundles_masks+=${fixel_analysis}/voxel_density_mask_${bundle_name}.nii.gz;
     bundles_masks+=" ";
@@ -194,7 +195,8 @@ out_corrected="correction/${data}/${bin_width_dir}";
 if $do_characterize_corrected;
     then
     echo "EIGHTH STEP";
-    for bundle in bundles/${data}/bundles/*.trk;
+    # for bundle in bundles/${data}/bundles/*.trk;
+    for bundle in $bundle_subset;
         do bundle_name=$(basename -- "${bundle%%.*}");
         mkdir -p ${out_corrected}/${bundle_name};
 
