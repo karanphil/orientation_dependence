@@ -11,7 +11,7 @@ source=$2;  # The second input of the script is the source directory.
 do_filter_trk=false;
 do_sift2=false;
 do_bundles=false;
-do_fixel_density=false;
+do_fixel_density=true;
 do_characterize_original=true;
 do_plot_original=true;
 do_correction=true;
@@ -102,13 +102,17 @@ fi;
 # Compute fixel density maps.
 
 weighted_bundles="bundles/${data}/bundles_weighted";
-fixel_analysis="fixel_analysis/${data}";
+# fixel_analysis="fixel_analysis/${data}";
+fixel_analysis="fixel_analysis_bundle_subset/${data}";
+
+# bundle_subset=${weighted_bundles}/*.trk
+bundle_subset="${weighted_bundles}/AF_L.trk ${weighted_bundles}/AF_R.trk ${weighted_bundles}/CC_1.trk ${weighted_bundles}/CC_2a.trk ${weighted_bundles}/CC_2b.trk ${weighted_bundles}/CC_3.trk ${weighted_bundles}/CC_4.trk ${weighted_bundles}/CC_5.trk ${weighted_bundles}/CC_6.trk ${weighted_bundles}/CC_7.trk ${weighted_bundles}/CG_L.trk ${weighted_bundles}/CG_R.trk ${weighted_bundles}/CST_L.trk ${weighted_bundles}/CST_R.trk ${weighted_bundles}/IFOF_L.trk ${weighted_bundles}/IFOF_R.trk ${weighted_bundles}/ILF_L.trk ${weighted_bundles}/ILF_R.trk ${weighted_bundles}/OR_L.trk ${weighted_bundles}/OR_R.trk ${weighted_bundles}/UF_L.trk ${weighted_bundles}/UF_R.trk";
 
 if $do_fixel_density;
     then
     echo "FOURTH STEP";
     mkdir -p $fixel_analysis;
-    scil_bundle_fixel_analysis.py FODF_metrics/${data}/new_peaks/peaks.nii.gz --in_bundles ${weighted_bundles}/*.trk --dps_key sift2 --split_bundles --out_dir $fixel_analysis --rel_thr 0.1 --abs_thr 1.5 --processes 8 -f;
+    scil_bundle_fixel_analysis.py FODF_metrics/${data}/new_peaks/peaks.nii.gz --in_bundles $bundle_subset --dps_key sift2 --split_bundles --out_dir $fixel_analysis --rel_thr 0.1 --abs_thr 1.5 --processes 8 -f;
 
     rm ${fixel_analysis}/fixel_density_mask*;
     rm ${fixel_analysis}/nb_bundles*;
