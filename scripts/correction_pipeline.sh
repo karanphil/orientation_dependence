@@ -108,6 +108,9 @@ fixel_analysis="fixel_analysis_bundle_subset/${data}";
 # bundle_subset=${weighted_bundles}/*.trk
 bundle_subset="${weighted_bundles}/AF_L.trk ${weighted_bundles}/AF_R.trk ${weighted_bundles}/CC_1.trk ${weighted_bundles}/CC_2a.trk ${weighted_bundles}/CC_2b.trk ${weighted_bundles}/CC_3.trk ${weighted_bundles}/CC_4.trk ${weighted_bundles}/CC_5.trk ${weighted_bundles}/CC_6.trk ${weighted_bundles}/CC_7.trk ${weighted_bundles}/CG_L.trk ${weighted_bundles}/CG_R.trk ${weighted_bundles}/CST_L.trk ${weighted_bundles}/CST_R.trk ${weighted_bundles}/IFOF_L.trk ${weighted_bundles}/IFOF_R.trk ${weighted_bundles}/ILF_L.trk ${weighted_bundles}/ILF_R.trk ${weighted_bundles}/OR_L.trk ${weighted_bundles}/OR_R.trk ${weighted_bundles}/UF_L.trk ${weighted_bundles}/UF_R.trk";
 
+# bundles_list="AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP";
+bundles_list="AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CST_L CST_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R UF_L UF_R";
+
 if $do_fixel_density;
     then
     echo "FOURTH STEP";
@@ -164,9 +167,9 @@ fi;
 if $do_plot_original;
     then
     echo "SIXTH STEP";
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat --in_bundles ${out_original}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_original}/orientation_dependence_MT.png --in_polyfits ${out_original}/*/1f_polyfits.npz;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat --in_bundles ${out_original}/*/1f_results.npz --bundles_order $bundles_list WM -f --out_filename  ${out_original}/orientation_dependence_MT.png --in_polyfits ${out_original}/*/1f_polyfits.npz;
 
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures ihMTR ihMTsat --in_bundles ${out_original}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_original}/orientation_dependence_ihMT.png --in_polyfits ${out_original}/*/1f_polyfits.npz;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures ihMTR ihMTsat --in_bundles ${out_original}/*/1f_results.npz --bundles_order $bundles_list WM -f --out_filename  ${out_original}/orientation_dependence_ihMT.png --in_polyfits ${out_original}/*/1f_polyfits.npz;
 
     python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat ihMTR ihMTsat --in_bundles ${out_original}/*/1f_results.npz --bundles_order AF_L AF_R CC_3 CC_4 CG_L CG_R CST_L CST_R IFOF_L IFOF_R OR_L OR_R WM -f --in_polyfits ${out_original}/*/1f_polyfits.npz --out_filename ${out_original}/orientation_dependence.png;
 
@@ -216,16 +219,16 @@ if $do_plot_corrected;
     then
     echo "NINTH STEP";
     # Corrected only
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_corrected}/orientation_dependence_MT.png --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order $bundles_list WM -f --out_filename  ${out_corrected}/orientation_dependence_MT.png --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
 
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures ihMTR ihMTsat --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_corrected}/orientation_dependence_ihMT.png --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures ihMTR ihMTsat --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order $bundles_list WM -f --out_filename  ${out_corrected}/orientation_dependence_ihMT.png --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
 
     python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat ihMTR ihMTsat --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_3 CC_4 CG_L CG_R CST_L CST_R IFOF_L IFOF_R OR_L OR_R WM -f --in_polyfits ${out_corrected}/*/1f_polyfits.npz --out_filename ${out_corrected}/orientation_dependence.png;
 
     # Corrected and original
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat --in_bundles ${out_original}/*/1f_results.npz --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_corrected}/orientation_dependence_comparison_MT.png --in_polyfits ${out_original}/*/1f_polyfits.npz --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat --in_bundles ${out_original}/*/1f_results.npz --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order $bundles_list WM -f --out_filename  ${out_corrected}/orientation_dependence_comparison_MT.png --in_polyfits ${out_original}/*/1f_polyfits.npz --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
 
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures ihMTR ihMTsat --in_bundles ${out_original}/*/1f_results.npz --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP WM -f --out_filename  ${out_corrected}/orientation_dependence_comparison_ihMT.png --in_polyfits ${out_original}/*/1f_polyfits.npz --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures ihMTR ihMTsat --in_bundles ${out_original}/*/1f_results.npz --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order $bundles_list WM -f --out_filename  ${out_corrected}/orientation_dependence_comparison_ihMT.png --in_polyfits ${out_original}/*/1f_polyfits.npz --in_polyfits ${out_corrected}/*/1f_polyfits.npz;
 
     python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures MTR MTsat ihMTR ihMTsat --in_bundles ${out_original}/*/1f_results.npz --in_bundles ${out_corrected}/*/1f_results.npz --bundles_order AF_L AF_R CC_3 CC_4 CG_L CG_R CST_L CST_R IFOF_L IFOF_R OR_L OR_R WM -f --in_polyfits ${out_original}/*/1f_polyfits.npz --in_polyfits ${out_corrected}/*/1f_polyfits.npz --out_filename ${out_corrected}/orientation_dependence_comparison.png;
 
