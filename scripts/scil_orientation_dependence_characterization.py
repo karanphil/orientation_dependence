@@ -214,6 +214,7 @@ def main():
     if args.save_polyfit:
         for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
             logging.info("Fitting the results of bundle {}.".format(bundle_name))
+            averages[i] = np.nanmean(measure_means[i], axis=0)
             measures_fit = fit_single_fiber_results_new(bins,
                                                         measure_means[i],
                                                         is_measures=new_is_measures[i],

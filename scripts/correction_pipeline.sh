@@ -11,7 +11,7 @@ source=$2;  # The second input of the script is the source directory.
 do_filter_trk=false;
 do_sift2=false;
 do_bundles=false;
-do_fixel_density=true;
+do_fixel_density=false;
 do_characterize_original=true;
 do_plot_original=true;
 do_correction=true;
@@ -102,14 +102,15 @@ fi;
 # Compute fixel density maps.
 
 weighted_bundles="bundles/${data}/bundles_weighted";
-# fixel_analysis="fixel_analysis/${data}";
-fixel_analysis="fixel_analysis_bundle_subset/${data}";
 
-# bundle_subset=${weighted_bundles}/*.trk
-bundle_subset="${weighted_bundles}/AF_L.trk ${weighted_bundles}/AF_R.trk ${weighted_bundles}/CC_1.trk ${weighted_bundles}/CC_2a.trk ${weighted_bundles}/CC_2b.trk ${weighted_bundles}/CC_3.trk ${weighted_bundles}/CC_4.trk ${weighted_bundles}/CC_5.trk ${weighted_bundles}/CC_6.trk ${weighted_bundles}/CC_7.trk ${weighted_bundles}/CG_L.trk ${weighted_bundles}/CG_R.trk ${weighted_bundles}/CST_L.trk ${weighted_bundles}/CST_R.trk ${weighted_bundles}/IFOF_L.trk ${weighted_bundles}/IFOF_R.trk ${weighted_bundles}/ILF_L.trk ${weighted_bundles}/ILF_R.trk ${weighted_bundles}/OR_L.trk ${weighted_bundles}/OR_R.trk ${weighted_bundles}/UF_L.trk ${weighted_bundles}/UF_R.trk";
+fixel_analysis="fixel_analysis/${data}";
+# fixel_analysis="fixel_analysis_bundle_subset/${data}";
 
-# bundles_list="AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP";
-bundles_list="AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CST_L CST_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R UF_L UF_R";
+bundle_subset=${weighted_bundles}/*.trk
+# bundle_subset="${weighted_bundles}/AF_L.trk ${weighted_bundles}/AF_R.trk ${weighted_bundles}/CC_1.trk ${weighted_bundles}/CC_2a.trk ${weighted_bundles}/CC_2b.trk ${weighted_bundles}/CC_3.trk ${weighted_bundles}/CC_4.trk ${weighted_bundles}/CC_5.trk ${weighted_bundles}/CC_6.trk ${weighted_bundles}/CC_7.trk ${weighted_bundles}/CG_L.trk ${weighted_bundles}/CG_R.trk ${weighted_bundles}/CST_L.trk ${weighted_bundles}/CST_R.trk ${weighted_bundles}/IFOF_L.trk ${weighted_bundles}/IFOF_R.trk ${weighted_bundles}/ILF_L.trk ${weighted_bundles}/ILF_R.trk ${weighted_bundles}/OR_L.trk ${weighted_bundles}/OR_R.trk ${weighted_bundles}/UF_L.trk ${weighted_bundles}/UF_R.trk";
+
+bundles_list="AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CR_L CR_R CST_L CST_R ICP_L ICP_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R SLF_1_L SLF_1_R SLF_2_L SLF_2_R SLF_3_L SLF_3_R UF_L UF_R MCP";
+# bundles_list="AF_L AF_R CC_1 CC_2a CC_2b CC_3 CC_4 CC_5 CC_6 CC_7 CG_L CG_R CST_L CST_R IFOF_L IFOF_R ILF_L ILF_R OR_L OR_R UF_L UF_R";
 
 if $do_fixel_density;
     then
