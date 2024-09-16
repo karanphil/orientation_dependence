@@ -42,10 +42,13 @@ def main():
     print(np.mean(all_mean_std_ratio[major_bundles]))
 
     # Average of the variation of std of mean between original and corrected
-    all_std_mean_ratio = np.zeros((len(df['Bundles'].unique()), 4))
+    measures = ['MTR', 'MTsat', 'ihMTR', 'ihMTsat']
+    # measures = ['ihMTR', 'ihMTsat']
+    # measures = ['MTR', 'MTsat']
+    all_std_mean_ratio = np.zeros((len(df['Bundles'].unique()), len(measures)))
     for i, bundle in enumerate(df['Bundles'].unique()):
         # print(bundle)
-        for j, measure in enumerate(['MTR', 'MTsat', 'ihMTR', 'ihMTsat']):
+        for j, measure in enumerate(measures):
             # print(measure)
             df_mean_ori = df[(df['Statistics'] == 'mean') & (df['Measures'] == measure) & (df['Type'] == 'original') & (df['Bundles'] == bundle)]
             df_mean_cor = df[(df['Statistics'] == 'mean') & (df['Measures'] == measure) & (df['Type'] == 'corrected') & (df['Bundles'] == bundle)]
