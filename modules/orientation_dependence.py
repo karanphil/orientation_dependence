@@ -50,6 +50,46 @@ def analyse_delta_m_max(bins, means_diag, sf_delta_m_max, nb_voxels,
     return slope, origin, delta_m_max, frac_thrs_mid, min_bins, max_bins
 
 
+def compute_fixel_measures(measure, peaks, affine, polyfits, reference,
+                           fixel_density_maps):
+    # Find the direction of the B0 field
+    rot = affine[0:3, 0:3]
+    z_axis = np.array([0, 0, 1])
+    b0_field = np.dot(rot.T, z_axis)
+
+    # Compute the peaks angle map
+    peaks_angles = np.empty((peaks.shape[0:3]) + (5,))
+    # Calculate the angle between e1 and B0 field for each peak
+    for i in range(peaks_angles.shape[-1]):
+        cos_theta = np.dot(peaks[..., i*3:(i+1)*3], b0_field)
+        theta = np.arccos(cos_theta) * 180 / np.pi
+        peaks_angles[..., i] = np.abs(theta//90 * 90 - theta%90) % 180
+
+    # Compute the delta_m for every bundle
+    estimated = np.zeros((fixel_density_maps.shape))
+    for i in range(polyfits.shape[-1]):
+        polynome = np.poly1d(polyfits[..., i])
+        estimated[..., i] = polynome(peaks_angles)
+
+    estimated_masked = np.where(fixel_density_maps !=0, estimated, 0)
+    
+    shift = measure - np.sum(fixel_density_maps * estimated, axis=(-2,-1))
+    shifted = np.zeros((peaks.shape[0:3]) + (polyfits.shape[-1],))
+    for i in range(polyfits.shape[-1]):
+        shifted[..., i] = np.sum(estimated_masked[..., i], axis=-1) + shift
+
+    # This probably doesn't work, maybe use np.repeat instead?
+    references = np.zeros((fixel_density_maps.shape))
+    references[..., :] = reference
+    shifts = np.zeros((fixel_density_maps.shape))
+    shifts[..., :, :] = shift
+    corrected = references + shifts
+
+    corrected_measure = np.sum(fixel_density_maps * corrected, axis=(-2,-1))
+
+    return shifted, corrected, corrected_measure
+
+
 def correct_measure(measure, peaks, affine, polyfits, reference,
                     fixel_density_maps):
     # Find the direction of the B0 field
