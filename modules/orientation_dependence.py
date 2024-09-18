@@ -66,28 +66,35 @@ def compute_fixel_measures(measure, peaks, affine, polyfits, reference,
         peaks_angles[..., i] = np.abs(theta//90 * 90 - theta%90) % 180
 
     # Compute the delta_m for every bundle
-    estimated = np.zeros((fixel_density_maps.shape))
+    estimations = np.zeros((fixel_density_maps.shape))
     for i in range(polyfits.shape[-1]):
         polynome = np.poly1d(polyfits[..., i])
-        estimated[..., i] = polynome(peaks_angles)
-
-    estimated_masked = np.where(fixel_density_maps !=0, estimated, 0)
+        estimations[..., i] = polynome(peaks_angles)
     
-    shift = measure - np.sum(fixel_density_maps * estimated, axis=(-2,-1))
-    shifted = np.zeros((peaks.shape[0:3]) + (polyfits.shape[-1],))
-    for i in range(polyfits.shape[-1]):
-        shifted[..., i] = np.sum(estimated_masked[..., i], axis=-1) + shift
+    shift = measure - np.sum(fixel_density_maps * estimations, axis=(-2,-1))
+    extended_shift = np.repeat(shift[:, :, :, np.newaxis],
+                               fixel_density_maps.shape[-2], axis=3)
+    extended_shift = np.repeat(extended_shift[:, :, :, :, np.newaxis],
+                               fixel_density_maps.shape[-1], axis=4)
+    shifted_estimations = estimations + extended_shift
 
-    # This probably doesn't work, maybe use np.repeat instead?
-    references = np.zeros((fixel_density_maps.shape))
-    references[..., :] = reference
-    shifts = np.zeros((fixel_density_maps.shape))
-    shifts[..., :, :] = shift
-    corrected = references + shifts
+    mean_estimations = np.sum(fixel_density_maps * shifted_estimations,
+                              axis=-2)
+    mean_estimations = np.where(np.sum(fixel_density_maps, axis=-2) != 0 ,
+                               mean_estimations / np.sum(fixel_density_maps,
+                                                         axis=-2), 0)
 
-    corrected_measure = np.sum(fixel_density_maps * corrected, axis=(-2,-1))
+    extended_shift = np.repeat(shift[:, :, :, np.newaxis],
+                               fixel_density_maps.shape[-1], axis=3)
+    extended_reference = np.zeros((extended_shift.shape))
+    extended_reference[..., :] = reference
+    mean_corrections = extended_reference + extended_shift
 
-    return shifted, corrected, corrected_measure
+    corrected_measure = np.sum(np.sum(fixel_density_maps,
+                                      axis=-2) * extended_reference,
+                               axis=-1) + extended_shift
+
+    return mean_estimations, mean_corrections, corrected_measure
 
 
 def correct_measure(measure, peaks, affine, polyfits, reference,
