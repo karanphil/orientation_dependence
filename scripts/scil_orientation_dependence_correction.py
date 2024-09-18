@@ -4,7 +4,8 @@ import numpy as np
 from pathlib import Path
 
 from modules.io import (extract_measures_as_list)
-from modules.orientation_dependence import (correct_measure)
+from modules.orientation_dependence import (correct_measure,
+                                            compute_fixel_measures)
 
 from scilpy.io.utils import (add_overwrite_arg)
 
@@ -104,11 +105,21 @@ def main():
             raise ValueError("The order of polyfits and lookup table are not the same.")
 
         # Compute correction
-        corrected_measure= correct_measure(measure, peaks, affine,
-                                           polyfits, references,
-                                           fixel_density_maps)
+        # corrected_measure= correct_measure(measure, peaks, affine,
+        #                                    polyfits, references,
+        #                                    fixel_density_maps)
+        
+        (mean_estimations,
+         mean_corrections,
+         corrected_measure) = compute_fixel_measures(measure, peaks, affine,
+                                                     polyfits, references,
+                                                     fixel_density_maps)
 
         # Save results
+        corrected_path = out_folder / str(str(measure_name) + "_bundle_wise_corrected.nii.gz")
+        nib.save(nib.Nifti1Image(mean_corrections, affine), corrected_path)
+        corrected_path = out_folder / str(str(measure_name) + "_bundle_wise.nii.gz")
+        nib.save(nib.Nifti1Image(mean_estimations, affine), corrected_path)
         corrected_path = out_folder / str(str(measure_name) + "_corrected.nii.gz")
         nib.save(nib.Nifti1Image(corrected_measure, affine), corrected_path)
         if args.save_differences:
