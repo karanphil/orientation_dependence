@@ -129,6 +129,7 @@ def main():
 
     nb_bins = int(90 / args.bin_width_sf)
     measure_means = np.zeros((nb_bundles, nb_bins, nb_measures))
+    measure_stds = np.zeros((nb_bundles, nb_bins, nb_measures))
     nb_voxels = np.zeros((nb_bundles, nb_bins, nb_measures))
     is_measures = np.ndarray((nb_bundles, nb_bins), dtype=bool)
     averages = np.zeros((nb_bundles, nb_measures))
@@ -138,7 +139,7 @@ def main():
     # For every bundle, compute the mean measures
     for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
         logging.info("Computing single-fiber means of bundle {}.".format(bundle_name))
-        bins, measure_means[i], nb_voxels[i] =\
+        bins, measure_means[i], measure_stds[i], nb_voxels[i] =\
             compute_single_fiber_means_new(peaks, fa,
                                            wm_mask,
                                            affine,
@@ -199,13 +200,14 @@ def main():
                                                        weights=nb_voxels[bundle_idx, ..., i][common_pts])
                         delta_mean = curr_bundle_mean - other_bundle_mean
                         measure_means[j, ..., i][patchable_pts] = measure_means[bundle_idx, ..., i][patchable_pts] + delta_mean
+                        measure_stds[j, ..., i][patchable_pts] = measure_stds[bundle_idx, ..., i][patchable_pts]
                         nb_voxels[j, ..., i][patchable_pts] = nb_voxels[bundle_idx, ..., i][patchable_pts]
                         pts_origin[j, ..., i][patchable_pts] = bundles_names[bundle_idx]
 
     # Saving the results of orientation dependence characterization
     for i in range(nb_bundles):
         out_path = out_folder / (bundles_names[i] + '/1f_results')
-        save_results_as_npz(bins, measure_means[i], nb_voxels[i],
+        save_results_as_npz(bins, measure_means[i], measure_stds[i], nb_voxels[i],
                             pts_origin[i], measures_name, out_path)
 
     new_is_measures = nb_voxels >= min_nb_voxels

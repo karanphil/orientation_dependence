@@ -327,6 +327,7 @@ def compute_single_fiber_means_new(peaks, fa, wm_mask, affine,
     theta = np.arccos(cos_theta) * 180 / np.pi
 
     measure_means = np.zeros((len(bins) - 1, measures.shape[-1]))
+    measure_stds = np.zeros((len(bins) - 1, measures.shape[-1]))
     nb_voxels = np.zeros((len(bins) - 1, measures.shape[-1]))
 
     # Apply the WM mask and FA threshold
@@ -345,10 +346,12 @@ def compute_single_fiber_means_new(peaks, fa, wm_mask, affine,
         nb_voxels[i, :] = np.sum(mask_total)
         if np.sum(mask_total) < 1:
             measure_means[i, :] = None
+            measure_stds[i, :] = None
         else:
             measure_means[i] = np.mean(measures[mask_total], axis=0)
+            measure_stds[i] = np.std(measures[mask_total], axis=0)
 
-    return bins, measure_means, nb_voxels
+    return bins, measure_means, measure_stds, nb_voxels
 
 
 def fit_single_fiber_results(bins, means, is_measures=None, weights=None):
