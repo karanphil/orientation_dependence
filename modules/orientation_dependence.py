@@ -89,10 +89,11 @@ def compute_fixel_measures(measure, peaks, affine, polyfits, reference,
     extended_reference = np.zeros((extended_shift.shape))
     extended_reference[..., :] = reference
     mean_corrections = extended_reference + extended_shift
+    mean_corrections *= np.sum(fixel_density_maps, axis=-2) != 0
 
     corrected_measure = np.sum(np.sum(fixel_density_maps,
                                       axis=-2) * extended_reference,
-                               axis=-1) + extended_shift
+                               axis=-1) + shift
 
     return mean_estimations, mean_corrections, corrected_measure
 
