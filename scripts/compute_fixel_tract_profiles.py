@@ -77,16 +77,19 @@ def main():
     means = np.zeros((nb_bundles, nb_measures))
     stds = np.zeros((nb_bundles, nb_measures))
     for k in range(nb_measures):
+        print(measures_name[k])
         for i, bundle in enumerate(bundles_labels):
+            print(bundles_names[i])
             means[i, k] = np.nanmean(measures[..., i, k][bundle >= 1])
             stds[i, k] = np.nanstd(measures[..., i, k][bundle >= 1])
-            df[(df['Statistics'] == 'mean') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'].isnull())] = means[i, k]
-            df[(df['Statistics'] == 'std') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'].isnull())] = stds[i, k]
+            df.loc[(df['Statistics'] == 'mean') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'].isnull()), ['Value']] = means[i, k]
+            df.loc[(df['Statistics'] == 'std') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'].isnull()), ['Value']] = stds[i, k]
             for j in range(nb_labels):
+                print("Section ", j + 1)
                 mean_profiles[i, j, k] = np.nanmean(measures[..., i, k][bundle == j + 1])
                 std_profiles[i, j, k] = np.nanstd(measures[..., i, k][bundle == j + 1])
-                df[(df['Statistics'] == 'mean') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'] == j + 1)] = mean_profiles[i, j, k]
-                df[(df['Statistics'] == 'std') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'] == j + 1)] = std_profiles[i, j, k]
+                df.loc[(df['Statistics'] == 'mean') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'] == j + 1), ['Value']] = mean_profiles[i, j, k]
+                df.loc[(df['Statistics'] == 'std') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'] == j + 1), ['Value']] = std_profiles[i, j, k]
 
     df.to_csv(args.out_csv)
 
