@@ -28,7 +28,8 @@ def _build_arg_parser():
                    help='List of names for the bundles.')
 
     p.add_argument('--in_weights', required=True,
-                   help='')
+                   help='voxel_density_maps_none_norm from '
+                        'scil_bundle_fixel_analysis.py.')
 
     p.add_argument('--type', type=str)
 
@@ -82,7 +83,8 @@ def main():
     nb_labels = int(np.nanmax(bundles_labels[0]) - np.nanmin(bundles_labels[0]))
 
     density_weights = nib.load(args.in_weights).get_fdata()
-    density_weights = np.sum(density_weights, axis=-2)
+    # density_weights = np.sum(density_weights, axis=-2)
+    density_weights[np.isnan(density_weights)] = 0
 
     mean_profiles = np.zeros((nb_bundles, nb_labels, nb_measures))
     std_profiles = np.zeros((nb_bundles, nb_labels, nb_measures))
