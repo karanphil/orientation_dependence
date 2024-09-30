@@ -11,7 +11,7 @@ source=$2;  # The second input of the script is the source directory.
 do_filter_trk=false;
 do_sift2=false;
 do_bundles=false;
-do_fixel_density=false;
+do_fixel_density=true;
 do_characterize_original=true;
 do_plot_original=true;
 do_correction=true;
@@ -116,12 +116,13 @@ if $do_fixel_density;
     then
     echo "FOURTH STEP";
     mkdir -p $fixel_analysis;
-    scil_bundle_fixel_analysis.py FODF_metrics/${data}/new_peaks/peaks.nii.gz --in_bundles $bundle_subset --dps_key sift2 --split_bundles --out_dir $fixel_analysis --rel_thr 0.1 --abs_thr 1.5 --processes 8 -f;
+    scil_bundle_fixel_analysis.py FODF_metrics/${data}/new_peaks/peaks.nii.gz --in_bundles $bundle_subset --dps_key sift2 --split_bundles --out_dir $fixel_analysis --rel_thr 0.1 --abs_thr 1.5 --processes 8 -f --norm voxel none;
 
     rm ${fixel_analysis}/fixel_density_mask*;
     rm ${fixel_analysis}/nb_bundles*;
-    rm ${fixel_analysis}/voxel_density_map*;
-    rm ${fixel_analysis}/voxel_density_masks.nii.gz;
+    rm ${fixel_analysis}/voxel_density_map_*;
+    rm ${fixel_analysis}/voxel_density_masks*;
+    rm ${fixel_analysis}/voxel_density_mask_none-norm*;
     rm ${fixel_analysis}/fixel_density_map_*;
 
 fi;
@@ -185,9 +186,9 @@ if $do_correction;
 
     polyfits=$(find ${out_original}/*/1f_polyfits.npz ! -path '*WM*');
 
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps.nii.gz ihMT/${data}/ --polyfits $polyfits --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps_voxel-norm.nii.gz ihMT/${data}/ --polyfits $polyfits --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt;
 
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps.nii.gz ihMT/${data}/ --polyfits $polyfits --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps_voxel-norm.nii.gz ihMT/${data}/ --polyfits $polyfits --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt;
 
 fi;
 
