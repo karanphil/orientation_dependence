@@ -11,7 +11,7 @@ source=$2;  # The second input of the script is the source directory.
 do_filter_trk=false;
 do_sift2=false;
 do_bundles=false;
-do_fixel_density=true;
+do_fixel_density=false;
 do_characterize_original=true;
 do_plot_original=true;
 do_correction=true;
@@ -139,7 +139,7 @@ out_original="characterization/${data}/${bin_width_dir}";
 # for bundle in bundles/${data}/bundles_weighted/*.trk;
 for bundle in $bundle_subset;
     do bundle_name=$(basename -- "${bundle%%.*}");
-    bundles_masks+=${fixel_analysis}/voxel_density_mask_${bundle_name}.nii.gz;
+    bundles_masks+=${fixel_analysis}/voxel_density_mask_voxel-norm_${bundle_name}.nii.gz;
     bundles_masks+=" ";
     bundles_names+=$bundle_name;
     bundles_names+=" ";
@@ -157,7 +157,7 @@ if $do_characterize_original;
 
     python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_original --measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles $bundles_masks --bundles_names $bundles_names --bin_width_sf $bin_width --min_nb_voxels 1 --min_frac_pts 0.5 --stop_crit 0.055 --save_polyfit --use_weighted_polyfit --patch;
 
-    scil_volume_math.py union ${fixel_analysis}/voxel_density_mask_*.nii.gz ${fixel_analysis}/voxel_density_mask_WM.nii.gz -f;
+    scil_volume_math.py union ${fixel_analysis}/voxel_density_mask_voxel-norm_*.nii.gz ${fixel_analysis}/voxel_density_mask_WM.nii.gz -f;
     mkdir -p ${out_original}/WM;
     python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_original --measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles ${fixel_analysis}/voxel_density_mask_WM.nii.gz --bundles_names WM --bin_width_sf $bin_width --min_nb_voxels 1 --stop_crit 0.055 --save_polyfit --use_weighted_polyfit;
 
