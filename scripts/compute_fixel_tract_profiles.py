@@ -33,6 +33,8 @@ def _build_arg_parser():
 
     p.add_argument('--type', type=str)
 
+    p.add_argument('--sid', default='sub-026-hc_ses-3')
+
     add_overwrite_arg(p)
     add_processes_arg(p)
     add_reference_arg(p)
@@ -52,8 +54,6 @@ def main():
                      'the same number of measures as given in --measures.')
 
     df = pd.read_csv(args.in_csv)
-
-    df = df[df['Sid'] == 'sub-026-hc_ses-3']
 
     data_shape = (nib.load(args.measures[0])).get_fdata().shape
 
@@ -91,19 +91,19 @@ def main():
     means = np.zeros((nb_bundles, nb_measures))
     stds = np.zeros((nb_bundles, nb_measures))
     for k in range(nb_measures):
-        print(measures_name[k])
+        #print(measures_name[k])
         for i, bundle in enumerate(bundles_labels):
-            print(bundles_names[i])
+            #print(bundles_names[i])
             masked_data = np.ma.masked_array(measures[..., i, k][bundle >= 1],
                                              np.isnan((measures[..., i, k][bundle >= 1])))
             means[i, k] = np.average(masked_data, weights=density_weights[..., i][bundle >= 1])
             stds[i, k] = np.sqrt(np.average((masked_data - means[i, k]) ** 2, weights=density_weights[..., i][bundle >= 1]))
             # means[i, k] = np.nanmean((measures[..., i, k] * density_weights[... , i])[bundle >= 1])
             # stds[i, k] = np.nanstd((measures[..., i, k] * density_weights[..., i])[bundle >= 1])
-            df.loc[(df['Statistics'] == 'mean') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'].isnull()), ['Value']] = means[i, k]
-            df.loc[(df['Statistics'] == 'std') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'].isnull()), ['Value']] = stds[i, k]
+            df.loc[(df['Statistics'] == 'mean') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'].isnull()) & (df['Sid'] == args.sid), ['Value']] = means[i, k]
+            df.loc[(df['Statistics'] == 'std') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'].isnull()) & (df['Sid'] == args.sid), ['Value']] = stds[i, k]
             for j in range(nb_labels):
-                print("Section ", j + 1)
+                #print("Section ", j + 1)
                 masked_data = np.ma.masked_array(measures[..., i, k][bundle == j + 1],
                                              np.isnan((measures[..., i, k][bundle == j + 1])))
                 mean_profiles[i, j, k] = np.average(masked_data,
@@ -112,8 +112,8 @@ def main():
                                                            weights=density_weights[..., i][bundle == j + 1]))
                 # mean_profiles[i, j, k] = np.nanmean((measures[..., i, k] * density_weights[..., i])[bundle == j + 1])
                 # std_profiles[i, j, k] = np.nanstd((measures[..., i, k] * density_weights[..., i])[bundle == j + 1])
-                df.loc[(df['Statistics'] == 'mean') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'] == j + 1), ['Value']] = mean_profiles[i, j, k]
-                df.loc[(df['Statistics'] == 'std') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'] == j + 1), ['Value']] = std_profiles[i, j, k]
+                df.loc[(df['Statistics'] == 'mean') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'] == j + 1) & (df['Sid'] == args.sid), ['Value']] = mean_profiles[i, j, k]
+                df.loc[(df['Statistics'] == 'std') & (df['Measures'] == measures_name[k]) & (df['Type'] == args.type) & (df['Bundles'] == bundles_names[i]) & (df['Section'] == j + 1) & (df['Sid'] == args.sid), ['Value']] = std_profiles[i, j, k]
 
     df.to_csv(args.out_csv)
 
