@@ -56,6 +56,12 @@ def _build_arg_parser():
     g.add_argument('--min_nb_voxels', default=1, type=int,
                    help='Value of the minimal number of voxels per bin '
                         '[%(default)s].')
+    g.add_argument('--reference', default="mean", type=str,
+                   choices=["mean", "maximum"],
+                   help='Choice of reference measure saved for later '
+                        'correction. \nBy default, the weighted mean is taken '
+                        'as the reference. \nTaking the maximum instead is '
+                        'possible, but proven to be very noisy.')
 
     g1 = p.add_argument_group(title='Patching parameters')
     g1.add_argument('--patch', action='store_true',
@@ -218,14 +224,19 @@ def main():
             logging.info("Fitting the results of bundle {}.".format(bundle_name))
             # Taking the average of the mean points instead of all the points
             # averages[i] = np.nanmean(measure_means[i], axis=0)
-            measures_fit = fit_single_fiber_results_new(bins,
+            measures_fit, measures_max = fit_single_fiber_results_new(bins,
                                                         measure_means[i],
                                                         is_measures=new_is_measures[i],
                                                         nb_voxels=nb_voxels[i],
                                                         stop_crit=args.stop_crit,
                                                         use_weighted_polyfit=args.use_weighted_polyfit)
             out_path = out_folder / (bundles_names[i] + '/1f_polyfits')
-            save_polyfits_as_npz(measures_fit, averages[i], measures_name, out_path)
+            if args.reference == "mean":
+                save_polyfits_as_npz(measures_fit, averages[i],
+                                     measures_name, out_path)
+            elif args.reference == "maximum":
+                save_polyfits_as_npz(measures_fit, measures_max,
+                                     measures_name, out_path)
 
 
 if __name__ == "__main__":

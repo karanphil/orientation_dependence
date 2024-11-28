@@ -425,7 +425,7 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
 
     max_poly_order = len(bins) - 1
     fits = np.zeros((max_poly_order, means.shape[-1]))
-    # references = np.zeros((means.shape[-1]))
+    measures_max = np.zeros((means.shape[-1]))
     for i in range(means.shape[-1]):
         new_bins, new_means, new_is_measures, new_weights =\
             extend_measure(bins, means[..., i], is_measure=is_measures[..., i],
@@ -480,15 +480,14 @@ def fit_single_fiber_results_new(bins, means, is_measures=None, nb_voxels=None,
                        chosen_poly_order,
                        w=new_weights[new_is_measures])
         # Compute maximum
-        # polynome = np.poly1d(fits[..., i])
-        # mid_bins = (bins[:-1] + bins[1:]) / 2
-        # bin_width = bins[1] - bins[0]
-        # min_angle = np.min(mid_bins[is_measures[..., i]]) - bin_width / 2
-        # max_angle = np.max(mid_bins[is_measures[..., i]]) + bin_width / 2
-        # highres_bins = np.arange(min_angle, max_angle, 0.1)
-        # if ref_type == "max":
-        #     references[i] = np.max(polynome(highres_bins))
-    return fits
+        polynome = np.poly1d(fits[..., i])
+        mid_bins = (bins[:-1] + bins[1:]) / 2
+        bin_width = bins[1] - bins[0]
+        min_angle = np.min(mid_bins[is_measures[..., i]]) - bin_width / 2
+        max_angle = np.max(mid_bins[is_measures[..., i]]) + bin_width / 2
+        highres_bins = np.arange(min_angle, max_angle, 0.1)
+        measures_max[i] = np.max(polynome(highres_bins))
+    return fits, measures_max
 
 
 def where_to_patch(is_measures, max_gap_frac=0.15, distance_sides_frac=0.1):
