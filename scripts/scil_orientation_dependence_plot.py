@@ -173,7 +173,7 @@ def main():
         max_counts = []
         for bundle in set:
             logging.info("Loading: {}".format(bundle))
-            result = np.load(bundle)
+            result = np.load(bundle) # when pipeline is finished, replace by dict(np.load(bundle))
             bundles.append(result)
             bundles_names.append(Path(bundle).parent.name)
             max_count = 0
@@ -232,7 +232,7 @@ def main():
             polyfits = []
             for polyfit in set:
                 logging.info("Loading: {}".format(polyfit))
-                polyfits.append(np.load(polyfit))
+                polyfits.append(np.load(polyfit))  # when pipeline is finished, replace by polyfits.append(dict(np.load(polyfit)))
             all_polyfits.append(polyfits)
 
             # Verify that number of polyfits equals number of bundles
