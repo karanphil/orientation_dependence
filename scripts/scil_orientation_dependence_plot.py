@@ -173,7 +173,7 @@ def main():
         max_counts = []
         for bundle in set:
             logging.info("Loading: {}".format(bundle))
-            result = np.load(bundle) # when pipeline is finished, replace by dict(np.load(bundle))
+            result = dict(np.load(bundle))
             bundles.append(result)
             bundles_names.append(Path(bundle).parent.name)
             max_count = 0
@@ -232,7 +232,7 @@ def main():
             polyfits = []
             for polyfit in set:
                 logging.info("Loading: {}".format(polyfit))
-                polyfits.append(np.load(polyfit))  # when pipeline is finished, replace by polyfits.append(dict(np.load(polyfit)))
+                polyfits.append(dict(np.load(polyfit)))
             all_polyfits.append(polyfits)
 
             # Verify that number of polyfits equals number of bundles
@@ -284,7 +284,7 @@ def main():
         cmap_idx = np.arange(0, 100, 1)
     else:
         cmap = cm.naviaS
-        cmap_idx = np.arange(2, 100, 1)
+        cmap_idx = np.arange(2, 1000, 1)
 
     initialize_plot(args)
     fig, ax = plt.subplots(nb_rows, nb_columns, layout='constrained')
