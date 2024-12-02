@@ -84,6 +84,9 @@ def _build_arg_parser():
                    help='Maximum number of measures that can be plotted. '
                         '\nIt is not recommended to change this value '
                         '[%(default)s].')
+    
+    p.add_argument('--plot_mean', action='store_true',
+                   help='If set, the mean of all sets is plotted.')
 
     g = p.add_argument_group(title="Plot parameters")
 
@@ -187,6 +190,17 @@ def main():
         all_bundles_names.append(bundles_names)
         all_max_counts.append(max_counts)
     nb_sets = len(sets)
+
+    if args.plot_mean:
+        # Il faut un dict par bundle. Sets est une liste de liste de dicts.
+        mean_bundles = dict()
+        for measure in ["MTR", "ihMTR", "MTsat", "ihMTsat"]:
+            mean_bundles[measure] = 0
+            for set in sets:
+                for bundle in set:
+                    mean_bundles[measure] += set[measure]
+            mean_bundles[measure] /= nb_sets
+        nb_sets = 1
 
     # Verify that all sets have the same dimension
     if all(nb_bundles == all_nb_bundles[0] for nb_bundles in all_nb_bundles):
