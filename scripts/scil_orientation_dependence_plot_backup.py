@@ -162,100 +162,101 @@ def main():
     # assert_inputs_exist(parser, args.in_bundles, args.in_polyfits)
     assert_outputs_exist(parser, args, args.out_filename)
 
-    nm_measures = args.measures
-    nb_measures = len(nm_measures)
-
-    # !!!!!! Attention, ce que j'ai fait ne marche pas... il faut une autre dimension
-    # aux arrays pour le nb de bins... qui peut varier et qu'on ne sait pas en avance...!!!!!
+    measures = args.measures
+    nb_measures = len(measures)
 
     # Load all results
-    nb_subjects = len(args.in_bundles)
-    nb_bundles = len(args.in_bundles[0])
-    bundles_names = np.empty((nb_bundles), dtype=object)
-    angles_min = np.zeros(nb_subjects, nb_bundles)
-    angles_max = np.zeros(nb_subjects, nb_bundles)
-    measures = np.zeros(nb_measures, nb_subjects, nb_bundles)
-    nb_voxels = np.zeros(nb_measures, nb_subjects, nb_bundles)
-    origins = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
-    for i, sub in enumerate(args.in_bundles):
-        # Verify that all subjects have the same number of bundles
-        if len(sub) != nb_bundles:
-            parser.error("Different sets of --in_bundles must have the same "
-                         "number of bundles.")
-        for j, bundle in enumerate(sub):
+    sets = []
+    all_nb_bundles = []
+    all_bundles_names = []
+    all_max_counts = []
+    for set in args.in_bundles:
+        bundles = []
+        bundles_names = []
+        max_counts = []
+        for bundle in set:
             logging.info("Loading: {}".format(bundle))
-            file = dict(np.load(bundle))
-            angles_min[i, j] = file['Angle_min']
-            angles_max[i, j] = file['Angle_max']
-            if args.in_bundles_names:
-                # Verify that number of bundle names equals number of bundles
-                if len(args.in_bundles_names) != nb_bundles:
-                    parser.error("--in_bundles_names must contain the same "
-                                 "number of elements as in each set of "
-                                 "--in_bundles.")
-                bundle_name = args.in_bundles_names[j]
-            else:
-                bundle_name = Path(bundle).parent.name
-            # Verify that all bundle names are the same between subjects
-            if i > 0 and bundle_name != bundles_names[j]:
-                parser.error("Bundles extracted from different sets do not "
-                             "seem to be the same. Use --in_bundles_names if "
-                             "the naming of files is not consistent across "
-                             "sets.")
-            else:
-                bundles_names[j] = bundle_name
-            for k, nm_measure in enumerate(nm_measures):
-                measures[k, i, j] = file[nm_measure]
-                nb_voxels[k, i, j] = file['Nb_voxels_' + nm_measure]
-                origins[k, i, j] = file['Origin_' + nm_measure]
+            result = dict(np.load(bundle))
+            bundles.append(result)
+            bundles_names.append(Path(bundle).parent.name)
+            max_count = 0
+            for measure in measures:
+                curr_max_count = np.max(result['Nb_voxels_' + measure])
+                if curr_max_count > max_count:
+                    max_count = curr_max_count
+            max_counts.append(max_count)
+        sets.append(bundles)
+        all_nb_bundles.append(len(set))
+        all_bundles_names.append(bundles_names)
+        all_max_counts.append(max_counts)
+    nb_sets = len(sets)
 
-    # if args.plot_mean:
-    #     # Il faut un dict par bundle. Sets est une liste de liste de dicts.
-    #     mean_bundles = dict()
-    #     for measure in ["MTR", "ihMTR", "MTsat", "ihMTsat"]:
-    #         mean_bundles[measure] = 0
-    #         for set in sets:
-    #             for bundle in set:
-    #                 mean_bundles[measure] += set[measure]
-    #         mean_bundles[measure] /= nb_sets
-    #     nb_sets = 1
+    if args.plot_mean:
+        # Il faut un dict par bundle. Sets est une liste de liste de dicts.
+        mean_bundles = dict()
+        for measure in ["MTR", "ihMTR", "MTsat", "ihMTsat"]:
+            mean_bundles[measure] = 0
+            for set in sets:
+                for bundle in set:
+                    mean_bundles[measure] += set[measure]
+            mean_bundles[measure] /= nb_sets
+        nb_sets = 1
 
-    if args.bundles_order:
-        bundles_order = args.bundles_order
-        # Verify that all bundles in bundles_order are present in bundles_names
-        if not all(bundle in bundles_names for bundle in bundles_order):
-            parser.error("Some bundles given in --bundles_order do not match "
-                         "the names in --in_bundles_names or extracted from "
-                         "the filenames.")
+    # Verify that all sets have the same dimension
+    if all(nb_bundles == all_nb_bundles[0] for nb_bundles in all_nb_bundles):
+        nb_bundles = all_nb_bundles[0]
     else:
-        bundles_order = bundles_names
-    nb_bundles_to_plot = len(bundles_order)
+        parser.error("Different sets of --in_bundles must have the same "
+                     "number of bundles.")
 
+    if not args.in_bundles_names:
+        # Verify that all extracted bundle names are the same between sets
+        if not all(name == all_bundles_names[0] for name in all_bundles_names):
+            parser.error("Bundles extracted from different sets do not seem "
+                         "to be the same. Use --in_bundles_names if the "
+                         "naming of files is not consistent across sets.")
+        bundles_names = all_bundles_names[0]
+    else:
+        # Verify that dimension of sets equals dimension of bundles names
+        if len(args.in_bundles_names) != nb_bundles:
+            parser.error("--in_bundles_names must contain the same number of "
+                         "elements as in each set of --in_bundles.")
+        bundles_names = args.in_bundles_names
+
+    bundles_order = args.bundles_order
+    nb_bundles_to_plot = len(bundles_order)
+    # Verify that all bundles in bundles_order are present in bundles_names
+    if not all(bundle in bundles_names for bundle in bundles_order):
+        parser.error("Some bundles given in --bundles_order do not match "
+                     "the names in --in_bundles_names or extracted from the "
+                     "filenames.")
     # Compute max voxel count with only bundles in bundles_order
     max_count = 0
-    for bundle in bundles_order:
-        bundle_idx = np.argwhere(bundles_names == bundle)[0][0]
-        if np.nanmax(nb_voxels[:, :, bundle_idx]) > max_count:
-            max_count = np.nanmax(nb_voxels[:, :, bundle_idx]) 
+    for max_counts in all_max_counts:
+        for bundle in bundles_order:
+            bundle_idx = bundles_names.index(bundle)
+            if max_counts[bundle_idx] > max_count:
+                max_count = max_counts[bundle_idx]
     norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
 
     # Load all polyfits
     if args.in_polyfits:
-        polyfits = np.zeros(nb_measures, nb_subjects, nb_bundles)
-        # Verify that polyfits and bundles have same number of sets
-        if len(args.in_polyfits) != nb_subjects:
-            parser.error("--in_polyfits must contain the same number of "
-                         "sets as --in_bundles.")
-        for i, sub in enumerate(args.in_polyfits):
+        all_polyfits = []
+        for set in args.in_polyfits:
+            polyfits = []
+            for polyfit in set:
+                logging.info("Loading: {}".format(polyfit))
+                polyfits.append(dict(np.load(polyfit)))
+            all_polyfits.append(polyfits)
+
             # Verify that number of polyfits equals number of bundles
-            if len(sub) != nb_bundles:
+            if len(polyfits) != nb_bundles:
                 parser.error("--in_polyfits must contain the same number of "
                              "elements as in each set of --in_bundles.")
-            for j, bundle in enumerate(sub):
-                logging.info("Loading: {}".format(bundle))
-                file = dict(np.load(bundle))
-                for k, nm_measure in enumerate(nm_measures):
-                    polyfits[k, i, j] = file[nm_measure + "_polyfit"]
+        # Verify that polyfits and bundles have same number of sets
+        if len(all_polyfits) != nb_sets:
+            parser.error("--in_polyfits must contain the same number of "
+                         "sets as --in_bundles.")
 
     # Verify the dimensions of the plot
     if (nb_bundles_to_plot > args.max_nb_bundles / 2 and
@@ -303,8 +304,8 @@ def main():
     fig, ax = plt.subplots(nb_rows, nb_columns, layout='constrained')
     min_measures = np.ones((nb_bundles_to_plot, nb_measures)) * 10000000
     max_measures = np.zeros((nb_bundles_to_plot, nb_measures))
-    colorbars = np.empty((nb_subjects), dtype=object)
-    for i in range(nb_subjects):
+    colorbars = np.empty((nb_sets), dtype=object)
+    for i, set in enumerate(sets):
         for j in range(nb_bundles_to_plot):
             if split_columns:  # for nb_measures <= args.max_nb_measures / 2
                 col = (j % 2) * int(nb_columns / 2)
@@ -313,54 +314,52 @@ def main():
                 col = 0
                 row = j
 
-            # measures = np.zeros(nb_measures, nb_subjects, nb_bundles)
-            # nb_voxels = np.zeros(nb_measures, nb_subjects, nb_bundles)
-            # origins = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
-
-            jj = np.argwhere(bundles_names == bundles_order[j])[0][0]
-            mid_bins = (angles_min[i, jj] + angles_max[i, jj]) / 2.
+            bundle_idx = bundles_names.index(bundles_order[j])
+            result = set[bundle_idx]
+            mid_bins = (result['Angle_min'] + result['Angle_max']) / 2.
             for k in range(nb_measures):
-                is_measures = nb_voxels[k, i, jj] >= min_nb_voxels
+                is_measures = result['Nb_voxels_' + measures[k]] >= min_nb_voxels
                 is_not_measures = np.invert(is_measures)
-                color = cmap(cmap_idx[i + (nb_subjects == 1) * k])
-                pts_origin = origins[k, i, jj]
+                color = cmap(cmap_idx[i + (nb_sets == 1) * k])
+                pts_origin = result['Origin_' + measures[k]]
                 is_original = pts_origin == bundles_order[j]
                 is_none = pts_origin == "None"
                 is_patched = np.logical_and(np.invert(is_none),
                                             np.invert(is_original))
                 cb = ax[row, col + k].scatter(mid_bins[is_original & is_measures],
-                                              measures[k, i, jj][is_original & is_measures],
-                                              c=nb_voxels[k, i, jj][is_original & is_measures],
+                                              result[measures[k]][is_original & is_measures],
+                                              c=result['Nb_voxels_' + measures[k]][is_original & is_measures],
                                               cmap='Greys', norm=norm,
                                               edgecolors=color,
                                               linewidths=1)
                 ax[row, col + k].scatter(mid_bins[is_original & is_not_measures],
-                                         measures[k, i, jj][is_original & is_not_measures],
-                                         c=nb_voxels[k, i, jj][is_original & is_not_measures],
+                                         result[measures[k]][is_original & is_not_measures],
+                                         c=result['Nb_voxels_' + measures[k]][is_original & is_not_measures],
                                          cmap='Greys', norm=norm, alpha=0.5,
                                          edgecolors=color, linewidths=1)
                 ax[row, col + k].scatter(mid_bins[is_patched & is_measures],
-                                         measures[k, i, jj][is_patched & is_measures],
-                                         c=nb_voxels[k, i, jj][is_patched & is_measures],
+                                         result[measures[k]][is_patched & is_measures],
+                                         c=result['Nb_voxels_' + measures[k]][is_patched & is_measures],
                                          cmap='Greys', norm=norm, marker="s",
                                          edgecolors=color, linewidths=1)
                 ax[row, col + k].scatter(mid_bins[is_patched & is_not_measures],
-                                         measures[k, i, jj][is_patched & is_not_measures],
-                                         c=nb_voxels[k, i, jj][is_patched & is_not_measures],
+                                         result[measures[k]][is_patched & is_not_measures],
+                                         c=result['Nb_voxels_' + measures[k]][is_patched & is_not_measures],
                                          cmap='Greys', norm=norm, marker="s",
                                          alpha=0.5, edgecolors=color,
                                          linewidths=1)
                 colorbars[i] = cb
 
                 if args.in_polyfits:
-                    polynome_r = np.poly1d(polyfits[k, i, jj])
+                    polyfits = all_polyfits[i]
+                    polynome_r = np.poly1d(polyfits[bundle_idx][measures[k] + "_polyfit"])
                     ax[row, col + k].plot(highres_bins, polynome_r(highres_bins),
                                           "--", color=color)
 
-                if 0.975 * np.nanmin(measures[k, i, jj]) < min_measures[j, k]:
-                    min_measures[j, k] = 0.975 * np.nanmin(measures[k, i, jj])
-                if 1.025 * np.nanmax(measures[k, i, jj]) > max_measures[j, k]:
-                    max_measures[j, k] = 1.025 * np.nanmax(measures[k, i, jj])
+                if 0.975 * np.nanmin(result[measures[k]]) < min_measures[j, k]:
+                    min_measures[j, k] = 0.975 * np.nanmin(result[measures[k]])
+                if 1.025 * np.nanmax(result[measures[k]]) > max_measures[j, k]:
+                    max_measures[j, k] = 1.025 * np.nanmax(result[measures[k]])
                 ax[row, col + k].set_ylim(min_measures[j, k],
                                           max_measures[j, k])
                 ax[row, col + k].set_yticks([np.round(min_measures[j, k],
@@ -384,7 +383,7 @@ def main():
                     ax[row, col + k].title.set_text(measures[k])
 
                 if (args.legend_names and args.legend_subplot and
-                    i == nb_subjects - 1):
+                    i == nb_sets - 1):
                     if (args.legend_subplot[0] == bundles_order[j] and
                         args.legend_subplot[1] == measures[k]):
                         ax[row, col + k].legend(handles=list(colorbars),
