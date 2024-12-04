@@ -165,17 +165,16 @@ def main():
     nm_measures = args.measures
     nb_measures = len(nm_measures)
 
-    # !!!!!! Attention, ce que j'ai fait ne marche pas... il faut une autre dimension
-    # aux arrays pour le nb de bins... qui peut varier et qu'on ne sait pas en avance...!!!!!
+    # !!!!!!!!!!! Attention si je veux faire des moyennes, il faut que les arrays aient la même taille...
 
     # Load all results
     nb_subjects = len(args.in_bundles)
     nb_bundles = len(args.in_bundles[0])
     bundles_names = np.empty((nb_bundles), dtype=object)
-    angles_min = np.zeros(nb_subjects, nb_bundles)
-    angles_max = np.zeros(nb_subjects, nb_bundles)
-    measures = np.zeros(nb_measures, nb_subjects, nb_bundles)
-    nb_voxels = np.zeros(nb_measures, nb_subjects, nb_bundles)
+    angles_min = np.empty((nb_subjects, nb_bundles), dtype=object)
+    angles_max = np.empty((nb_subjects, nb_bundles), dtype=object)
+    measures = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
+    nb_voxels = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
     origins = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
     for i, sub in enumerate(args.in_bundles):
         # Verify that all subjects have the same number of bundles
@@ -235,13 +234,16 @@ def main():
     max_count = 0
     for bundle in bundles_order:
         bundle_idx = np.argwhere(bundles_names == bundle)[0][0]
-        if np.nanmax(nb_voxels[:, :, bundle_idx]) > max_count:
-            max_count = np.nanmax(nb_voxels[:, :, bundle_idx]) 
+        for i in range(nb_measures):
+            for j in range(nb_subjects):
+                if np.nanmax(nb_voxels[i, j, bundle_idx]) > max_count:
+                    max_count = np.nanmax(nb_voxels[i, j, bundle_idx]) 
     norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
 
     # Load all polyfits
     if args.in_polyfits:
-        polyfits = np.zeros(nb_measures, nb_subjects, nb_bundles)
+        polyfits = np.empty((nb_measures, nb_subjects, nb_bundles),
+                            dtype=object)
         # Verify that polyfits and bundles have same number of sets
         if len(args.in_polyfits) != nb_subjects:
             parser.error("--in_polyfits must contain the same number of "
@@ -313,10 +315,6 @@ def main():
                 col = 0
                 row = j
 
-            # measures = np.zeros(nb_measures, nb_subjects, nb_bundles)
-            # nb_voxels = np.zeros(nb_measures, nb_subjects, nb_bundles)
-            # origins = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
-
             jj = np.argwhere(bundles_names == bundles_order[j])[0][0]
             mid_bins = (angles_min[i, jj] + angles_max[i, jj]) / 2.
             for k in range(nb_measures):
@@ -381,12 +379,12 @@ def main():
                     ax[row, col + k].set_xticks([0, 15, 30, 45, 60, 75, 90])
 
                 if row == 0:
-                    ax[row, col + k].title.set_text(measures[k])
+                    ax[row, col + k].title.set_text(nm_measures[k])
 
                 if (args.legend_names and args.legend_subplot and
                     i == nb_subjects - 1):
                     if (args.legend_subplot[0] == bundles_order[j] and
-                        args.legend_subplot[1] == measures[k]):
+                        args.legend_subplot[1] == nm_measures[k]):
                         ax[row, col + k].legend(handles=list(colorbars),
                                                 labels=args.legend_names,
                                                 loc=args.legend_location)
