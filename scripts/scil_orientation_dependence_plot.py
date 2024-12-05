@@ -86,7 +86,11 @@ def _build_arg_parser():
                         '[%(default)s].')
     
     p.add_argument('--plot_mean', action='store_true',
-                   help='If set, the mean of all sets is plotted.')
+                   help='If set, the mean of all sets is plotted. Cannot be '
+                        'set with in_polyfits.')
+
+    p.add_argument('--plot_std', action='store_true',
+                   help='If set, the std is plotted.')
 
     g = p.add_argument_group(title="Plot parameters")
 
@@ -162,10 +166,12 @@ def main():
     # assert_inputs_exist(parser, args.in_bundles, args.in_polyfits)
     assert_outputs_exist(parser, args, args.out_filename)
 
+    # if args.in_polyfits and args.plot_mean:
+    #     parser.error('Polynomial fits cannot be given with the plot_mean '
+    #                  'option.')
+
     nm_measures = args.measures
     nb_measures = len(nm_measures)
-
-    # !!!!!!!!!!! Attention si je veux faire des moyennes, il faut que les arrays aient la même taille...
 
     # Load all results
     nb_subjects = len(args.in_bundles)
@@ -174,6 +180,8 @@ def main():
     angles_min = np.empty((nb_subjects, nb_bundles), dtype=object)
     angles_max = np.empty((nb_subjects, nb_bundles), dtype=object)
     measures = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
+    measures_std = np.empty((nb_measures, nb_subjects, nb_bundles),
+                            dtype=object)
     nb_voxels = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
     origins = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
     for i, sub in enumerate(args.in_bundles):
@@ -205,19 +213,62 @@ def main():
                 bundles_names[j] = bundle_name
             for k, nm_measure in enumerate(nm_measures):
                 measures[k, i, j] = file[nm_measure]
+                measures_std[k, i, j] = file[nm_measure + '_std']
                 nb_voxels[k, i, j] = file['Nb_voxels_' + nm_measure]
                 origins[k, i, j] = file['Origin_' + nm_measure]
+                nb_bins = len(measures[k, i, j])
+                if args.plot_mean and nb_bins != len(measures[k, 0, j]):
+                    parser.error("When the plot_mean option is given, the "
+                                 "number of bins for a given bundle and "
+                                 "measure must be the same for all subjects.")
 
-    # if args.plot_mean:
-    #     # Il faut un dict par bundle. Sets est une liste de liste de dicts.
-    #     mean_bundles = dict()
-    #     for measure in ["MTR", "ihMTR", "MTsat", "ihMTsat"]:
-    #         mean_bundles[measure] = 0
-    #         for set in sets:
-    #             for bundle in set:
-    #                 mean_bundles[measure] += set[measure]
-    #         mean_bundles[measure] /= nb_sets
-    #     nb_sets = 1
+    # Load all polyfits
+    if args.in_polyfits:
+        polyfits = np.empty((nb_measures, nb_subjects, nb_bundles),
+                            dtype=object)
+        # Verify that polyfits and bundles have same number of sets
+        if len(args.in_polyfits) != nb_subjects:
+            parser.error("--in_polyfits must contain the same number of "
+                         "sets as --in_bundles.")
+        for i, sub in enumerate(args.in_polyfits):
+            # Verify that number of polyfits equals number of bundles
+            if len(sub) != nb_bundles:
+                parser.error("--in_polyfits must contain the same number of "
+                             "elements as in each set of --in_bundles.")
+            for j, bundle in enumerate(sub):
+                logging.info("Loading: {}".format(bundle))
+                file = dict(np.load(bundle))
+                for k, nm_measure in enumerate(nm_measures):
+                    polyfits[k, i, j] = file[nm_measure + "_polyfit"]
+
+    if args.plot_mean:
+        mean_measures = np.empty((nb_measures, 1, nb_bundles), dtype=object)
+        mean_measures_std = np.empty((nb_measures, 1, nb_bundles),
+                                     dtype=object)
+        mean_nb_voxels = np.empty((nb_measures, 1, nb_bundles), dtype=object)
+        mean_origins = np.empty((nb_measures, 1, nb_bundles), dtype=object)
+        mean_polyfits = np.empty((nb_measures, 1, nb_bundles), dtype=object)
+        for j, bundle_name in enumerate(bundles_names):
+            for k in range(nb_measures):
+                nb_bins = len(measures[k, 0, j])
+                origin = np.array(list(origins[k, :, j])) == bundle_name
+                measure = np.where(origin, np.array(list(measures[k, :, j])),
+                                   np.NaN)
+                nb_voxel = np.where(origin, np.array(list(nb_voxels[k, :, j])),
+                                    np.NaN)
+                mean_measures[k, 0, j] = np.nanmean(measure, axis=0)
+                mean_measures_std[k, 0, j] = np.nanstd(measure, axis=0)
+                mean_nb_voxels[k, 0, j] = np.nanmean(nb_voxel, axis=0)
+                mean_origins[k, 0, j] = np.repeat(bundle_name, nb_bins)
+                if args.in_polyfits:
+                    polyfit = np.array(list(polyfits[k, :, j]))
+                    mean_polyfits[k, 0, j] = np.mean(polyfit, axis=0)
+        measures = mean_measures
+        measures_std = mean_measures_std
+        nb_voxels = mean_nb_voxels
+        origins = mean_origins
+        polyfits = mean_polyfits
+        nb_subjects = 1
 
     if args.bundles_order:
         bundles_order = args.bundles_order
@@ -239,25 +290,6 @@ def main():
                 if np.nanmax(nb_voxels[i, j, bundle_idx]) > max_count:
                     max_count = np.nanmax(nb_voxels[i, j, bundle_idx]) 
     norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
-
-    # Load all polyfits
-    if args.in_polyfits:
-        polyfits = np.empty((nb_measures, nb_subjects, nb_bundles),
-                            dtype=object)
-        # Verify that polyfits and bundles have same number of sets
-        if len(args.in_polyfits) != nb_subjects:
-            parser.error("--in_polyfits must contain the same number of "
-                         "sets as --in_bundles.")
-        for i, sub in enumerate(args.in_polyfits):
-            # Verify that number of polyfits equals number of bundles
-            if len(sub) != nb_bundles:
-                parser.error("--in_polyfits must contain the same number of "
-                             "elements as in each set of --in_bundles.")
-            for j, bundle in enumerate(sub):
-                logging.info("Loading: {}".format(bundle))
-                file = dict(np.load(bundle))
-                for k, nm_measure in enumerate(nm_measures):
-                    polyfits[k, i, j] = file[nm_measure + "_polyfit"]
 
     # Verify the dimensions of the plot
     if (nb_bundles_to_plot > args.max_nb_bundles / 2 and
@@ -354,6 +386,14 @@ def main():
                     polynome_r = np.poly1d(polyfits[k, i, jj])
                     ax[row, col + k].plot(highres_bins, polynome_r(highres_bins),
                                           "--", color=color)
+
+                if args.plot_std:
+                    ax[row, col + k].fill_between(mid_bins,
+                                                  measures[k, i, jj] - measures_std[k, i, jj],
+                                                  measures[k, i, jj] + measures_std[k, i, jj],
+                                                  color=color,
+                                                  edgecolor=None,
+                                                  alpha=0.3)
 
                 if 0.975 * np.nanmin(measures[k, i, jj]) < min_measures[j, k]:
                     min_measures[j, k] = 0.975 * np.nanmin(measures[k, i, jj])
