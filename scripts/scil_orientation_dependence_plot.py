@@ -213,7 +213,8 @@ def main():
                 bundles_names[j] = bundle_name
             for k, nm_measure in enumerate(nm_measures):
                 measures[k, i, j] = file[nm_measure]
-                measures_std[k, i, j] = file[nm_measure + '_std']
+                if nm_measure + '_std' in file.keys():
+                    measures_std[k, i, j] = file[nm_measure + '_std']
                 nb_voxels[k, i, j] = file['Nb_voxels_' + nm_measure]
                 origins[k, i, j] = file['Origin_' + nm_measure]
                 nb_bins = len(measures[k, i, j])
