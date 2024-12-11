@@ -387,9 +387,31 @@ def save_results_as_npz(bins, measure_means, measure_stds, nb_voxels,
     np.savez(str(out_path), **savez_dict)
 
 
+def save_results_as_npz_mean(bins, measure_means, measure_stds, nb_voxels,
+                             pts_origin, names, out_path):
+    # Save the results to a npz files
+    savez_dict = dict()
+    savez_dict['Angle_min'] = bins[:-1]
+    savez_dict['Angle_max'] = bins[1:]
+    for i in range(measure_means.shape[-1]):
+        savez_dict[str(names[i])] = measure_means[i]
+        savez_dict[str(names[i]) + '_std'] = measure_stds[i]
+        savez_dict['Origin_' + str(names[i])] = pts_origin[i].astype(str)
+        savez_dict['Nb_voxels_' + str(names[i])] = nb_voxels[i]
+    np.savez(str(out_path), **savez_dict)
+
+
 def save_polyfits_as_npz(polyfits, measures_ref, names, out_path):
     savez_dict = dict()
     for i in range(polyfits.shape[-1]):
         savez_dict[str(names[i]) + "_polyfit"] = polyfits[..., i]
+        savez_dict[str(names[i]) + "_reference"] = measures_ref[i]
+    np.savez(str(out_path), **savez_dict)
+
+
+def save_polyfits_as_npz_mean(polyfits, measures_ref, names, out_path):
+    savez_dict = dict()
+    for i in range(polyfits.shape[-1]):
+        savez_dict[str(names[i]) + "_polyfit"] = polyfits[i]
         savez_dict[str(names[i]) + "_reference"] = measures_ref[i]
     np.savez(str(out_path), **savez_dict)

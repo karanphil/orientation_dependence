@@ -11,7 +11,7 @@ import numpy as np
 import logging
 from pathlib import Path
 
-from modules.io import (save_results_as_npz, save_polyfits_as_npz)
+from modules.io import (save_results_as_npz_mean, save_polyfits_as_npz_mean)
 
 from scilpy.io.utils import (add_verbose_arg, assert_inputs_exist,
                              assert_outputs_exist, add_overwrite_arg)
@@ -57,8 +57,8 @@ def _build_arg_parser():
                         '\nMake sure that each set has the same number of '
                         'bundles.')
 
-    p.add_argument('--out_folder', default='./',
-                   help='Path to the output folder.')
+    p.add_argument('--outdir', default='./',
+                   help='Path to the output directory.')
     
     p.add_argument('--reference', default="mean", type=str,
                    choices=["mean", "maximum"],
@@ -78,12 +78,12 @@ def main():
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.getLevelName(args.verbose))
 
-    out_folder = Path(args.out_folder)
+    out_folder = Path(args.outdir)
 
     # This does not work since the inputs are lists of lists.
     # I would have to adjust assert_inputs_exist in scilpy
     # assert_inputs_exist(parser, args.in_bundles, args.in_polyfits)
-    assert_outputs_exist(parser, args, args.out_filename)
+    assert_outputs_exist(parser, args, args.outdir)
 
     # Load all results
     nm_measures = args.measures
@@ -105,7 +105,8 @@ def main():
         for j, bundle in enumerate(sub):
             logging.info("Loading: {}".format(bundle))
             file = dict(np.load(bundle))
-            bins[j] = np.concatenate(file['Angle_min'], file['Angle_max'][-1])
+            bins[j] = np.concatenate((file['Angle_min'],
+                                      [file['Angle_max'][-1]]))
             if args.in_bundles_names:
                 # Verify that number of bundle names equals number of bundles
                 if len(args.in_bundles_names) != nb_bundles:
@@ -178,20 +179,21 @@ def main():
                 if args.reference == "mean":
                     mean_reference[k, j] = np.ma.average(np.ma.MaskedArray(mean_measures[k, j],
                                                          mask=np.isnan(mean_measures[k, j])),
-                                                         mean_nb_voxels[k, j], axis=0)
+                                                         weights=mean_nb_voxels[k, j])
                 elif args.reference == "maximum":
                     mean_reference[k, j] = np.nanmax(mean_measures[k, j])
 
     # Add here an option to compute new polyfits on the mean points.
 
     for j, bundle_name in enumerate(bundles_names):
-        out_path = out_folder / (bundle_name + '_1f_results')
-        save_results_as_npz(bins[j], mean_measures[:, j],
+        out_path = out_folder / (bundle_name + '/1f_results')
+        save_results_as_npz_mean(bins[j], mean_measures[:, j],
                             mean_measures_std[:, j], mean_nb_voxels[:, j],
-                            mean_origins[:, j], nm_measure, out_path)
+                            mean_origins[:, j], nm_measures, out_path)
         if args.in_polyfits:
-            save_polyfits_as_npz(mean_polyfits[:, j], mean_reference[:, j],
-                                 nm_measure, out_path)
+            out_path = out_folder / (bundle_name + '/1f_polyfits')
+            save_polyfits_as_npz_mean(mean_polyfits[:, j], mean_reference[:, j],
+                                     nm_measures, out_path)
 
 
 if __name__ == "__main__":
