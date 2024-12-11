@@ -92,6 +92,17 @@ def _build_arg_parser():
     p.add_argument('--plot_std', action='store_true',
                    help='If set, the std is plotted.')
 
+    p.add_argument('--common_yticks', action='store_true',
+                   help='If set, all plots of the same measure will have the '
+                        'same yticks.')
+
+    p.add_argument('--set_yticks', nargs='+', action='append', type=float,
+                   help='Given yticks per measure. For each measure, use the '
+                        '--set_yticks argument to give all yticks. \nThe '
+                        'minimum * 0.975 and maximum * 1.025 for each will be '
+                        'used for ylim. \nMust be in the same order as '
+                        '--measures.')
+
     g = p.add_argument_group(title="Plot parameters")
 
     g.add_argument("--figsize", default=[8, 8], nargs=2,
@@ -170,10 +181,13 @@ def main():
     #     parser.error('Polynomial fits cannot be given with the plot_mean '
     #                  'option.')
 
-    nm_measures = args.measures
-    nb_measures = len(nm_measures)
+    if args.common_yticks and args.set_yticks:
+        parser.error('Argument common_yticks and set_yticks cannot be used '
+                     'together.')
 
     # Load all results
+    nm_measures = args.measures
+    nb_measures = len(nm_measures)
     nb_subjects = len(args.in_bundles)
     nb_bundles = len(args.in_bundles[0])
     bundles_names = np.empty((nb_bundles), dtype=object)
@@ -282,14 +296,21 @@ def main():
         bundles_order = bundles_names
     nb_bundles_to_plot = len(bundles_order)
 
-    # Compute max voxel count with only bundles in bundles_order
+    # Compute max voxel count with only bundles in bundles_order and
+    # the minimal/maximal values for each measures
     max_count = 0
+    ymin = np.ones((nb_measures)) * 1000000
+    ymax = np.zeros((nb_measures))
     for bundle in bundles_order:
         bundle_idx = np.argwhere(bundles_names == bundle)[0][0]
         for i in range(nb_measures):
             for j in range(nb_subjects):
                 if np.nanmax(nb_voxels[i, j, bundle_idx]) > max_count:
-                    max_count = np.nanmax(nb_voxels[i, j, bundle_idx]) 
+                    max_count = np.nanmax(nb_voxels[i, j, bundle_idx])
+                if np.nanmax(measures[i, j, bundle_idx]) > ymax[i]:
+                    ymax[i] = np.nanmax(measures[i, j, bundle_idx])
+                if np.nanmin(measures[i, j, bundle_idx]) < ymin[i]:
+                    ymin[i] = np.nanmin(measures[i, j, bundle_idx])
     norm = mpl.colors.Normalize(vmin=0, vmax=max_count)
 
     # Verify the dimensions of the plot
@@ -396,16 +417,27 @@ def main():
                                                   edgecolor=None,
                                                   alpha=0.3)
 
-                if 0.975 * np.nanmin(measures[k, i, jj]) < min_measures[j, k]:
-                    min_measures[j, k] = 0.975 * np.nanmin(measures[k, i, jj])
-                if 1.025 * np.nanmax(measures[k, i, jj]) > max_measures[j, k]:
-                    max_measures[j, k] = 1.025 * np.nanmax(measures[k, i, jj])
-                ax[row, col + k].set_ylim(min_measures[j, k],
-                                          max_measures[j, k])
-                ax[row, col + k].set_yticks([np.round(min_measures[j, k],
-                                                      decimals=1),
-                                             np.round(max_measures[j, k],
-                                                      decimals=1)])
+                if args.common_yticks:
+                    ax[row, col + k].set_ylim(ymin[k] * 0.975, ymax[k] * 1.025)
+                    ax[row, col + k].set_yticks([np.round(ymin[k], decimals=1),
+                                                 np.round(ymax[k],
+                                                          decimals=1)])
+                elif args.set_yticks is not None:
+                    yticks = args.set_yticks[k]
+                    ax[row, col + k].set_ylim(np.min(yticks) * 0.975,
+                                              np.max(yticks) * 1.025)
+                    ax[row, col + k].set_yticks(yticks)
+                else:
+                    if 0.975 * np.nanmin(measures[k, i, jj]) < min_measures[j, k]:
+                        min_measures[j, k] = 0.975 * np.nanmin(measures[k, i, jj])
+                    if 1.025 * np.nanmax(measures[k, i, jj]) > max_measures[j, k]:
+                        max_measures[j, k] = 1.025 * np.nanmax(measures[k, i, jj])
+                    ax[row, col + k].set_ylim(min_measures[j, k],
+                                              max_measures[j, k])
+                    ax[row, col + k].set_yticks([np.round(min_measures[j, k],
+                                                decimals=1),
+                                                np.round(max_measures[j, k],
+                                                decimals=1)])
                 ax[row, col + k].set_xlim(0, 90)
 
                 if (col + k) % 2 != 0:
