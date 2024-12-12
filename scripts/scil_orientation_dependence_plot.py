@@ -172,9 +172,7 @@ def main():
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.getLevelName(args.verbose))
 
-    # This does not work since the inputs are lists of lists.
-    # I would have to adjust assert_inputs_exist in scilpy
-    # assert_inputs_exist(parser, args.in_bundles, args.in_polyfits)
+    assert_inputs_exist(parser, args.in_bundles, args.in_polyfits)
     assert_outputs_exist(parser, args, args.out_filename)
 
     # if args.in_polyfits and args.plot_mean:
