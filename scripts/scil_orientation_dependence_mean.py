@@ -160,6 +160,7 @@ def main():
     mean_nb_voxels = np.empty((nb_measures, nb_bundles), dtype=object)
     mean_origins = np.empty((nb_measures, nb_bundles), dtype=object)
     mean_polyfits = np.empty((nb_measures, nb_bundles), dtype=object)
+    polyfits = np.empty((nb_measures, nb_bundles), dtype=object)
     mean_reference = np.empty((nb_measures, nb_bundles))
     for j, bundle_name in enumerate(bundles_names):
         for k in range(nb_measures):
@@ -183,8 +184,6 @@ def main():
                 elif args.reference == "maximum":
                     mean_reference[k, j] = np.nanmax(mean_measures[k, j])
 
-    # Add here an option to compute new polyfits on the mean points.
-
     for j, bundle_name in enumerate(bundles_names):
         out_path = out_folder / (bundle_name + '/1f_results')
         save_results_as_npz_mean(bins[j], mean_measures[:, j],
@@ -193,7 +192,7 @@ def main():
         if args.in_polyfits:
             out_path = out_folder / (bundle_name + '/1f_polyfits')
             save_polyfits_as_npz_mean(mean_polyfits[:, j], mean_reference[:, j],
-                                     nm_measures, out_path)
+                                      nm_measures, out_path)
 
 
 if __name__ == "__main__":

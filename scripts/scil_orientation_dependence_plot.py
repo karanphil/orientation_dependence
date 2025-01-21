@@ -92,6 +92,12 @@ def _build_arg_parser():
     p.add_argument('--plot_std', action='store_true',
                    help='If set, the std is plotted.')
 
+    p.add_argument('--write_mean_std', action='store_true',
+                   help='If set, the mean std is added as text.') # Update help
+
+    p.add_argument('--horizontal_test', action='store_true',
+                   help='If set, the ratio between...') # Update help
+
     p.add_argument('--common_yticks', action='store_true',
                    help='If set, all plots of the same measure will have the '
                         'same yticks.')
@@ -402,6 +408,29 @@ def main():
                                          linewidths=1)
                 colorbars[i] = cb
 
+                if args.horizontal_test: # This only works for 2 series of input!!! Modify this later.
+                    is_not_nan = nb_voxels[k, 0, jj] >= 1
+                    polyfit1 = np.polyfit(mid_bins[is_not_nan],
+                                          measures[k, 0, jj][is_not_nan],
+                                          0,
+                                          w=np.sqrt(nb_voxels[k, 0, jj][is_not_nan]),
+                                          full=True)
+                    polyfit2 = np.polyfit(mid_bins[is_not_nan],
+                                          measures[k, 1, jj][is_not_nan],
+                                          0,
+                                          w=np.sqrt(nb_voxels[k, 1, jj][is_not_nan]),
+                                          full=True)
+                    res1 = polyfit1[1][0]
+                    res2 = polyfit2[1][0]
+                    print(bundles_order[j], nm_measures[k])
+                    print(res1, res2)
+                    diff_res = (res1 - res2) / res1 * 100
+                    ax[row, col + k].text(0.1, 0.08,
+                                          str(np.round(diff_res, decimals=1)) + "%",
+                                          color="dimgrey",
+                                          transform=ax[row, col + k].transAxes,
+                                          size=6)
+
                 if args.in_polyfits:
                     polynome_r = np.poly1d(polyfits[k, i, jj])
                     ax[row, col + k].plot(highres_bins, polynome_r(highres_bins),
@@ -414,6 +443,39 @@ def main():
                                                   color=color,
                                                   edgecolor=None,
                                                   alpha=0.3)
+                
+                if args.write_mean_std: # This only works for 2 series of input!!! Modify this later.
+                    mean1 = np.ma.average(np.ma.MaskedArray(measures[k, 0, jj],
+                                                           mask=np.isnan(measures[k, 0, jj])),
+                                                           weights=nb_voxels[k, 0, jj])
+                    mean_std1 = np.ma.average(np.ma.MaskedArray(measures_std[k, 0, jj],
+                                                               mask=np.isnan(measures[k, 0, jj])),
+                                                               weights=nb_voxels[k, 0, jj])
+                    
+                    mean2 = np.ma.average(np.ma.MaskedArray(measures[k, 1, jj],
+                                                           mask=np.isnan(measures[k, 1, jj])),
+                                                           weights=nb_voxels[k, 1, jj])
+                    mean_std2 = np.ma.average(np.ma.MaskedArray(measures_std[k, 1, jj],
+                                                               mask=np.isnan(measures[k, 1, jj])),
+                                                               weights=nb_voxels[k, 1, jj])
+                    # Ratio
+                    # ax[row, col + k].text(0.45, 0.1,
+                    #                       str(np.round(((mean_std1 / mean1)/(mean_std2 / mean2)) * 100, decimals=1)) + "%",
+                    #                       color="dimgrey",
+                    #                       transform=ax[row, col + k].transAxes,
+                    #                       size=6)
+                    # Écart-relatif pondéré par moyenne
+                    # ax[row, col + k].text(0.45, 0.1,
+                    #                       str(np.round(((mean_std1 / mean1)/(mean_std2 / mean2) - 1) * 100, decimals=1)) + "%",
+                    #                       color="dimgrey",
+                    #                       transform=ax[row, col + k].transAxes,
+                    #                       size=6)
+                    # Écart-relatif
+                    ax[row, col + k].text(0.75, 0.08,
+                                          str(np.round(((mean_std1)/(mean_std2) - 1) * 100, decimals=1)) + "%",
+                                          color="dimgrey",
+                                          transform=ax[row, col + k].transAxes,
+                                          size=6)
 
                 if args.common_yticks:
                     ax[row, col + k].set_ylim(ymin[k] * 0.975, ymax[k] * 1.025)
