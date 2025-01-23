@@ -420,10 +420,14 @@ def main():
                                           0,
                                           w=np.sqrt(nb_voxels[k, 1, jj][is_not_nan]),
                                           full=True)
-                    res1 = polyfit1[1][0]
-                    res2 = polyfit2[1][0]
+                    res1 = np.sqrt(polyfit1[1][0])
+                    res2 = np.sqrt(polyfit2[1][0])
+                    # Calculer la std pondérée!
+                    std1 = np.std(measures[k, 0, jj][is_not_nan])
+                    std2 = np.std(measures[k, 1, jj][is_not_nan])
                     print(bundles_order[j], nm_measures[k])
                     print(res1, res2)
+                    print(std1, std2)
                     diff_res = (res1 - res2) / res1 * 100
                     ax[row, col + k].text(0.1, 0.08,
                                           str(np.round(diff_res, decimals=1)) + "%",
