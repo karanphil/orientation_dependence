@@ -98,6 +98,9 @@ def _build_arg_parser():
     p.add_argument('--horizontal_test', action='store_true',
                    help='If set, the ratio between...') # Update help
 
+    p.add_argument('--norm_with_wm', action='store_true',
+                   help='If set, the normalization...') # Update help
+
     p.add_argument('--common_yticks', action='store_true',
                    help='If set, all plots of the same measure will have the '
                         'same yticks.')
@@ -309,8 +312,12 @@ def main():
         bundle_idx = np.argwhere(bundles_names == bundle)[0][0]
         for i in range(nb_measures):
             for j in range(nb_subjects):
-                if np.nanmax(nb_voxels[i, j, bundle_idx]) > max_count:
-                    max_count = np.nanmax(nb_voxels[i, j, bundle_idx])
+                if bundle == "WM" and args.norm_with_wm:
+                    if np.nanmax(nb_voxels[i, j, bundle_idx]) > max_count:
+                        max_count = np.nanmax(nb_voxels[i, j, bundle_idx])
+                elif bundle != "WM":
+                    if np.nanmax(nb_voxels[i, j, bundle_idx]) > max_count:
+                        max_count = np.nanmax(nb_voxels[i, j, bundle_idx])                    
                 if np.nanmax(measures[i, j, bundle_idx]) > ymax[i]:
                     ymax[i] = np.nanmax(measures[i, j, bundle_idx])
                 if np.nanmin(measures[i, j, bundle_idx]) < ymin[i]:
@@ -410,27 +417,33 @@ def main():
 
                 if args.horizontal_test: # This only works for 2 series of input!!! Modify this later.
                     is_not_nan = nb_voxels[k, 0, jj] >= 1
-                    polyfit1 = np.polyfit(mid_bins[is_not_nan],
-                                          measures[k, 0, jj][is_not_nan],
-                                          0,
-                                          w=np.sqrt(nb_voxels[k, 0, jj][is_not_nan]),
-                                          full=True)
-                    polyfit2 = np.polyfit(mid_bins[is_not_nan],
-                                          measures[k, 1, jj][is_not_nan],
-                                          0,
-                                          w=np.sqrt(nb_voxels[k, 1, jj][is_not_nan]),
-                                          full=True)
-                    res1 = np.sqrt(polyfit1[1][0])
-                    res2 = np.sqrt(polyfit2[1][0])
-                    # Calculer la std pondérée!
-                    std1 = np.std(measures[k, 0, jj][is_not_nan])
-                    std2 = np.std(measures[k, 1, jj][is_not_nan])
-                    print(bundles_order[j], nm_measures[k])
-                    print(res1, res2)
-                    print(std1, std2)
-                    diff_res = (res1 - res2) / res1 * 100
-                    ax[row, col + k].text(0.1, 0.08,
-                                          str(np.round(diff_res, decimals=1)) + "%",
+                    # polyfit1 = np.polyfit(mid_bins[is_not_nan],
+                    #                       measures[k, 0, jj][is_not_nan],
+                    #                       0,
+                    #                       w=np.sqrt(nb_voxels[k, 0, jj][is_not_nan]),
+                    #                       full=True)
+                    # polyfit2 = np.polyfit(mid_bins[is_not_nan],
+                    #                       measures[k, 1, jj][is_not_nan],
+                    #                       0,
+                    #                       w=np.sqrt(nb_voxels[k, 1, jj][is_not_nan]),
+                    #                       full=True)
+                    # res1 = np.sqrt(polyfit1[1][0])
+                    # res2 = np.sqrt(polyfit2[1][0])
+                    # STD pondérée
+                    average1 = np.average(measures[k, 0, jj][is_not_nan],
+                                          weights=np.sqrt(nb_voxels[k, 0, jj])[is_not_nan])
+                    var1 = np.average((measures[k, 0, jj][is_not_nan] - average1)**2,
+                                      weights=np.sqrt(nb_voxels[k, 0, jj])[is_not_nan])
+
+                    average2 = np.average(measures[k, 1, jj][is_not_nan],
+                                          weights=np.sqrt(nb_voxels[k, 1, jj])[is_not_nan])
+
+                    var2 = np.average((measures[k, 1, jj][is_not_nan] - average2)**2,
+                                      weights=np.sqrt(nb_voxels[k, 1, jj])[is_not_nan])
+                    std1 = np.sqrt(var1)
+                    std2 = np.sqrt(var2)
+                    ax[row, col + k].text(0.01, 0.03,
+                                          "F: " + str(np.round((std1 - std2) / std1 * 100, decimals=1)) + "%",
                                           color="dimgrey",
                                           transform=ax[row, col + k].transAxes,
                                           size=6)
@@ -475,8 +488,8 @@ def main():
                     #                       transform=ax[row, col + k].transAxes,
                     #                       size=6)
                     # Écart-relatif
-                    ax[row, col + k].text(0.75, 0.08,
-                                          str(np.round(((mean_std1)/(mean_std2) - 1) * 100, decimals=1)) + "%",
+                    ax[row, col + k].text(0.70, 0.03,
+                                          "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%",
                                           color="dimgrey",
                                           transform=ax[row, col + k].transAxes,
                                           size=6)
