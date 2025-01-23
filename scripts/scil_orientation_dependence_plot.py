@@ -488,7 +488,10 @@ def main():
                     #                       transform=ax[row, col + k].transAxes,
                     #                       size=6)
                     # Écart-relatif
-                    ax[row, col + k].text(0.70, 0.03,
+                    text = "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%"
+                    # Trick to make the text start at the far right
+                    xpos = 1.0 - len(text) / 26.5
+                    ax[row, col + k].text(xpos, 0.03,
                                           "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%",
                                           color="dimgrey",
                                           transform=ax[row, col + k].transAxes,
