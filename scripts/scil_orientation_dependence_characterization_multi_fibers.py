@@ -114,7 +114,8 @@ def main():
             bundle_idx = i
         mf_bunlde_mask = np.where(np.sum(fixel_density_masks[..., bundle_idx], axis=-1) >= 1, 1, 0)
         # print(fixel_density_masks[..., bundle_idx])
-        bundle_peaks = peaks[fixel_density_masks[..., bundle_idx]]
+        peak_index = np.argwhere(fixel_density_masks[..., bundle_idx] == 1)[..., 0]
+        bundle_peaks = peaks[peak_index]
     #     bins, measure_means[i], measure_stds[i], nb_voxels[i] =\
     #         compute_single_fiber_means_new(peaks, fa,
     #                                        wm_mask,
