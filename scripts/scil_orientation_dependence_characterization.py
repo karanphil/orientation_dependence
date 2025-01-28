@@ -47,9 +47,6 @@ def _build_arg_parser():
     g.add_argument('--bin_width_sf', default=1, type=int,
                    help='Value of the bin width for the single-fiber '
                         'characterization [%(default)s].')
-    g.add_argument('--bin_width_mf', default=10, type=int,
-                   help='Value of the bin width for the multi-fiber '
-                        'characterization [%(default)s].')
     g.add_argument('--min_frac_thr', default=0.1,
                    help='Value of the minimal fraction threshold for '
                         'selecting peaks to correct [%(default)s].')

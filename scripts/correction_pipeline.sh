@@ -14,12 +14,12 @@ reference="maximum";
 do_filter_trk=false;
 do_sift2=false;
 do_bundles=false;
-do_fixel_density=false;
-do_characterize_original=true;
-do_plot_original=true;
-do_correction=true;
-do_characterize_corrected=true;
-do_plot_corrected=true;
+do_fixel_density=true;
+do_characterize_original=false;
+do_plot_original=false;
+do_correction=false;
+do_characterize_corrected=false;
+do_plot_corrected=false;
 do_tractometry=false;
 
 #---------------------------------- FIRST STEP --------------------------------
@@ -121,10 +121,10 @@ if $do_fixel_density;
     mkdir -p $fixel_analysis;
     scil_bundle_fixel_analysis.py FODF_metrics/${data}/new_peaks/peaks.nii.gz --in_bundles $bundle_subset --dps_key sift2 --split_bundles --out_dir $fixel_analysis --rel_thr 0.1 --abs_thr 1.5 --processes 8 -f --norm voxel none;
 
-    rm ${fixel_analysis}/fixel_density_mask*;
-    rm ${fixel_analysis}/nb_bundles*;
+    # rm ${fixel_analysis}/fixel_density_mask*;
+    # rm ${fixel_analysis}/nb_bundles*;
     rm ${fixel_analysis}/voxel_density_map_*;
-    rm ${fixel_analysis}/voxel_density_masks*;
+    # rm ${fixel_analysis}/voxel_density_masks*;
     rm ${fixel_analysis}/voxel_density_mask_none-norm*;
     rm ${fixel_analysis}/fixel_density_map_*;
 
