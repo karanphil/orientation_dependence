@@ -5,9 +5,10 @@
 
 data=$1;  # The first input of the script is the subject/session ID.
 source=$2;  # The second input of the script is the source directory.
+reference=$3; # The third input of the script is the reference type.
 
 # reference="mean";
-reference="maximum";
+# reference="maximum";
 
 # All steps:
 
