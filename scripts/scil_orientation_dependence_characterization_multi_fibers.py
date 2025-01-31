@@ -41,7 +41,7 @@ def _build_arg_parser():
                         'order.')    
 
     g = p.add_argument_group(title='Characterization parameters')
-    g.add_argument('--bin_width_mf', default=10, type=int,
+    g.add_argument('--bin_width_mf', default=5, type=int,
                    help='Value of the bin width for the multi-fiber '
                         'characterization [%(default)s].')
     g.add_argument('--min_nb_voxels', default=1, type=int,
@@ -120,7 +120,6 @@ def main():
                                           affine,
                                           measures,
                                           bin_width=args.bin_width_mf)
-        pts_origin[i, is_measures[i]] = bundle_name
         is_measures[i] = nb_voxels[i, :, 0] >= min_nb_voxels
         nb_filled_bins = np.sum(is_measures[i])
         if nb_filled_bins == 0:
@@ -131,10 +130,11 @@ def main():
                      single-fiber voxels. Try to carefully reduce the
                      min_nb_voxels."""
             raise ValueError(msg)
+        pts_origin[i, is_measures[i]] = bundle_name
 
     # Saving the results of orientation dependence characterization
     for i in range(nb_bundles):
-        out_path = out_folder / (bundles_names[i] + '/1f_results')
+        out_path = out_folder / (bundles_names[i] + '/mf_results')
         save_results_as_npz(bins, measure_means[i], measure_stds[i],
                             nb_voxels[i], pts_origin[i], measures_name,
                             out_path)

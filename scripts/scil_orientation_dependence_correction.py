@@ -28,7 +28,11 @@ def _build_arg_parser():
     p.add_argument('out_folder',
                    help='Path of the output folder for txt, png, masks and '
                         'measures.')
-    
+
+    p.add_argument('--keyword', default='', type=str,
+                   help='Keyword to add before the _corrected.nii.gz in the '
+                        'saved file')
+
     p.add_argument('--polyfits', nargs='+', required=True,
                    help='List of polyfit files. Should be the '
                         'output of the \n'
@@ -110,7 +114,7 @@ def main():
                                            fixel_density_maps)
 
         # Save results
-        corrected_path = out_folder / str(str(measure_name) + "_corrected.nii.gz")
+        corrected_path = out_folder / str(str(measure_name) + "_" + args.keyword + "_corrected.nii.gz")
         nib.save(nib.Nifti1Image(corrected_measure, affine), corrected_path)
         if args.save_differences:
             if args.differences_folder:

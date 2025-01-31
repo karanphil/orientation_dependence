@@ -375,7 +375,7 @@ def compute_fiber_means_from_mask(peaks, mask, affine, measures, bin_width=1):
         angle_mask_0_90 = (theta >= bins[i]) & (theta < bins[i+1]) 
         angle_mask_90_180 = (180 - theta >= bins[i]) & (180 - theta < bins[i+1])
         angle_mask = angle_mask_0_90 | angle_mask_90_180
-        mask_total = mask > 0 & angle_mask
+        mask_total = (mask > 0) & angle_mask
         nb_voxels[i, :] = np.sum(mask_total)
         if np.sum(mask_total) < 1:
             measure_means[i, :] = None

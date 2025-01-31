@@ -14,13 +14,12 @@ reference="maximum";
 do_filter_trk=false;
 do_sift2=false;
 do_bundles=false;
-do_fixel_density=true;
-do_characterize_original=false;
+do_fixel_density=false;
+do_characterize_original=false; do_characterize_original_mf=true;
 do_plot_original=false;
-do_correction=false;
-do_characterize_corrected=false;
+do_correction=true;
+do_characterize_corrected=false; do_characterize_corrected_mf=true;
 do_plot_corrected=false;
-do_tractometry=false;
 
 #---------------------------------- FIRST STEP --------------------------------
 # Filter tractogram from Imeka (which is messy).
@@ -137,7 +136,7 @@ bundles_masks="";
 bundles_names="";
 bin_width=5;
 bin_width_dir="${bin_width}_degree_bins";
-out_original="characterization/${data}/${bin_width_dir}";
+out_original="characterization_${reference}/${data}/${bin_width_dir}";
 
 # for bundle in bundles/${data}/bundles_weighted/*.trk;
 for bundle in $bundle_subset;
@@ -166,6 +165,13 @@ if $do_characterize_original;
 
 fi;
 
+if $do_characterize_original_mf;
+    then
+
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization_multi_fibers.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_masks_voxel-norm.nii.gz $out_original --measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles_names $bundles_names --lookuptable ${fixel_analysis}/bundles_LUT.txt --bin_width_mf $bin_width --min_nb_voxels 1;
+
+fi;
+
 #---------------------------------- SIXTH STEP --------------------------------
 # Plot the characterization of the original measures.
 
@@ -189,16 +195,14 @@ if $do_correction;
 
     polyfits=$(find ${out_original}/*/1f_polyfits.npz ! -path '*WM*');
 
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps_voxel-norm.nii.gz ihMT/${data}/ --polyfits $polyfits --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt;
-
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps_voxel-norm.nii.gz ihMT/${data}/ --polyfits $polyfits --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_correction.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_maps_voxel-norm.nii.gz ihMT/${data}/ --polyfits $polyfits --in_measures ihMT/${data}/${data}__MTR_warped.nii.gz ihMT/${data}/${data}__MTsat_warped.nii.gz ihMT/${data}/${data}__ihMTR_warped.nii.gz ihMT/${data}/${data}__ihMTsat_warped.nii.gz --measures_names MTR MTsat ihMTR ihMTsat --lookuptable ${fixel_analysis}/bundles_LUT.txt --keyword $reference;
 
 fi;
 
 #---------------------------------- EIGHTH STEP -------------------------------
 # Characterize the bundles on corrected measures.
 
-out_corrected="correction/${data}/${bin_width_dir}";
+out_corrected="correction_${reference}/${data}/${bin_width_dir}";
 
 if $do_characterize_corrected;
     then
@@ -210,10 +214,17 @@ if $do_characterize_corrected;
 
     done;
 
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_corrected.nii.gz ihMT/${data}/ihMTR_corrected.nii.gz ihMT/${data}/MTsat_corrected.nii.gz ihMT/${data}/ihMTsat_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles $bundles_masks --bundles_names $bundles_names --bin_width_sf $bin_width --min_nb_voxels 1 --stop_crit 0.055 --save_polyfit --use_weighted_polyfit --reference $reference;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_${reference}_corrected.nii.gz ihMT/${data}/ihMTR_${reference}_corrected.nii.gz ihMT/${data}/MTsat_${reference}_corrected.nii.gz ihMT/${data}/ihMTsat_${reference}_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles $bundles_masks --bundles_names $bundles_names --bin_width_sf $bin_width --min_nb_voxels 1 --stop_crit 0.055 --save_polyfit --use_weighted_polyfit --reference $reference;
 
     mkdir -p ${out_corrected}/WM;
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_corrected.nii.gz ihMT/${data}/ihMTR_corrected.nii.gz ihMT/${data}/MTsat_corrected.nii.gz ihMT/${data}/ihMTsat_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles ${fixel_analysis}/voxel_density_mask_WM.nii.gz --bundles_names WM --bin_width_sf $bin_width --min_nb_voxels 1 --stop_crit 0.055 --save_polyfit --use_weighted_polyfit --reference $reference;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_${reference}_corrected.nii.gz ihMT/${data}/ihMTR_${reference}_corrected.nii.gz ihMT/${data}/MTsat_${reference}_corrected.nii.gz ihMT/${data}/ihMTsat_${reference}_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles ${fixel_analysis}/voxel_density_mask_WM.nii.gz --bundles_names WM --bin_width_sf $bin_width --min_nb_voxels 1 --stop_crit 0.055 --save_polyfit --use_weighted_polyfit --reference $reference;
+
+fi;
+
+if $do_characterize_corrected_mf;
+    then
+
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization_multi_fibers.py FODF_metrics/${data}/new_peaks/peaks.nii.gz ${fixel_analysis}/fixel_density_masks_voxel-norm.nii.gz $out_corrected --measures ihMT/${data}/MTR_${reference}_corrected.nii.gz ihMT/${data}/ihMTR_${reference}_corrected.nii.gz ihMT/${data}/MTsat_${reference}_corrected.nii.gz ihMT/${data}/ihMTsat_${reference}_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles_names $bundles_names --lookuptable ${fixel_analysis}/bundles_LUT.txt --bin_width_mf $bin_width --min_nb_voxels 1;
 
 fi;
 
