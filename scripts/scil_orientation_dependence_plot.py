@@ -416,39 +416,6 @@ def main():
                                          linewidths=1)
                 colorbars[i] = cb
 
-                if args.horizontal_test: # This only works for 2 series of input!!! Modify this later.
-                    is_not_nan = nb_voxels[k, 0, jj] >= 1
-                    # polyfit1 = np.polyfit(mid_bins[is_not_nan],
-                    #                       measures[k, 0, jj][is_not_nan],
-                    #                       0,
-                    #                       w=np.sqrt(nb_voxels[k, 0, jj][is_not_nan]),
-                    #                       full=True)
-                    # polyfit2 = np.polyfit(mid_bins[is_not_nan],
-                    #                       measures[k, 1, jj][is_not_nan],
-                    #                       0,
-                    #                       w=np.sqrt(nb_voxels[k, 1, jj][is_not_nan]),
-                    #                       full=True)
-                    # res1 = np.sqrt(polyfit1[1][0])
-                    # res2 = np.sqrt(polyfit2[1][0])
-                    # STD pondérée
-                    average1 = np.average(measures[k, 0, jj][is_not_nan],
-                                          weights=np.sqrt(nb_voxels[k, 0, jj])[is_not_nan])
-                    var1 = np.average((measures[k, 0, jj][is_not_nan] - average1)**2,
-                                      weights=np.sqrt(nb_voxels[k, 0, jj])[is_not_nan])
-
-                    average2 = np.average(measures[k, 1, jj][is_not_nan],
-                                          weights=np.sqrt(nb_voxels[k, 1, jj])[is_not_nan])
-
-                    var2 = np.average((measures[k, 1, jj][is_not_nan] - average2)**2,
-                                      weights=np.sqrt(nb_voxels[k, 1, jj])[is_not_nan])
-                    std1 = np.sqrt(var1)
-                    std2 = np.sqrt(var2)
-                    ax[row, col + k].text(0.01, 0.03,
-                                          "F: " + str(np.round((std1 - std2) / std1 * 100, decimals=1)) + "%",
-                                          color="dimgrey",
-                                          transform=ax[row, col + k].transAxes,
-                                          size=6)
-
                 if args.in_polyfits:
                     polynome_r = np.poly1d(polyfits[k, i, jj])
                     ax[row, col + k].plot(highres_bins, polynome_r(highres_bins),
@@ -461,53 +428,25 @@ def main():
                                                   color=color,
                                                   edgecolor=None,
                                                   alpha=0.3)
-                
-                if args.write_mean_std: # This only works for 2 series of input!!! Modify this later.
-                    mean1 = np.ma.average(np.ma.MaskedArray(measures[k, 0, jj],
-                                                           mask=np.isnan(measures[k, 0, jj])),
-                                                           weights=nb_voxels[k, 0, jj])
-                    mean_std1 = np.ma.average(np.ma.MaskedArray(measures_std[k, 0, jj],
-                                                               mask=np.isnan(measures[k, 0, jj])),
-                                                               weights=nb_voxels[k, 0, jj])
-                    
-                    mean2 = np.ma.average(np.ma.MaskedArray(measures[k, 1, jj],
-                                                           mask=np.isnan(measures[k, 1, jj])),
-                                                           weights=nb_voxels[k, 1, jj])
-                    mean_std2 = np.ma.average(np.ma.MaskedArray(measures_std[k, 1, jj],
-                                                               mask=np.isnan(measures[k, 1, jj])),
-                                                               weights=nb_voxels[k, 1, jj])
-                    # Ratio
-                    # ax[row, col + k].text(0.45, 0.1,
-                    #                       str(np.round(((mean_std1 / mean1)/(mean_std2 / mean2)) * 100, decimals=1)) + "%",
-                    #                       color="dimgrey",
-                    #                       transform=ax[row, col + k].transAxes,
-                    #                       size=6)
-                    # Écart-relatif pondéré par moyenne
-                    # ax[row, col + k].text(0.45, 0.1,
-                    #                       str(np.round(((mean_std1 / mean1)/(mean_std2 / mean2) - 1) * 100, decimals=1)) + "%",
-                    #                       color="dimgrey",
-                    #                       transform=ax[row, col + k].transAxes,
-                    #                       size=6)
-                    # Écart-relatif
-                    text = "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%"
-                    # Trick to make the text start at the far right
-                    xpos = 1.0 - len(text) / 26.5
-                    ax[row, col + k].text(xpos, 0.03,
-                                          "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%",
-                                          color="dimgrey",
-                                          transform=ax[row, col + k].transAxes,
-                                          size=6)
 
                 if args.common_yticks:
                     ax[row, col + k].set_ylim(ymin[k] * 0.975, ymax[k] * 1.025)
                     ax[row, col + k].set_yticks([np.round(ymin[k], decimals=1),
                                                  np.round(ymax[k],
                                                           decimals=1)])
+                    if (np.abs(np.array([ymin[k], ymax[k]]) - np.mean(measures[k, i, jj]))).argmin() == 0:
+                        yprint = 0.76
+                    else:
+                        yprint = 0.03
                 elif args.set_yticks is not None:
                     yticks = args.set_yticks[k]
                     ax[row, col + k].set_ylim(np.min(yticks) * 0.975,
                                               np.max(yticks) * 1.025)
                     ax[row, col + k].set_yticks(yticks)
+                    if (np.abs(np.array([np.min(yticks), np.max(yticks)]) - np.mean(measures[k, i, jj]))).argmin() == 0:
+                        yprint = 0.76
+                    else:
+                        yprint = 0.03
                 else:
                     if 0.975 * np.nanmin(measures[k, i, jj]) < min_measures[j, k]:
                         min_measures[j, k] = 0.975 * np.nanmin(measures[k, i, jj])
@@ -542,6 +481,50 @@ def main():
                         ax[row, col + k].legend(handles=list(colorbars),
                                                 labels=args.legend_names,
                                                 loc=args.legend_location)
+
+                if args.horizontal_test: # This only works for 2 series of input!!! Modify this later.
+                    is_not_nan = nb_voxels[k, 0, jj] >= 1
+                    average1 = np.average(measures[k, 0, jj][is_not_nan],
+                                          weights=np.sqrt(nb_voxels[k, 0, jj])[is_not_nan])
+                    var1 = np.average((measures[k, 0, jj][is_not_nan] - average1)**2,
+                                      weights=np.sqrt(nb_voxels[k, 0, jj])[is_not_nan])
+
+                    average2 = np.average(measures[k, 1, jj][is_not_nan],
+                                          weights=np.sqrt(nb_voxels[k, 1, jj])[is_not_nan])
+
+                    var2 = np.average((measures[k, 1, jj][is_not_nan] - average2)**2,
+                                      weights=np.sqrt(nb_voxels[k, 1, jj])[is_not_nan])
+                    std1 = np.sqrt(var1)
+                    std2 = np.sqrt(var2)
+                    ax[row, col + k].text(0.01, yprint,
+                                          "F: " + str(np.round((std1 - std2) / std1 * 100, decimals=1)) + "%",
+                                          color="dimgrey",
+                                          transform=ax[row, col + k].transAxes,
+                                          size=6)
+
+                if args.write_mean_std: # This only works for 2 series of input!!! Modify this later.
+                    mean1 = np.ma.average(np.ma.MaskedArray(measures[k, 0, jj],
+                                                           mask=np.isnan(measures[k, 0, jj])),
+                                                           weights=nb_voxels[k, 0, jj])
+                    mean_std1 = np.ma.average(np.ma.MaskedArray(measures_std[k, 0, jj],
+                                                               mask=np.isnan(measures[k, 0, jj])),
+                                                               weights=nb_voxels[k, 0, jj])
+                    
+                    mean2 = np.ma.average(np.ma.MaskedArray(measures[k, 1, jj],
+                                                           mask=np.isnan(measures[k, 1, jj])),
+                                                           weights=nb_voxels[k, 1, jj])
+                    mean_std2 = np.ma.average(np.ma.MaskedArray(measures_std[k, 1, jj],
+                                                               mask=np.isnan(measures[k, 1, jj])),
+                                                               weights=nb_voxels[k, 1, jj])
+                    # Écart-relatif
+                    text = "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%"
+                    # Trick to make the text start at the far right
+                    xpos = 1.0 - len(text) / 26.5
+                    ax[row, col + k].text(xpos, yprint,
+                                          "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%",
+                                          color="dimgrey",
+                                          transform=ax[row, col + k].transAxes,
+                                          size=6)
 
             if len(bundles_order[j]) > 6:
                 fontsize = 7
