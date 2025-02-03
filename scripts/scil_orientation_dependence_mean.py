@@ -90,6 +90,7 @@ def main():
     nb_measures = len(nm_measures)
     nb_subjects = len(args.in_bundles)
     nb_bundles = len(args.in_bundles[0])
+    file_name = Path(args.in_bundles[0][0]).stem
     bundles_names = np.empty((nb_bundles), dtype=object)
     bins = np.empty((nb_bundles), dtype=object)
     measures = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
@@ -185,7 +186,7 @@ def main():
                     mean_reference[k, j] = np.nanmax(mean_measures[k, j])
 
     for j, bundle_name in enumerate(bundles_names):
-        out_path = out_folder / (bundle_name + '/1f_results')
+        out_path = out_folder / (bundle_name + "/" + file_name)
         save_results_as_npz_mean(bins[j], mean_measures[:, j],
                             mean_measures_std[:, j], mean_nb_voxels[:, j],
                             mean_origins[:, j], nm_measures, out_path)

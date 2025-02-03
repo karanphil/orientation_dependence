@@ -302,6 +302,7 @@ def main():
     else:
         bundles_order = bundles_names
     nb_bundles_to_plot = len(bundles_order)
+    odd_nb_bundles = nb_bundles_to_plot % 2 != 0
 
     # Compute max voxel count with only bundles in bundles_order and
     # the minimal/maximal values for each measures
@@ -548,6 +549,40 @@ def main():
                 fontsize = 9
             ax[row, col].set_ylabel(bundles_order[j], labelpad=10,
                                     fontsize=fontsize)
+
+    if odd_nb_bundles:
+        if split_columns:
+            col = 1 * int(nb_columns / 2)
+        else:
+            col = 0
+        for k in range(nb_measures):
+            ax[row, col + k].set_xlabel(r'$\theta_a$')
+            ax[row, col + k].set_xlim(0, 90)
+            ax[row, col + k].set_xticks([0, 15, 30, 45, 60, 75, 90])
+            if args.common_yticks:
+                ax[row, col + k].set_ylim(ymin[k] * 0.975, ymax[k] * 1.025)
+                ax[row, col + k].set_yticks([np.round(ymin[k], decimals=1),
+                                             np.round(ymax[k], decimals=1)])
+            elif args.set_yticks is not None:
+                yticks = args.set_yticks[k]
+                ax[row, col + k].set_ylim(np.min(yticks) * 0.975,
+                                          np.max(yticks) * 1.025)
+                ax[row, col + k].set_yticks(yticks)
+            else:
+                if 0.975 * np.nanmin(measures[k, i, jj]) < min_measures[j, k]:
+                    min_measures[j, k] = 0.975 * np.nanmin(measures[k, i, jj])
+                if 1.025 * np.nanmax(measures[k, i, jj]) > max_measures[j, k]:
+                    max_measures[j, k] = 1.025 * np.nanmax(measures[k, i, jj])
+                ax[row, col + k].set_ylim(min_measures[j, k],
+                                            max_measures[j, k])
+                ax[row, col + k].set_yticks([np.round(min_measures[j, k],
+                                            decimals=1),
+                                            np.round(max_measures[j, k],
+                                            decimals=1)])
+            ax[row, col + k].set_xlim(0, 90)
+            if (col + k) % 2 != 0:
+                ax[row, col + k].yaxis.set_label_position("right")
+                ax[row, col + k].yaxis.tick_right()
 
     if args.legend_names and not args.legend_subplot:
         ax[row, col + k].legend(handles=list(colorbars),
