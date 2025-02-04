@@ -37,6 +37,9 @@ def _build_arg_parser():
     p.add_argument('--bundles_names', nargs='+', default=[],
                    help='List of names for the bundles.')
 
+    p.add_argument('--suffix', default='', type=str,
+                   help='Suffix to add at the end of the saved file')
+
     add_verbose_arg(p)
 
     return p
@@ -106,7 +109,7 @@ def main():
 
     # Saving the results of orientation dependence characterization
     for i in range(nb_bundles):
-        out_path = out_folder / (bundles_names[i] + '/tract_profiles')
+        out_path = out_folder / (bundles_names[i] + '/tract_profiles_' + args.suffix)
         save_profiles_as_npz(measure_means[i], measure_stds[i],
                              nb_voxels[i], measures_name, out_path)
 
