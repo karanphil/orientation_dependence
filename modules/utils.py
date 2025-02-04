@@ -63,7 +63,8 @@ def nb_peaks_factor(delta_m_max_fct, peak_fraction):
     return np.clip(nb_peaks_factor, 0, 1)
 
 
-def compute_mf_mask(fixel_density_masks):
+def compute_sf_mf_mask(fixel_density_masks):
     fixel_mask = np.clip(np.sum(fixel_density_masks, axis=-1), 0, 1)
+    sf_mask = np.where(np.sum(fixel_mask, axis=-1) == 1, 1, 0)
     mf_mask = np.where(np.sum(fixel_mask, axis=-1) > 1, 1, 0)
-    return mf_mask
+    return sf_mask, mf_mask
