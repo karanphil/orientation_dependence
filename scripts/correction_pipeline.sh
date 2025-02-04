@@ -18,7 +18,7 @@ do_bundles=false;
 do_fixel_density=false;
 do_characterize_original=false; do_characterize_original_mf=true;
 do_plot_original=false;
-do_correction=true;
+do_correction=false;
 do_characterize_corrected=false; do_characterize_corrected_mf=true;
 do_plot_corrected=false;
 

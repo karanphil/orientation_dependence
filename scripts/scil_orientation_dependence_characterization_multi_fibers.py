@@ -9,6 +9,7 @@ from scilpy.io.utils import add_verbose_arg
 
 from modules.io import (save_results_as_npz, extract_measures)
 from modules.orientation_dependence import compute_fiber_means_from_mask
+from modules.utils import compute_mf_mask
 
 
 def _build_arg_parser():
@@ -98,6 +99,7 @@ def main():
     pts_origin.fill("None")
 
     # For every bundle, compute the mean measures
+    mf_mask = compute_mf_mask(fixel_density_masks)
     for i, bundle_name in enumerate(bundles_names):
         logging.info("Computing multi-fiber means of bundle {}.".format(bundle_name))
         if args.lookuptable:
@@ -112,8 +114,9 @@ def main():
         indices_to_select = np.stack([first_peak_index, first_peak_index + 1,
                                       first_peak_index + 2], axis=-1)
         bundle_peaks = np.take_along_axis(peaks, indices_to_select, axis=3)
-        mf_bundle_mask = np.where(np.sum(fixel_density_masks[..., bundle_idx],
-                                         axis=-1) >= 1, 1, 0)
+        bundle_mask = np.where(np.sum(fixel_density_masks[..., bundle_idx],
+                                      axis=-1) > 0, 1, 0)
+        mf_bundle_mask = bundle_mask & mf_mask
         bins, measure_means[i], measure_stds[i], nb_voxels[i] =\
             compute_fiber_means_from_mask(bundle_peaks,
                                           mf_bundle_mask,

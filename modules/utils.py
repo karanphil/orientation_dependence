@@ -61,3 +61,9 @@ def extend_measure(bins, measure, is_measure, weights=None):
 def nb_peaks_factor(delta_m_max_fct, peak_fraction):
     nb_peaks_factor = delta_m_max_fct(peak_fraction)
     return np.clip(nb_peaks_factor, 0, 1)
+
+
+def compute_mf_mask(fixel_density_masks):
+    fixel_mask = np.clip(np.sum(fixel_density_masks, axis=-1), 0, 1)
+    mf_mask = np.where(np.sum(fixel_mask, axis=-1) > 1, 1, 0)
+    return mf_mask
