@@ -170,7 +170,7 @@ def main():
                          "number of bundles.")
         for j, bundle in enumerate(sub):
             logging.info("Loading: {}".format(bundle))
-            file = dict(np.load(bundle))
+            f = dict(np.load(bundle))
             if args.in_bundles_names:
                 # Verify that number of bundle names equals number of bundles
                 if len(args.in_bundles_names) != nb_bundles:
@@ -189,15 +189,15 @@ def main():
             else:
                 bundles_names[j] = bundle_name
             for k, nm_measure in enumerate(nm_measures):
-                measures[k, i, j, 2] = file[nm_measure + '_af']
-                measures[k, i, j, 1] = file[nm_measure + '_sf']
-                measures[k, i, j, 0] = file[nm_measure + '_mf']
-                measures_std[k, i, j, 2] = file[nm_measure + '_std_af']
-                measures_std[k, i, j, 1] = file[nm_measure + '_std_sf']
-                measures_std[k, i, j, 0] = file[nm_measure + '_std_mf']
-                nb_voxels[k, i, j, 2] = file[nm_measure + '_voxel_count_af']
-                nb_voxels[k, i, j, 1] = file[nm_measure + '_voxel_count_sf']
-                nb_voxels[k, i, j, 0] = file[nm_measure + '_voxel_count_mf']
+                measures[k, i, j, 2] = f[nm_measure + '_af']
+                measures[k, i, j, 1] = f[nm_measure + '_sf']
+                measures[k, i, j, 0] = f[nm_measure + '_mf']
+                measures_std[k, i, j, 2] = f[nm_measure + '_std_af']
+                measures_std[k, i, j, 1] = f[nm_measure + '_std_sf']
+                measures_std[k, i, j, 0] = f[nm_measure + '_std_mf']
+                nb_voxels[k, i, j, 2] = f[nm_measure + '_voxel_count_af']
+                nb_voxels[k, i, j, 1] = f[nm_measure + '_voxel_count_sf']
+                nb_voxels[k, i, j, 0] = f[nm_measure + '_voxel_count_mf']
 
     if args.bundles_order:
         bundles_order = args.bundles_order
@@ -222,7 +222,7 @@ def main():
             for j in range(nb_subjects):
                 for k in range(3):
                     if np.nanmax(nb_voxels[i, j, bundle_idx, k]) > max_count:
-                        max_count = np.nanmax(nb_voxels[i, j, bundle_idx, k])                
+                        max_count = np.nanmax(nb_voxels[i, j, bundle_idx, k])
                     if np.nanmax(measures[i, j, bundle_idx, k]) > ymax[i]:
                         ymax[i] = np.nanmax(measures[i, j, bundle_idx, k])
                     if np.nanmin(measures[i, j, bundle_idx, k]) < ymin[i]:

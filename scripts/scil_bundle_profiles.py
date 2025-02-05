@@ -94,18 +94,18 @@ def main():
     for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
         logging.info("Computing multi-fiber means of bundle {}.".format(bundle_name))
         for j in range(nb_sections):
-            section_mask = bundle == (j + 1)
+            section_mask = (bundle == (j + 1))
             sf_section_mask = (sf_mask > 0) & section_mask
             mf_section_mask = (mf_mask > 0) & section_mask
-            measure_means[i, j, :, 0] = np.mean(measures[section_mask], axis=0)
-            measure_stds[i, j, :, 0] = np.std(measures[section_mask], axis=0)
-            nb_voxels[i, j, :, 0] = np.sum(section_mask)
-            measure_means[i, j, :, 1] = np.mean(measures[sf_section_mask], axis=0)
-            measure_stds[i, j, :, 1] = np.std(measures[sf_section_mask], axis=0)
-            nb_voxels[i, j, :, 1] = np.sum(sf_section_mask)
-            measure_means[i, j, :, 2] = np.mean(measures[mf_section_mask], axis=0)
-            measure_stds[i, j, :, 2] = np.std(measures[mf_section_mask], axis=0)
-            nb_voxels[i, j, :, 2] = np.sum(mf_section_mask)
+            measure_means[i, j, :, 0] = np.nanmean(measures[section_mask], axis=0)
+            measure_stds[i, j, :, 0] = np.nanstd(measures[section_mask], axis=0)
+            nb_voxels[i, j, :, 0] = np.nansum(section_mask)
+            measure_means[i, j, :, 1] = np.nanmean(measures[sf_section_mask], axis=0)
+            measure_stds[i, j, :, 1] = np.nanstd(measures[sf_section_mask], axis=0)
+            nb_voxels[i, j, :, 1] = np.nansum(sf_section_mask)
+            measure_means[i, j, :, 2] = np.nanmean(measures[mf_section_mask], axis=0)
+            measure_stds[i, j, :, 2] = np.nanstd(measures[mf_section_mask], axis=0)
+            nb_voxels[i, j, :, 2] = np.nansum(mf_section_mask)
 
     # Saving the results of orientation dependence characterization
     for i in range(nb_bundles):

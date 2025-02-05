@@ -11,7 +11,7 @@ import numpy as np
 import logging
 from pathlib import Path
 
-from modules.io import save_profiles_as_npz
+from modules.io import save_profiles_mean_as_npz
 
 from scilpy.io.utils import (add_verbose_arg, assert_inputs_exist,
                              assert_outputs_exist, add_overwrite_arg)
@@ -118,9 +118,9 @@ def main():
 
     for j, bundle_name in enumerate(bundles_names):
         out_path = out_folder / (bundle_name + "/" + file_name)
-        save_profiles_as_npz(mean_measures[:, j, :],
-                             mean_measures_std[:, j, :],
-                             mean_nb_voxels[:, j, :], nm_measures, out_path)
+        save_profiles_mean_as_npz(mean_measures[:, j, :],
+                                  mean_measures_std[:, j, :],
+                                  mean_nb_voxels[:, j, :], nm_measures, out_path)
 
 if __name__ == "__main__":
     main()
