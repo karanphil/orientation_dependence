@@ -405,7 +405,7 @@ def save_profiles_as_npz(measure_means, measure_stds, nb_voxels, names,
                          out_path):
     # Save the results to a npz files
     savez_dict = dict()
-    for i in range(measure_means.shape[-1]):
+    for i in range(measure_means.shape[-2]):
         savez_dict[str(names[i]) + '_af'] = measure_means[..., i, 0]
         savez_dict[str(names[i]) + '_std_af'] = measure_stds[..., i, 0]
         savez_dict[str(names[i]) + '_voxel_count_af'] = nb_voxels[..., i, 0]

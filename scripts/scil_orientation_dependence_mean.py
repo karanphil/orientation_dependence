@@ -22,7 +22,7 @@ def _build_arg_parser():
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     
     p.add_argument('--measures', nargs='+', required=True,
-                   help='List of measures to plot.')
+                   help='List of measures.')
     
     p.add_argument('--in_bundles', nargs='+', action='append', required=True,
                    help='Characterization results for all bundles. \nShould '
