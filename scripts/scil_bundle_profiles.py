@@ -94,7 +94,7 @@ def main():
     for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
         logging.info("Computing multi-fiber means of bundle {}.".format(bundle_name))
         for j in range(nb_sections):
-            section_mask = (bundle == (j + 1)) & (sf_mask > 0 | mf_mask > 0)
+            section_mask = (bundle == (j + 1)) & ((sf_mask > 0) | (mf_mask > 0))
             sf_section_mask = (sf_mask > 0) & section_mask
             mf_section_mask = (mf_mask > 0) & section_mask
             measure_means[i, j, :, 0] = np.nanmean(measures[section_mask], axis=0)
