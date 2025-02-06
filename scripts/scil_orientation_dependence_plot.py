@@ -434,7 +434,7 @@ def main():
                     ax[row, col + k].set_yticks([np.round(ymin[k], decimals=1),
                                                  np.round(ymax[k],
                                                           decimals=1)])
-                    if (np.abs(np.array([ymin[k], ymax[k]]) - np.mean(measures[k, i, jj]))).argmin() == 0:
+                    if (np.abs(np.array([ymin[k], ymax[k]]) - np.mean([np.mean(measures[k, 0, jj]), np.mean(measures[k, 1, jj])]))).argmin() == 0:
                         yprint = 0.76
                     else:
                         yprint = 0.03
@@ -443,7 +443,7 @@ def main():
                     ax[row, col + k].set_ylim(np.min(yticks) * 0.975,
                                               np.max(yticks) * 1.025)
                     ax[row, col + k].set_yticks(yticks)
-                    if (np.abs(np.array([np.min(yticks), np.max(yticks)]) - np.mean(measures[k, i, jj]))).argmin() == 0:
+                    if (np.abs(np.array([np.min(yticks), np.max(yticks)]) - np.mean([np.mean(measures[k, 0, jj]), np.mean(measures[k, 1, jj])]))).argmin() == 0:
                         yprint = 0.76
                     else:
                         yprint = 0.03
