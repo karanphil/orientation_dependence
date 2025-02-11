@@ -503,7 +503,7 @@ def main():
                     std1 = np.sqrt(var1)
                     std2 = np.sqrt(var2)
                     if bundles_order[j] != "WM":
-                        mean_f[k, jj] = (std1 - std2) / std1 * 100
+                        mean_f[k, j] = (std1 - std2) / std1 * 100
                     ax[row, col + k].text(0.01, yprint,
                                           "F: " + str(np.round((std1 - std2) / std1 * 100, decimals=1)) + "%",
                                           color="dimgrey",
@@ -527,7 +527,7 @@ def main():
                     # Écart-relatif
                     text = "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%"
                     if bundles_order[j] != "WM":
-                        mean_v[k, jj] = (mean_std1 - mean_std2) / mean_std1 * 100
+                        mean_v[k, j] = (mean_std1 - mean_std2) / mean_std1 * 100
                     # Trick to make the text start at the far right
                     xpos = 1.0 - len(text) / 26.5
                     ax[row, col + k].text(xpos, yprint,
