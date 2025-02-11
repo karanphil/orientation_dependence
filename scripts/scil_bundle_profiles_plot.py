@@ -189,15 +189,15 @@ def main():
             else:
                 bundles_names[j] = bundle_name
             for k, nm_measure in enumerate(nm_measures):
-                measures[k, i, j, 2] = f[nm_measure + '_af']
+                measures[k, i, j, 0] = f[nm_measure + '_af']
                 measures[k, i, j, 1] = f[nm_measure + '_sf']
-                measures[k, i, j, 0] = f[nm_measure + '_mf']
-                measures_std[k, i, j, 2] = f[nm_measure + '_std_af']
+                measures[k, i, j, 2] = f[nm_measure + '_mf']
+                measures_std[k, i, j, 0] = f[nm_measure + '_std_af']
                 measures_std[k, i, j, 1] = f[nm_measure + '_std_sf']
-                measures_std[k, i, j, 0] = f[nm_measure + '_std_mf']
-                nb_voxels[k, i, j, 2] = f[nm_measure + '_voxel_count_af']
+                measures_std[k, i, j, 2] = f[nm_measure + '_std_mf']
+                nb_voxels[k, i, j, 0] = f[nm_measure + '_voxel_count_af']
                 nb_voxels[k, i, j, 1] = f[nm_measure + '_voxel_count_sf']
-                nb_voxels[k, i, j, 0] = f[nm_measure + '_voxel_count_mf']
+                nb_voxels[k, i, j, 2] = f[nm_measure + '_voxel_count_mf']
 
     if args.bundles_order:
         bundles_order = args.bundles_order
@@ -275,7 +275,7 @@ def main():
     min_measures = np.ones((nb_bundles_to_plot, nb_measures)) * 10000000
     max_measures = np.zeros((nb_bundles_to_plot, nb_measures))
     sections = np.arange(1, 11, 1)
-    markers = ['^', 's', 'o']
+    markers = ['o', 's', '^']
     colorbars = np.empty((nb_subjects), dtype=object)
     for i in range(nb_subjects):
         for j in range(nb_bundles_to_plot):
@@ -288,7 +288,7 @@ def main():
 
             jj = np.argwhere(bundles_names == bundles_order[j])[0][0]
             for k in range(nb_measures):
-                for l in range(3):
+                for l in range(1):
                     is_measures = nb_voxels[k, i, jj, l] >= min_nb_voxels
                     is_not_measures = np.invert(is_measures)
                     color = cmap(cmap_idx[i + l])
