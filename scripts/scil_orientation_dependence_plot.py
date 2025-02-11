@@ -372,6 +372,12 @@ def main():
     min_measures = np.ones((nb_bundles_to_plot, nb_measures)) * 10000000
     max_measures = np.zeros((nb_bundles_to_plot, nb_measures))
     colorbars = np.empty((nb_subjects), dtype=object)
+    if "WM" in bundles_order:
+        mean_f = np.zeros((nb_measures, nb_bundles_to_plot - 1))
+        mean_v = np.zeros((nb_measures, nb_bundles_to_plot - 1))
+    else:
+        mean_f = np.zeros((nb_measures, nb_bundles_to_plot))
+        mean_v = np.zeros((nb_measures, nb_bundles_to_plot))
     for i in range(nb_subjects):
         for j in range(nb_bundles_to_plot):
             if split_columns:  # for nb_measures <= args.max_nb_measures / 2
@@ -496,6 +502,8 @@ def main():
                                       weights=np.sqrt(nb_voxels[k, 1, jj])[is_not_nan])
                     std1 = np.sqrt(var1)
                     std2 = np.sqrt(var2)
+                    if bundles_order[j] != "WM":
+                        mean_f[k, jj] = (std1 - std2) / std1 * 100
                     ax[row, col + k].text(0.01, yprint,
                                           "F: " + str(np.round((std1 - std2) / std1 * 100, decimals=1)) + "%",
                                           color="dimgrey",
@@ -518,10 +526,12 @@ def main():
                                                                weights=nb_voxels[k, 1, jj])
                     # Écart-relatif
                     text = "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%"
+                    if bundles_order[j] != "WM":
+                        mean_v[k, jj] = (mean_std1 - mean_std2) / mean_std1 * 100
                     # Trick to make the text start at the far right
                     xpos = 1.0 - len(text) / 26.5
                     ax[row, col + k].text(xpos, yprint,
-                                          "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%",
+                                          text,
                                           color="dimgrey",
                                           transform=ax[row, col + k].transAxes,
                                           size=6)
@@ -577,6 +587,14 @@ def main():
     fig.get_layout_engine().set(h_pad=0, hspace=0)
     plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
     plt.close()
+
+    std_f = np.std(mean_f, axis=-1)
+    std_v = np.std(mean_v, axis=-1)
+    mean_f = np.mean(mean_f, axis=-1)
+    mean_v = np.mean(mean_v, axis=-1)
+
+    logging.info('Mean F: {} | STD F: {}'.format(mean_f, std_f))
+    logging.info('Mean V: {} | STD V: {}'.format(mean_v, std_v))
 
 
 if __name__ == "__main__":
