@@ -64,6 +64,9 @@ def _build_arg_parser():
     p.add_argument('--plot_std', action='store_true',
                    help='If set, the std is plotted.')
 
+    p.add_argument('--write_mean_std', action='store_true',
+                   help='If set, the mean std is added as text.') # Update help
+
     p.add_argument('--common_yticks', action='store_true',
                    help='If set, all plots of the same measure will have the '
                         'same yticks.')
@@ -277,6 +280,7 @@ def main():
     sections = np.arange(1, 11, 1)
     markers = ['o', 's', '^']
     colorbars = np.empty((nb_subjects), dtype=object)
+    mean_v = np.zeros((nb_measures, nb_bundles_to_plot))
     for i in range(nb_subjects):
         for j in range(nb_bundles_to_plot):
             if split_columns:  # for nb_measures <= args.max_nb_measures / 2
@@ -326,7 +330,7 @@ def main():
                         ax[row, col + k].set_yticks([np.round(ymin[k], decimals=1),
                                                     np.round(ymax[k],
                                                             decimals=1)])
-                        if (np.abs(np.array([ymin[k], ymax[k]]) - np.mean(measures[k, i, jj, l]))).argmin() == 0:
+                        if (np.abs(np.array([ymin[k], ymax[k]]) - np.mean([np.mean(measures[k, 0, jj]), np.mean(measures[k, 1, jj])]))).argmin() == 0:
                             yprint = 0.76
                         else:
                             yprint = 0.03
@@ -335,7 +339,7 @@ def main():
                         ax[row, col + k].set_ylim(np.min(yticks) * 0.975,
                                                 np.max(yticks) * 1.025)
                         ax[row, col + k].set_yticks(yticks)
-                        if (np.abs(np.array([np.min(yticks), np.max(yticks)]) - np.mean(measures[k, i, jj, l]))).argmin() == 0:
+                        if (np.abs(np.array([np.min(yticks), np.max(yticks)]) - np.mean([np.mean(measures[k, 0, jj]), np.mean(measures[k, 1, jj])]))).argmin() == 0:
                             yprint = 0.76
                         else:
                             yprint = 0.03
@@ -373,6 +377,36 @@ def main():
                             ax[row, col + k].legend(handles=list(colorbars),
                                                     labels=args.legend_names,
                                                     loc=args.legend_location)
+                    
+                    if args.write_mean_std: # This only works for 2 series of input!!! Modify this later.
+                        mean1 = np.ma.average(np.ma.MaskedArray(measures[k, 0, jj, l],
+                                                            mask=np.isnan(measures[k, 0, jj, l])),
+                                                            weights=nb_voxels[k, 0, jj, l])
+                        mean_std1 = np.ma.average(np.ma.MaskedArray(measures_std[k, 0, jj, l],
+                                                                mask=np.isnan(measures[k, 0, jj, l])),
+                                                                weights=nb_voxels[k, 0, jj, l])
+                        
+                        mean2 = np.ma.average(np.ma.MaskedArray(measures[k, 1, jj, l],
+                                                            mask=np.isnan(measures[k, 1, jj, l])),
+                                                            weights=nb_voxels[k, 1, jj, l])
+                        mean_std2 = np.ma.average(np.ma.MaskedArray(measures_std[k, 1, jj, l],
+                                                                mask=np.isnan(measures[k, 1, jj, l])),
+                                                                weights=nb_voxels[k, 1, jj, l])
+                        # Écart-relatif
+                        text = "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%"
+                        if bundles_order[j] != "WM":
+                            mean_v[k, j] = (mean_std1 - mean_std2) / mean_std1 * 100
+                        # Trick to make the text start at the far right
+                        xpos = 1.0 - len(text) / 26.5
+                        ax[row, col + k].text(xpos, yprint,
+                                            text,
+                                            color="dimgrey",
+                                            transform=ax[row, col + k].transAxes,
+                                            size=6)
+                        if i == 0:
+                            ax[row, col + k].hlines(mean1, 0, 11, colors=color, linestyles="dashed")
+                        elif i == 1:
+                            ax[row, col + k].hlines(mean2, 0 , 11, colors=color, linestyles="dashed")
 
             if len(bundles_order[j]) > 6:
                 fontsize = 7
@@ -425,6 +459,10 @@ def main():
     fig.get_layout_engine().set(h_pad=0, hspace=0)
     plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
     plt.close()
+
+    std_v = np.std(mean_v, axis=-1)
+    mean_v = np.mean(mean_v, axis=-1)
+    logging.info('Mean V: {} | STD V: {}'.format(mean_v, std_v))
 
 
 if __name__ == "__main__":
