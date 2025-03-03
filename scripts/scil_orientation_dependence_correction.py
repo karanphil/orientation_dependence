@@ -38,6 +38,9 @@ def _build_arg_parser():
                         'output of the \n'
                         'scil_characterize_orientation_dependence.py script.')
 
+    p.add_argument('--max_mean_refs', nargs='+',
+                   help='')
+
     p.add_argument('--in_measures', nargs='+', required=True,
                    help='Path to the measures to correct.')
     p.add_argument('--measures_names', nargs='+', required=True,
@@ -91,6 +94,7 @@ def main():
         polyfit_shape = np.load(args.polyfits[0])[measure_name + "_polyfit"].shape
         polyfits = np.ndarray((polyfit_shape) + (len(args.polyfits),))
         references = np.zeros(len(args.polyfits))
+        max_means = np.zeros(len(args.max_mean_refs))
         bundles_names = np.empty(len(args.polyfits), dtype=object)
         for i, polyfit in enumerate(args.polyfits):
             bundle_name = Path(polyfit).parent.name
@@ -104,9 +108,13 @@ def main():
             polyfits[..., bundle_idx] = np.load(polyfit)[measure_name + "_polyfit"]
             references[bundle_idx] = np.load(polyfit)[measure_name + "_reference"]
             bundles_names[bundle_idx] = bundle_name
+            if args.max_mean_refs:
+                max_means[bundle_idx] = np.load(args.max_mean_refs[i])[measure_name + "_reference"]
 
         if (lookuptable != bundles_names).all():
             raise ValueError("The order of polyfits and lookup table are not the same.")
+        
+        references += max_means  # Does nothing if no max-mean ref is given.
 
         # Compute correction
         corrected_measure= correct_measure(measure, peaks, affine,
