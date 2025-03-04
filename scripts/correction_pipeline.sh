@@ -9,7 +9,7 @@ reference=$3; # The third input of the script is the reference type.
 
 # reference="mean";
 # reference="maximum";
-# reference="max_mean";
+# reference="max_mean"; # be careful with this one.
 
 # All steps:
 
@@ -192,7 +192,9 @@ fi;
 # Correct the original measures.
 if [ "$reference" = "max_mean" ];
     then
-    max_mean_cmd="--max_mean_refs characterization_max_mean/${data}/${bin_width_dir}/means/*/1f_polyfits.npz";
+    max_mean_polyfits=$(find characterization_max_mean/means/*/1f_polyfits.npz ! -path '*WM*');
+    max_mean_cmd="--max_mean_refs $max_mean_polyfits";
+    out_original="characterization_mean/${data}/${bin_width_dir}";
 else
     max_mean_cmd=""
 fi;
@@ -222,10 +224,11 @@ if $do_characterize_corrected;
 
     done;
 
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_${reference}_corrected.nii.gz ihMT/${data}/ihMTR_${reference}_corrected.nii.gz ihMT/${data}/MTsat_${reference}_corrected.nii.gz ihMT/${data}/ihMTsat_${reference}_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles $bundles_masks --bundles_names $bundles_names --bin_width_sf $bin_width --min_nb_voxels 1 --stop_crit 0.055 --save_polyfit --use_weighted_polyfit;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_${reference}_corrected.nii.gz ihMT/${data}/ihMTR_${reference}_corrected.nii.gz ihMT/${data}/MTsat_${reference}_corrected.nii.gz ihMT/${data}/ihMTsat_${reference}_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles $bundles_masks --bundles_names $bundles_names --bin_width_sf $bin_width --min_nb_voxels 1;
 
     mkdir -p ${out_corrected}/WM;
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_${reference}_corrected.nii.gz ihMT/${data}/ihMTR_${reference}_corrected.nii.gz ihMT/${data}/MTsat_${reference}_corrected.nii.gz ihMT/${data}/ihMTsat_${reference}_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles ${fixel_analysis}/voxel_density_mask_WM.nii.gz --bundles_names WM --bin_width_sf $bin_width --min_nb_voxels 1 --stop_crit 0.055 --save_polyfit --use_weighted_polyfit;
+    scil_volume_math.py union ${fixel_analysis}/voxel_density_mask_voxel-norm_*.nii.gz ${fixel_analysis}/voxel_density_mask_WM.nii.gz -f;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_characterization.py FODF_metrics/${data}/new_peaks/peaks.nii.gz DTI_metrics/${data}/${data}__dti_fa.nii.gz FODF_metrics/${data}/new_peaks/nufo.nii.gz wm_mask/${data}/${data}__wm_mask.nii.gz $out_corrected --measures ihMT/${data}/MTR_${reference}_corrected.nii.gz ihMT/${data}/ihMTR_${reference}_corrected.nii.gz ihMT/${data}/MTsat_${reference}_corrected.nii.gz ihMT/${data}/ihMTsat_${reference}_corrected.nii.gz --measures_names MTR ihMTR MTsat ihMTsat --bundles ${fixel_analysis}/voxel_density_mask_WM.nii.gz --bundles_names WM --bin_width_sf $bin_width --min_nb_voxels 1;
 
 fi;
 

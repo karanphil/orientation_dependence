@@ -113,7 +113,7 @@ def main():
 
         if (lookuptable != bundles_names).all():
             raise ValueError("The order of polyfits and lookup table are not the same.")
-        
+
         references += max_means  # Does nothing if no max-mean ref is given.
 
         # Compute correction
