@@ -159,6 +159,7 @@ def main():
     mean_measures_std = np.empty((nb_measures, nb_bundles),
                                     dtype=object)
     mean_nb_voxels = np.empty((nb_measures, nb_bundles), dtype=object)
+    mean_nb_voxels_std = np.empty((nb_measures, nb_bundles), dtype=object)
     mean_origins = np.empty((nb_measures, nb_bundles), dtype=object)
     mean_polyfits = np.empty((nb_measures, nb_bundles), dtype=object)
     polyfits = np.empty((nb_measures, nb_bundles), dtype=object)
@@ -174,6 +175,7 @@ def main():
             mean_measures[k, j] = np.nanmean(measure, axis=0)
             mean_measures_std[k, j] = np.nanstd(measure, axis=0)
             mean_nb_voxels[k, j] = np.nanmean(nb_voxel, axis=0)
+            mean_nb_voxels_std[k, j] = np.nanstd(nb_voxel, axis=0)
             mean_origins[k, j] = np.repeat(bundle_name, nb_bins)
             if args.in_polyfits:
                 polyfit = np.array(list(polyfits[k, :, j]))
@@ -189,6 +191,7 @@ def main():
         out_path = out_folder / (bundle_name + "/" + file_name)
         save_results_as_npz_mean(bins[j], mean_measures[:, j],
                             mean_measures_std[:, j], mean_nb_voxels[:, j],
+                            mean_nb_voxels_std[:, j],
                             mean_origins[:, j], nm_measures, out_path)
         if args.in_polyfits:
             out_path = out_folder / (bundle_name + '/1f_polyfits')

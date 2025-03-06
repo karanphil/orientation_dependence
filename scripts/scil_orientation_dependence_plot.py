@@ -75,6 +75,10 @@ def _build_arg_parser():
                    help='Value of the minimal number of voxels per bin '
                         '[%(default)s].')
 
+    p.add_argument('--check_nb_voxels_std', action='store_true',
+                   help='If set, checks the std of nb_voxels along with '
+                        'min_nb_voxels.')
+
     p.add_argument('--max_nb_bundles', default=34, type=int,
                    help='Maximum number of bundles that can be plotted '
                         '\nIt is not recommended to change this value '
@@ -204,6 +208,8 @@ def main():
     measures_std = np.empty((nb_measures, nb_subjects, nb_bundles),
                             dtype=object)
     nb_voxels = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
+    nb_voxels_std = np.empty((nb_measures, nb_subjects, nb_bundles),
+                             dtype=object)
     origins = np.empty((nb_measures, nb_subjects, nb_bundles), dtype=object)
     for i, sub in enumerate(args.in_bundles):
         # Verify that all subjects have the same number of bundles
@@ -237,6 +243,8 @@ def main():
                 if nm_measure + '_std' in file.keys():
                     measures_std[k, i, j] = file[nm_measure + '_std']
                 nb_voxels[k, i, j] = file['Nb_voxels_' + nm_measure]
+                if 'Nb_voxels_std_' + nm_measure in file.keys():
+                    nb_voxels_std[k, i, j] = file['Nb_voxels_std_' + nm_measure]
                 origins[k, i, j] = file['Origin_' + nm_measure]
                 nb_bins = len(measures[k, i, j])
                 if args.plot_mean and nb_bins != len(measures[k, 0, j]):
@@ -391,6 +399,8 @@ def main():
             mid_bins = (angles_min[i, jj] + angles_max[i, jj]) / 2.
             for k in range(nb_measures):
                 is_measures = nb_voxels[k, i, jj] >= min_nb_voxels
+                if args.check_nb_voxels_std:
+                    is_measures = is_measures & (nb_voxels_std[k, i, jj] < nb_voxels[k, i, jj]) & (nb_voxels_std[k, i, jj] != 0)
                 is_not_measures = np.invert(is_measures)
                 color = cmap(cmap_idx[i + (nb_subjects == 1) * k])
                 pts_origin = origins[k, i, jj]
@@ -487,19 +497,23 @@ def main():
                         ax[row, col + k].legend(handles=list(colorbars),
                                                 labels=args.legend_names,
                                                 loc=args.legend_location)
+                        
+                # !!!!!!!!!! Why one uses sqrt(nb_voxels) and the other just nb_voxels as weights???
+                # Changed it to only nb_voxels for both.
 
                 if args.horizontal_test: # This only works for 2 series of input!!! Modify this later.
-                    is_not_nan = nb_voxels[k, 0, jj] >= 1
-                    average1 = np.average(measures[k, 0, jj][is_not_nan],
-                                          weights=np.sqrt(nb_voxels[k, 0, jj])[is_not_nan])
-                    var1 = np.average((measures[k, 0, jj][is_not_nan] - average1)**2,
-                                      weights=np.sqrt(nb_voxels[k, 0, jj])[is_not_nan])
+                    #nb_voxels_check = nb_voxels[k, 0, jj] >= 1
+                    nb_voxels_check = is_measures
+                    average1 = np.average(measures[k, 0, jj][nb_voxels_check],
+                                          weights=nb_voxels[k, 0, jj][nb_voxels_check])
+                    var1 = np.average((measures[k, 0, jj][nb_voxels_check] - average1)**2,
+                                      weights=nb_voxels[k, 0, jj][nb_voxels_check])
 
-                    average2 = np.average(measures[k, 1, jj][is_not_nan],
-                                          weights=np.sqrt(nb_voxels[k, 1, jj])[is_not_nan])
+                    average2 = np.average(measures[k, 1, jj][nb_voxels_check],
+                                          weights=nb_voxels[k, 1, jj][nb_voxels_check])
 
-                    var2 = np.average((measures[k, 1, jj][is_not_nan] - average2)**2,
-                                      weights=np.sqrt(nb_voxels[k, 1, jj])[is_not_nan])
+                    var2 = np.average((measures[k, 1, jj][nb_voxels_check] - average2)**2,
+                                      weights=nb_voxels[k, 1, jj][nb_voxels_check])
                     std1 = np.sqrt(var1)
                     std2 = np.sqrt(var2)
                     if bundles_order[j] != "WM":
@@ -511,19 +525,12 @@ def main():
                                           size=6)
 
                 if args.write_mean_std: # This only works for 2 series of input!!! Modify this later.
-                    mean1 = np.ma.average(np.ma.MaskedArray(measures[k, 0, jj],
-                                                           mask=np.isnan(measures[k, 0, jj])),
-                                                           weights=nb_voxels[k, 0, jj])
-                    mean_std1 = np.ma.average(np.ma.MaskedArray(measures_std[k, 0, jj],
-                                                               mask=np.isnan(measures[k, 0, jj])),
-                                                               weights=nb_voxels[k, 0, jj])
-                    
-                    mean2 = np.ma.average(np.ma.MaskedArray(measures[k, 1, jj],
-                                                           mask=np.isnan(measures[k, 1, jj])),
-                                                           weights=nb_voxels[k, 1, jj])
-                    mean_std2 = np.ma.average(np.ma.MaskedArray(measures_std[k, 1, jj],
-                                                               mask=np.isnan(measures[k, 1, jj])),
-                                                               weights=nb_voxels[k, 1, jj])
+                    #nb_voxels_check = nb_voxels[k, 0, jj] >= 1
+                    nb_voxels_check = is_measures
+                    mean_std1 = np.average(measures_std[k, 0, jj][nb_voxels_check],
+                                           weights=nb_voxels[k, 0, jj][nb_voxels_check])
+                    mean_std2 = np.average(measures_std[k, 1, jj][nb_voxels_check],
+                                           weights=nb_voxels[k, 1, jj][nb_voxels_check])
                     # Écart-relatif
                     text = "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%"
                     if bundles_order[j] != "WM":
