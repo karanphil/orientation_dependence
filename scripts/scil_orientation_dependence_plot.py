@@ -600,8 +600,11 @@ def main():
     mean_f = np.mean(mean_f, axis=-1)
     mean_v = np.mean(mean_v, axis=-1)
 
-    logging.info('Mean F: {} | STD F: {}'.format(mean_f, std_f))
-    logging.info('Mean V: {} | STD V: {}'.format(mean_v, std_v))
+    for i in range(mean_f.shape[-1]):
+        logging.info('{} F: {} ± {}'.format(nm_measures[i], np.round(mean_f[i], decimals=3), np.round(std_f[i], decimals=3)))
+
+    for i in range(mean_f.shape[-1]):
+        logging.info('{} V: {} ± {}'.format(nm_measures[i], np.round(mean_v[i], decimals=3), np.round(std_v[i], decimals=3)))
 
 
 if __name__ == "__main__":
