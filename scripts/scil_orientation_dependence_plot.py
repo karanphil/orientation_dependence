@@ -381,11 +381,11 @@ def main():
     max_measures = np.zeros((nb_bundles_to_plot, nb_measures))
     colorbars = np.empty((nb_subjects), dtype=object)
     if "WM" in bundles_order:
-        mean_f = np.zeros((nb_measures, nb_bundles_to_plot - 1))
-        mean_v = np.zeros((nb_measures, nb_bundles_to_plot - 1))
+        f = np.zeros((nb_measures, nb_bundles_to_plot - 1))
+        v = np.zeros((nb_measures, nb_bundles_to_plot - 1))
     else:
-        mean_f = np.zeros((nb_measures, nb_bundles_to_plot))
-        mean_v = np.zeros((nb_measures, nb_bundles_to_plot))
+        f = np.zeros((nb_measures, nb_bundles_to_plot))
+        v = np.zeros((nb_measures, nb_bundles_to_plot))
     for i in range(nb_subjects):
         for j in range(nb_bundles_to_plot):
             if split_columns:  # for nb_measures <= args.max_nb_measures / 2
@@ -507,34 +507,46 @@ def main():
                     average1 = np.average(measures[k, 0, jj][nb_voxels_check],
                                           weights=nb_voxels[k, 0, jj][nb_voxels_check])
                     var1 = np.average((measures[k, 0, jj][nb_voxels_check] - average1)**2,
-                                      weights=nb_voxels[k, 0, jj][nb_voxels_check])
+                                      weights=nb_voxels[k, 0, jj][nb_voxels_check]) / average1
 
                     average2 = np.average(measures[k, 1, jj][nb_voxels_check],
                                           weights=nb_voxels[k, 1, jj][nb_voxels_check])
 
                     var2 = np.average((measures[k, 1, jj][nb_voxels_check] - average2)**2,
-                                      weights=nb_voxels[k, 1, jj][nb_voxels_check])
-                    std1 = np.sqrt(var1)
-                    std2 = np.sqrt(var2)
+                                      weights=nb_voxels[k, 1, jj][nb_voxels_check]) / average2
+                    # !!!! Which one should it be?!?! Variance or std?
+                    # Least-squared error would have a sqrt right?
+                    std1 = 1 / np.sqrt(var1)
+                    std2 = 1 / np.sqrt(var2)
+                    # std1 = var1
+                    # std2 = var2
+                    # curr_f = std2
+                    curr_f = (std2 - std1) / std2 * 100
                     if bundles_order[j] != "WM":
-                        mean_f[k, j] = (std1 - std2) / std1 * 100
+                        f[k, j] = curr_f
                     ax[row, col + k].text(0.01, yprint,
-                                          "F: " + str(np.round((std1 - std2) / std1 * 100, decimals=1)) + "%",
-                                          color="dimgrey",
-                                          transform=ax[row, col + k].transAxes,
-                                          size=6)
+                                        "F: " + str(np.round(curr_f, decimals=1)) + "%",
+                                        color="dimgrey",
+                                        transform=ax[row, col + k].transAxes,
+                                        size=6)
 
                 if args.write_mean_std: # This only works for 2 series of input!!! Modify this later.
                     #nb_voxels_check = nb_voxels[k, 0, jj] >= 1
                     nb_voxels_check = is_measures
+                    average1 = np.average(measures[k, 0, jj][nb_voxels_check],
+                                          weights=nb_voxels[k, 0, jj][nb_voxels_check])
                     mean_std1 = np.average(measures_std[k, 0, jj][nb_voxels_check],
-                                           weights=nb_voxels[k, 0, jj][nb_voxels_check])
+                                           weights=nb_voxels[k, 0, jj][nb_voxels_check]) #/ average1
+                    average2 = np.average(measures[k, 1, jj][nb_voxels_check],
+                                          weights=nb_voxels[k, 1, jj][nb_voxels_check])
                     mean_std2 = np.average(measures_std[k, 1, jj][nb_voxels_check],
-                                           weights=nb_voxels[k, 1, jj][nb_voxels_check])
+                                           weights=nb_voxels[k, 1, jj][nb_voxels_check]) #/ average2
                     # Écart-relatif
-                    text = "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%"
+                    curr_v = (mean_std1 - mean_std2) / mean_std1 * 100
+                    # curr_v = (mean_std2 - mean_std1) / mean_std2 * 100
+                    text = "V: " + str(np.round(curr_v, decimals=1)) + "%"
                     if bundles_order[j] != "WM":
-                        mean_v[k, j] = (mean_std1 - mean_std2) / mean_std1 * 100
+                        v[k, j] = curr_v
                     # Trick to make the text start at the far right
                     xpos = 1.0 - len(text) / 26.5
                     ax[row, col + k].text(xpos, yprint,
@@ -595,10 +607,10 @@ def main():
     plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
     plt.close()
 
-    std_f = np.std(mean_f, axis=-1)
-    std_v = np.std(mean_v, axis=-1)
-    mean_f = np.mean(mean_f, axis=-1)
-    mean_v = np.mean(mean_v, axis=-1)
+    mean_f = np.mean(f, axis=-1)
+    mean_v = np.mean(v, axis=-1)
+    std_f = np.std(f, axis=-1)
+    std_v = np.std(v, axis=-1)
 
     for i in range(mean_f.shape[-1]):
         logging.info('{} F: {} ± {}'.format(nm_measures[i], np.round(mean_f[i], decimals=3), np.round(std_f[i], decimals=3)))
