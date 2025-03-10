@@ -618,6 +618,14 @@ def main():
     for i in range(mean_f.shape[-1]):
         logging.info('{} V: {} ± {}'.format(nm_measures[i], np.round(mean_v[i], decimals=3), np.round(std_v[i], decimals=3)))
 
+    np.savetxt(Path(args.out_filename).stem + "_f_values.txt", f,
+               header="{} {}".format(nm_measures[0], nm_measures[1]),
+               comments="")
+
+    np.savetxt(Path(args.out_filename).stem + "_v_values.txt", v,
+               header="{} {}".format(nm_measures[0], nm_measures[1]),
+               comments="")
+
 
 if __name__ == "__main__":
     main()
