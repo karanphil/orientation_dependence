@@ -38,9 +38,13 @@ def _build_arg_parser():
     p.add_argument('--out_folder', default='orientation_dependence_plot.png',
                    help='Path and name of the output file.')
 
-    p.add_argument('--min_nb_voxels', default=30, type=int,
+    p.add_argument('--min_nb_voxels', default=1, type=int,
                    help='Value of the minimal number of voxels per bin '
                         '[%(default)s].')
+
+    p.add_argument('--check_nb_voxels_std', action='store_true',
+                   help='If set, checks the std of nb_voxels along with '
+                        'min_nb_voxels.')
 
     g2 = p.add_argument_group(title='Polyfit parameters')
     g2.add_argument('--use_weighted_polyfit', action='store_true',
@@ -76,6 +80,7 @@ def main():
     measures = np.empty((nb_bundles, nb_bins, nb_measures))
     averages = np.zeros((nb_bundles, nb_measures))
     nb_voxels = np.empty((nb_bundles, nb_bins, nb_measures))
+    nb_voxels_std = np.empty((nb_bundles, nb_bins, nb_measures))
     is_measures = np.empty((nb_bundles, nb_bins, nb_measures), dtype=bool)
     origins = np.empty((nb_bundles, nb_bins, nb_measures), dtype=object)
     for i, bundle in enumerate(args.in_bundles):
@@ -94,7 +99,12 @@ def main():
         for j, nm_measure in enumerate(nm_measures):
             measures[i, :, j] = file[nm_measure]
             nb_voxels[i, :, j] = file['Nb_voxels_' + nm_measure]
+            if 'Nb_voxels_std_' + nm_measure in file.keys():
+                nb_voxels_std[i, :, j] = file['Nb_voxels_std_' + nm_measure]
             is_measures[i, :, j] = nb_voxels[i, :, j] >= args.min_nb_voxels
+            if args.check_nb_voxels_std:
+                is_measures[i, :, j] = is_measures[i, :, j] & (nb_voxels_std[i, :, j] < nb_voxels[i, :, j]) & (nb_voxels_std[i, :, j] != 0)
+            # Add check for empty is_measures!! If empty, maximum makes no sense.
             origins[i, :, j] = file['Origin_' + nm_measure]
             is_original = origins[i, :, j] == bundles_names[i]
             averages[i, j] = np.ma.average(np.ma.MaskedArray(measures[i, :, j][is_original],
