@@ -102,6 +102,9 @@ def _build_arg_parser():
     p.add_argument('--horizontal_test', action='store_true',
                    help='If set, the ratio between...') # Update help
 
+    p.add_argument('--save_stats', action='store_true',
+                   help='') # Update help
+
     p.add_argument('--norm_with_wm', action='store_true',
                    help='If set, the normalization...') # Update help
 
@@ -607,24 +610,25 @@ def main():
     plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
     plt.close()
 
-    mean_f = np.mean(f, axis=-1)
-    mean_v = np.mean(v, axis=-1)
-    std_f = np.std(f, axis=-1)
-    std_v = np.std(v, axis=-1)
+    if args.save_stats:
+        mean_f = np.mean(f, axis=-1)
+        mean_v = np.mean(v, axis=-1)
+        std_f = np.std(f, axis=-1)
+        std_v = np.std(v, axis=-1)
 
-    for i in range(mean_f.shape[-1]):
-        logging.info('{} F: {} ± {}'.format(nm_measures[i], np.round(mean_f[i], decimals=3), np.round(std_f[i], decimals=3)))
+        for i in range(mean_f.shape[-1]):
+            logging.info('{} F: {} ± {}'.format(nm_measures[i], np.round(mean_f[i], decimals=3), np.round(std_f[i], decimals=3)))
 
-    for i in range(mean_f.shape[-1]):
-        logging.info('{} V: {} ± {}'.format(nm_measures[i], np.round(mean_v[i], decimals=3), np.round(std_v[i], decimals=3)))
+        for i in range(mean_f.shape[-1]):
+            logging.info('{} V: {} ± {}'.format(nm_measures[i], np.round(mean_v[i], decimals=3), np.round(std_v[i], decimals=3)))
 
-    np.savetxt(Path(args.out_filename).stem + "_f_values.txt", f,
-               header="{} {}".format(nm_measures[0], nm_measures[1]),
-               comments="")
+        np.savetxt(Path(args.out_filename).stem + "_f_values.txt", f,
+                header="{} {}".format(nm_measures[0], nm_measures[1]),
+                comments="")
 
-    np.savetxt(Path(args.out_filename).stem + "_v_values.txt", v,
-               header="{} {}".format(nm_measures[0], nm_measures[1]),
-               comments="")
+        np.savetxt(Path(args.out_filename).stem + "_v_values.txt", v,
+                header="{} {}".format(nm_measures[0], nm_measures[1]),
+                comments="")
 
 
 if __name__ == "__main__":
