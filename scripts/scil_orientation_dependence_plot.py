@@ -68,6 +68,9 @@ def _build_arg_parser():
                         '\nMake sure that each set has the same number of '
                         'bundles.')
 
+    p.add_argument('--polyfits_to_plot', type=int, default=None, nargs='+',
+                   help='Index of the polyfits to plot.')
+
     p.add_argument('--out_filename', default='orientation_dependence_plot.png',
                    help='Path and name of the output file.')
 
@@ -435,10 +438,14 @@ def main():
                                          linewidths=1)
                 colorbars[i] = cb
 
-                if args.in_polyfits:
+                if args.in_polyfits and args.polyfits_to_plot == None:
                     polynome_r = np.poly1d(polyfits[k, i, jj])
                     ax[row, col + k].plot(highres_bins, polynome_r(highres_bins),
-                                          "--", color=color)
+                                        "--", color=color)
+                elif args.in_polyfits and i in args.polyfits_to_plot:
+                    polynome_r = np.poly1d(polyfits[k, i, jj])
+                    ax[row, col + k].plot(highres_bins, polynome_r(highres_bins),
+                                        "--", color=color)
 
                 if args.plot_std:
                     ax[row, col + k].fill_between(mid_bins,
