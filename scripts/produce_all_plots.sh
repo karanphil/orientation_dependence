@@ -21,7 +21,7 @@ for method in 'correction_max_mean' 'correction_mean' 'correction_maximum';
     name="MT_ihMT";
     figsize="8 4.5";
     set_yticks="--set_yticks 26.3 19.4 --set_yticks 5.4 2.1 --set_yticks 12.2 4.1 --set_yticks 1.6 0.3"
-    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures $measures --in_bundles ../characterization_mean/means/*/1f_results.npz --in_bundles means/*/1f_results.npz --bundles_order $bundles $polyfits --out_filename ${name}_means_comparison${name_bundle_choice}.png --plot_std --common_yticks --write_mean_std --horizontal_test --figsize $figsize -f $set_yticks $nb_voxels_args --polyfits_to_plot 0;
+    python ${source}/orientation_dependence/scripts/scil_orientation_dependence_plot.py --measures $measures --in_bundles ../characterization_mean/means/*/1f_results.npz --in_bundles means/*/1f_results.npz --bundles_order $bundles $polyfits --out_filename ${name}_means_comparison${name_bundle_choice}.png --plot_std --write_mean_std --horizontal_test --figsize $figsize -f $set_yticks $nb_voxels_args --polyfits_to_plot 0;
     # multi-fiber
     bundles="AF_R CC_2a CC_4 CG_R CST_R IFOF_R OR_R";
     figsize="8 4";
