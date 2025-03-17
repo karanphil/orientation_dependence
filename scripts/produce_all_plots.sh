@@ -4,8 +4,8 @@
 
 source=$1;
 
-nb_voxels_args="--check_nb_voxels_std --min_nb_voxels 10";
-# nb_voxels_args="--min_nb_voxels 30";
+# nb_voxels_args="--check_nb_voxels_std --min_nb_voxels 10";
+nb_voxels_args="--min_nb_voxels 30";
 
 for method in 'correction_max_mean' 'correction_mean' 'correction_maximum';
     do cd $method;

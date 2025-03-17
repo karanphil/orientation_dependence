@@ -134,16 +134,18 @@ def main():
     # plt.boxplot(values.swapaxes(0, 1))
     # plt.show()
     if args.value_type == "f":
-        ylabel = "Relative flatness (%)"
+        ylabel = "Relative flatness change (%)"
         ymin = -100
-        ymax = 100
+        ymax = 1100
     else:
-        ylabel = "Relative variability (%)"
-        ymin = -70
-        ymax = 30
+        ylabel = "Relative variability change (%)"
+        ymin = -30
+        ymax = 130
     labels = []
     labels_list = ["max-mean", "maximum", "mean"]
     fig, ax = plt.subplots(1, 2, layout='constrained')
+    ax[0].hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+    ax[1].hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
     for i in range(nb_sets):
         violin_parts = ax[0].violinplot(values_sf[i].swapaxes(0, 1), showmeans=True,
                                       showmedians=True,
@@ -152,7 +154,7 @@ def main():
         for partname in ('cbars','cmins','cmaxes','cmeans','cmedians'):
             vp = violin_parts[partname]
             if partname == 'cmedians':
-                vp.set_edgecolor('red')
+                vp.set_edgecolor('grey')
             else:
                 vp.set_edgecolor(cmap(cmap_idx[i]))
         for parts in violin_parts['bodies']:
@@ -163,7 +165,9 @@ def main():
     ax[0].set_ylabel(ylabel)
     #ax[0].set_ylim(max(-100, np.min(values_sf) - 5), min(100, np.max(values_sf) + 5))
     ax[0].set_ylim(ymin, ymax)
-    ax[0].legend(*zip(*labels), loc=3, title="Reference")
+    ax[0].set_xlim(0, 16)
+    if args.value_type == "f":
+        ax[1].legend(*zip(*labels), loc=1, title="Reference")
     ax[0].set_title("Single-fiber voxels")
     for i in range(nb_sets):
         violin_parts = ax[1].violinplot(values_mf[i].swapaxes(0, 1), showmeans=True,
@@ -173,7 +177,7 @@ def main():
         for partname in ('cbars','cmins','cmaxes','cmeans','cmedians'):
             vp = violin_parts[partname]
             if partname == 'cmedians':
-                vp.set_edgecolor('red')
+                vp.set_edgecolor('grey')
             else:
                 vp.set_edgecolor(cmap(cmap_idx[i]))
         for parts in violin_parts['bodies']:
@@ -184,6 +188,7 @@ def main():
     # ax[1].set_ylabel(ylabel)
     #ax[1].set_ylim(max(-100, np.min(values_sf) - 5), min(100, np.max(values_sf) + 5))
     ax[1].set_ylim(ymin, ymax)
+    ax[1].set_xlim(0, 16)
     ax[1].set_title("Multi-fiber voxels")
     # plt.show()
     plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')

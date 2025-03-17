@@ -511,27 +511,27 @@ def main():
                 # !!!!!!!!!! Why one uses sqrt(nb_voxels) and the other just nb_voxels as weights???
                 # Changed it to only nb_voxels for both.
 
+                nb_voxels_check = nb_voxels[k, 0, jj] >= 1
+                # nb_voxels_check = is_measures
                 if args.horizontal_test: # This only works for 2 series of input!!! Modify this later.
-                    #nb_voxels_check = nb_voxels[k, 0, jj] >= 1
-                    nb_voxels_check = is_measures
                     average1 = np.average(measures[k, 0, jj][nb_voxels_check],
                                           weights=nb_voxels[k, 0, jj][nb_voxels_check])
                     var1 = np.average((measures[k, 0, jj][nb_voxels_check] - average1)**2,
-                                      weights=nb_voxels[k, 0, jj][nb_voxels_check]) / average1
+                                      weights=nb_voxels[k, 0, jj][nb_voxels_check])
 
                     average2 = np.average(measures[k, 1, jj][nb_voxels_check],
                                           weights=nb_voxels[k, 1, jj][nb_voxels_check])
 
                     var2 = np.average((measures[k, 1, jj][nb_voxels_check] - average2)**2,
-                                      weights=nb_voxels[k, 1, jj][nb_voxels_check]) / average2
+                                      weights=nb_voxels[k, 1, jj][nb_voxels_check])
                     # !!!! Which one should it be?!?! Variance or std?
                     # Least-squared error would have a sqrt right?
-                    std1 = 1 / np.sqrt(var1)
-                    std2 = 1 / np.sqrt(var2)
+                    f1 = 1 / np.sqrt(var1)
+                    f2 = 1 / np.sqrt(var2)
                     # std1 = var1
                     # std2 = var2
                     # curr_f = std2
-                    curr_f = (std2 - std1) / std2 * 100
+                    curr_f = (f2 - f1) / f1 * 100
                     if bundles_order[j] != "WM":
                         f[k, j] = curr_f
                     ax[row, col + k].text(0.01, yprint,
@@ -541,19 +541,17 @@ def main():
                                         size=6)
 
                 if args.write_mean_std: # This only works for 2 series of input!!! Modify this later.
-                    #nb_voxels_check = nb_voxels[k, 0, jj] >= 1
-                    nb_voxels_check = is_measures
-                    average1 = np.average(measures[k, 0, jj][nb_voxels_check],
-                                          weights=nb_voxels[k, 0, jj][nb_voxels_check])
+                    # average1 = np.average(measures[k, 0, jj][nb_voxels_check],
+                    #                       weights=nb_voxels[k, 0, jj][nb_voxels_check])
                     mean_std1 = np.average(measures_std[k, 0, jj][nb_voxels_check],
                                            weights=nb_voxels[k, 0, jj][nb_voxels_check]) #/ average1
-                    average2 = np.average(measures[k, 1, jj][nb_voxels_check],
-                                          weights=nb_voxels[k, 1, jj][nb_voxels_check])
+                    # average2 = np.average(measures[k, 1, jj][nb_voxels_check],
+                    #                       weights=nb_voxels[k, 1, jj][nb_voxels_check])
                     mean_std2 = np.average(measures_std[k, 1, jj][nb_voxels_check],
                                            weights=nb_voxels[k, 1, jj][nb_voxels_check]) #/ average2
                     # Écart-relatif
-                    curr_v = (mean_std1 - mean_std2) / mean_std1 * 100
-                    # curr_v = (mean_std2 - mean_std1) / mean_std2 * 100
+                    # curr_v = (mean_std1 - mean_std2) / mean_std1 * 100
+                    curr_v = (mean_std2 - mean_std1) / mean_std1 * 100
                     text = "V: " + str(np.round(curr_v, decimals=1)) + "%"
                     if bundles_order[j] != "WM":
                         v[k, j] = curr_v
