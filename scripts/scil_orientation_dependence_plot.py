@@ -392,6 +392,10 @@ def main():
     else:
         f = np.zeros((nb_measures, nb_bundles_to_plot))
         v = np.zeros((nb_measures, nb_bundles_to_plot))
+    if nb_measures == 4:
+        ytop = 0.8
+    else:
+        ytop = 0.76
     for i in range(nb_subjects):
         for j in range(nb_bundles_to_plot):
             if split_columns:  # for nb_measures <= args.max_nb_measures / 2
@@ -461,7 +465,7 @@ def main():
                                                  np.round(ymax[k],
                                                           decimals=1)])
                     if (np.abs(np.array([ymin[k], ymax[k]]) - np.mean([np.mean(measures[k, 0, jj]), np.mean(measures[k, 1, jj])]))).argmin() == 0:
-                        yprint = 0.76
+                        yprint = ytop
                     else:
                         yprint = 0.03
                 elif args.set_yticks is not None:
@@ -470,7 +474,7 @@ def main():
                                               np.max(yticks) * 1.025)
                     ax[row, col + k].set_yticks(yticks)
                     if (np.abs(np.array([np.min(yticks), np.max(yticks)]) - np.mean([np.mean(measures[k, 0, jj]), np.mean(measures[k, 1, jj])]))).argmin() == 0:
-                        yprint = 0.76
+                        yprint = ytop
                     else:
                         yprint = 0.03
                 else:
@@ -535,7 +539,7 @@ def main():
                     if bundles_order[j] != "WM":
                         f[k, j] = curr_f
                     ax[row, col + k].text(0.01, yprint,
-                                        "F: " + str(np.round(curr_f, decimals=1)) + "%",
+                                        r"$\Delta$F: " + str(np.round(curr_f, decimals=1)) + "%",
                                         color="dimgrey",
                                         transform=ax[row, col + k].transAxes,
                                         size=6)
@@ -552,11 +556,11 @@ def main():
                     # Écart-relatif
                     # curr_v = (mean_std1 - mean_std2) / mean_std1 * 100
                     curr_v = (mean_std2 - mean_std1) / mean_std1 * 100
-                    text = "V: " + str(np.round(curr_v, decimals=1)) + "%"
+                    text = r"$\Delta$V: " + str(np.round(curr_v, decimals=1)) + "%"
                     if bundles_order[j] != "WM":
                         v[k, j] = curr_v
                     # Trick to make the text start at the far right
-                    xpos = 1.0 - len(text) / 26.5
+                    xpos = 1.0 - (len(text) - 7) / 26.5
                     ax[row, col + k].text(xpos, yprint,
                                           text,
                                           color="dimgrey",

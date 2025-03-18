@@ -148,10 +148,9 @@ def main():
     ax[1].hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
     for i in range(nb_sets):
         violin_parts = ax[0].violinplot(values_sf[i].swapaxes(0, 1), showmeans=True,
-                                      showmedians=True,
                                       positions=[i + 1, i + 5, i + 9, i + 13])#,
                                       #label=labels[i])
-        for partname in ('cbars','cmins','cmaxes','cmeans','cmedians'):
+        for partname in ('cbars','cmins','cmaxes','cmeans'):
             vp = violin_parts[partname]
             if partname == 'cmedians':
                 vp.set_edgecolor('grey')
@@ -171,10 +170,9 @@ def main():
     ax[0].set_title("Single-fiber voxels")
     for i in range(nb_sets):
         violin_parts = ax[1].violinplot(values_mf[i].swapaxes(0, 1), showmeans=True,
-                                      showmedians=True,
                                       positions=[i + 1, i + 5, i + 9, i + 13])#,
                                       #label=labels[i])
-        for partname in ('cbars','cmins','cmaxes','cmeans','cmedians'):
+        for partname in ('cbars','cmins','cmaxes','cmeans'):
             vp = violin_parts[partname]
             if partname == 'cmedians':
                 vp.set_edgecolor('grey')
