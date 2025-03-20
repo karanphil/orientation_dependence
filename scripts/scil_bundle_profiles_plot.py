@@ -67,6 +67,9 @@ def _build_arg_parser():
     p.add_argument('--write_mean_std', action='store_true',
                    help='If set, the mean std is added as text.') # Update help
 
+    p.add_argument('--save_stats', action='store_true',
+                   help='') # Update help
+
     p.add_argument('--common_yticks', action='store_true',
                    help='If set, all plots of the same measure will have the '
                         'same yticks.')
@@ -280,7 +283,7 @@ def main():
     sections = np.arange(1, 11, 1)
     markers = ['o', 's', '^']
     colorbars = np.empty((nb_subjects), dtype=object)
-    mean_v = np.zeros((nb_measures, nb_bundles_to_plot))
+    v = np.zeros((nb_measures, nb_bundles_to_plot))
     for i in range(nb_subjects):
         for j in range(nb_bundles_to_plot):
             if split_columns:  # for nb_measures <= args.max_nb_measures / 2
@@ -393,20 +396,22 @@ def main():
                                                                 mask=np.isnan(measures[k, 1, jj, l])),
                                                                 weights=nb_voxels[k, 1, jj, l])
                         # Écart-relatif
-                        text = "V: " + str(np.round((mean_std1 - mean_std2) / mean_std1 * 100, decimals=1)) + "%"
+                        curr_v = (mean_std2 - mean_std1) / mean_std1 * 100
+                        text = r"$\Delta$V: " + str(np.round(curr_v, decimals=1)) + "%"
                         if bundles_order[j] != "WM":
-                            mean_v[k, j] = (mean_std1 - mean_std2) / mean_std1 * 100
+                            v[k, j] = curr_v
                         # Trick to make the text start at the far right
-                        xpos = 1.0 - len(text) / 26.5
+                        xpos = 1.0 - (len(text) - 7) / 26.5
                         ax[row, col + k].text(xpos, yprint,
                                             text,
                                             color="dimgrey",
                                             transform=ax[row, col + k].transAxes,
                                             size=6)
                         if i == 0:
-                            ax[row, col + k].hlines(mean1, 0, 11, colors=color, linestyles="dashed")
+                            ax[row, col + k].hlines(mean1, 0, 11, colors=color, linestyles="dotted")
                         elif i == 1:
-                            ax[row, col + k].hlines(mean2, 0 , 11, colors=color, linestyles="dashed")
+                            ax[row, col + k].hlines(mean2, 0 , 11, colors=color, linestyles="dotted")
+                        ax[row, col + k].plot(sections[is_measures], measures[k, 1, jj, l][is_measures] - measures[k, 0, jj, l][is_measures] + mean1, '--')
 
             if len(bundles_order[j]) > 6:
                 fontsize = 7
@@ -460,9 +465,16 @@ def main():
     plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
     plt.close()
 
-    std_v = np.std(mean_v, axis=-1)
-    mean_v = np.mean(mean_v, axis=-1)
-    logging.info('Mean V: {} | STD V: {}'.format(mean_v, std_v))
+    if args.save_stats:
+        mean_v = np.mean(v, axis=-1)
+        std_v = np.std(v, axis=-1)
+
+        for i in range(mean_v.shape[-1]):
+            logging.info('{} V: {} ± {}'.format(nm_measures[i], np.round(mean_v[i], decimals=3), np.round(std_v[i], decimals=3)))
+
+        np.savetxt(Path(args.out_filename).stem + "_v_values.txt", v,
+                header="{} {}".format(nm_measures[0], nm_measures[1]),
+                comments="")
 
 
 if __name__ == "__main__":

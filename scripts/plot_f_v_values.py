@@ -27,7 +27,7 @@ def _build_arg_parser():
     p.add_argument('--in_values_sf', nargs=2, required=True, action='append',
                    help='List of values to plot. Either F or V values')
 
-    p.add_argument('--in_values_mf', nargs=2, required=True, action='append',
+    p.add_argument('--in_values_mf', nargs=2, action='append',
                    help='List of values to plot. Either F or V values')
 
     p.add_argument('--out_filename',
@@ -108,18 +108,20 @@ def main():
     assert_outputs_exist(parser, args, args.out_filename)
 
     nb_sets = len(args.in_values_sf)
+    is_mf_values = args.in_values_mf != None
     values_sf = np.empty((nb_sets,
                           4,np.loadtxt(args.in_values_sf[0][0],
-                                       skiprows=1).shape[-1]))
-    values_mf = np.empty((nb_sets,
-                          4,np.loadtxt(args.in_values_mf[0][0],
                                        skiprows=1).shape[-1]))
     for i, in_values in enumerate(args.in_values_sf):
         for j, in_value in enumerate(in_values):
             values_sf[i, j*2: j*2+2] = np.loadtxt(in_value, skiprows=1)
-    for i, in_values in enumerate(args.in_values_mf):
-        for j, in_value in enumerate(in_values):
-            values_mf[i, j*2: j*2+2] = np.loadtxt(in_value, skiprows=1)
+    if is_mf_values:
+        values_mf = np.empty((nb_sets,
+                            4,np.loadtxt(args.in_values_mf[0][0],
+                                        skiprows=1).shape[-1]))
+        for i, in_values in enumerate(args.in_values_mf):
+            for j, in_value in enumerate(in_values):
+                values_mf[i, j*2: j*2+2] = np.loadtxt(in_value, skiprows=1)
 
     initialize_plot(args)
 
@@ -143,55 +145,82 @@ def main():
         ymax = 130
     labels = []
     labels_list = ["max-mean", "maximum", "mean"]
-    fig, ax = plt.subplots(1, 2, layout='constrained')
-    ax[0].hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
-    ax[1].hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
-    for i in range(nb_sets):
-        violin_parts = ax[0].violinplot(values_sf[i].swapaxes(0, 1), showmeans=True,
-                                      positions=[i + 1, i + 5, i + 9, i + 13])#,
-                                      #label=labels[i])
-        for partname in ('cbars','cmins','cmaxes','cmeans'):
-            vp = violin_parts[partname]
-            if partname == 'cmedians':
-                vp.set_edgecolor('grey')
-            else:
-                vp.set_edgecolor(cmap(cmap_idx[i]))
-        for parts in violin_parts['bodies']:
-            parts.set_facecolor(cmap(cmap_idx[i]))
-            parts.set_edgecolor(cmap(cmap_idx[i]))
-        labels.append((violin_parts['bodies'][0], labels_list[i]))
-    ax[0].set_xticks(ticks=[2, 6, 10, 14], labels=["MTR", "MTsat", "ihMTR", "ihMTsat"])
-    ax[0].set_ylabel(ylabel)
-    #ax[0].set_ylim(max(-100, np.min(values_sf) - 5), min(100, np.max(values_sf) + 5))
-    ax[0].set_ylim(ymin, ymax)
-    ax[0].set_xlim(0, 16)
-    if args.value_type == "f":
-        ax[1].legend(*zip(*labels), loc=1, title="Reference")
-    ax[0].set_title("Single-fiber voxels")
-    for i in range(nb_sets):
-        violin_parts = ax[1].violinplot(values_mf[i].swapaxes(0, 1), showmeans=True,
-                                      positions=[i + 1, i + 5, i + 9, i + 13])#,
-                                      #label=labels[i])
-        for partname in ('cbars','cmins','cmaxes','cmeans'):
-            vp = violin_parts[partname]
-            if partname == 'cmedians':
-                vp.set_edgecolor('grey')
-            else:
-                vp.set_edgecolor(cmap(cmap_idx[i]))
-        for parts in violin_parts['bodies']:
-            parts.set_facecolor(cmap(cmap_idx[i]))
-            parts.set_edgecolor(cmap(cmap_idx[i]))
-        labels.append((violin_parts['bodies'][0], labels_list[i]))
-    ax[1].set_xticks(ticks=[2, 6, 10, 14], labels=["MTR", "MTsat", "ihMTR", "ihMTsat"])
-    # ax[1].set_ylabel(ylabel)
-    #ax[1].set_ylim(max(-100, np.min(values_sf) - 5), min(100, np.max(values_sf) + 5))
-    ax[1].set_ylim(ymin, ymax)
-    ax[1].set_xlim(0, 16)
-    ax[1].set_title("Multi-fiber voxels")
-    # plt.show()
-    plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
-    plt.close()
-
+    if is_mf_values:
+        fig, ax = plt.subplots(1, 2, layout='constrained')
+        ax[0].hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        ax[1].hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        for i in range(nb_sets):
+            violin_parts = ax[0].violinplot(values_sf[i].swapaxes(0, 1), showmeans=True,
+                                        positions=[i + 1, i + 5, i + 9, i + 13])#,
+                                        #label=labels[i])
+            for partname in ('cbars','cmins','cmaxes','cmeans'):
+                vp = violin_parts[partname]
+                if partname == 'cmedians':
+                    vp.set_edgecolor('grey')
+                else:
+                    vp.set_edgecolor(cmap(cmap_idx[i]))
+            for parts in violin_parts['bodies']:
+                parts.set_facecolor(cmap(cmap_idx[i]))
+                parts.set_edgecolor(cmap(cmap_idx[i]))
+            labels.append((violin_parts['bodies'][0], labels_list[i]))
+        ax[0].set_xticks(ticks=[2, 6, 10, 14], labels=["MTR", "MTsat", "ihMTR", "ihMTsat"])
+        ax[0].set_ylabel(ylabel)
+        #ax[0].set_ylim(max(-100, np.min(values_sf) - 5), min(100, np.max(values_sf) + 5))
+        ax[0].set_ylim(ymin, ymax)
+        ax[0].set_xlim(0, 16)
+        if args.value_type == "f":
+            ax[1].legend(*zip(*labels), loc=1, title="Reference")
+        ax[0].set_title("Single-fiber voxels")
+        for i in range(nb_sets):
+            violin_parts = ax[1].violinplot(values_mf[i].swapaxes(0, 1), showmeans=True,
+                                        positions=[i + 1, i + 5, i + 9, i + 13])#,
+                                        #label=labels[i])
+            for partname in ('cbars','cmins','cmaxes','cmeans'):
+                vp = violin_parts[partname]
+                if partname == 'cmedians':
+                    vp.set_edgecolor('grey')
+                else:
+                    vp.set_edgecolor(cmap(cmap_idx[i]))
+            for parts in violin_parts['bodies']:
+                parts.set_facecolor(cmap(cmap_idx[i]))
+                parts.set_edgecolor(cmap(cmap_idx[i]))
+            labels.append((violin_parts['bodies'][0], labels_list[i]))
+        ax[1].set_xticks(ticks=[2, 6, 10, 14], labels=["MTR", "MTsat", "ihMTR", "ihMTsat"])
+        # ax[1].set_ylabel(ylabel)
+        #ax[1].set_ylim(max(-100, np.min(values_sf) - 5), min(100, np.max(values_sf) + 5))
+        ax[1].set_ylim(ymin, ymax)
+        ax[1].set_xlim(0, 16)
+        ax[1].set_title("Multi-fiber voxels")
+        # plt.show()
+        plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
+        plt.close()
+    else:
+        fig, ax = plt.subplots(1, 1, layout='constrained')
+        ax.hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        for i in range(nb_sets):
+            violin_parts = ax.violinplot(values_sf[i].swapaxes(0, 1), showmeans=True,
+                                        positions=[i + 1, i + 5, i + 9, i + 13])#,
+                                        #label=labels[i])
+            for partname in ('cbars','cmins','cmaxes','cmeans'):
+                vp = violin_parts[partname]
+                if partname == 'cmedians':
+                    vp.set_edgecolor('grey')
+                else:
+                    vp.set_edgecolor(cmap(cmap_idx[i]))
+            for parts in violin_parts['bodies']:
+                parts.set_facecolor(cmap(cmap_idx[i]))
+                parts.set_edgecolor(cmap(cmap_idx[i]))
+            labels.append((violin_parts['bodies'][0], labels_list[i]))
+        ax.set_xticks(ticks=[2, 6, 10, 14], labels=["MTR", "MTsat", "ihMTR", "ihMTsat"])
+        ax.set_ylabel(ylabel)
+        #ax.set_ylim(max(-100, np.min(values_sf) - 5), min(100, np.max(values_sf) + 5))
+        ax.set_ylim(ymin, ymax)
+        ax.set_xlim(0, 16)
+        ax.legend(*zip(*labels), loc=1, title="Reference")
+        # ax.set_title("Single-fiber voxels")
+        # plt.show()
+        plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
+        plt.close()
 
 if __name__ == "__main__":
     main()
