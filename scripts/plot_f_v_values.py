@@ -37,6 +37,9 @@ def _build_arg_parser():
                    choices=["f", "v"],
                    help='')
 
+    p.add_argument('--tractometry', action='store_true',
+                   help='')
+
     g = p.add_argument_group(title="Plot parameters")
 
     g.add_argument("--figsize", default=[10, 4], nargs=2,
@@ -145,7 +148,7 @@ def main():
         ymax = 130
     labels = []
     labels_list = ["max-mean", "maximum", "mean"]
-    if is_mf_values:
+    if is_mf_values and not args.tractometry:
         fig, ax = plt.subplots(1, 2, layout='constrained')
         ax[0].hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
         ax[1].hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
@@ -191,6 +194,78 @@ def main():
         ax[1].set_ylim(ymin, ymax)
         ax[1].set_xlim(0, 16)
         ax[1].set_title("Multi-fiber voxels")
+        # plt.show()
+        plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
+        plt.close()
+    elif is_mf_values and args.tractometry:
+        # c = [0, 0, 1, 1, 1, 2, 3, 3, 4, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 13, 13, 13, 13, 14, 14, 15]
+        symbols = ["o", "s", "^"]
+        # values_mf[:, 0] /= np.max(values_mf[:, 0])
+        # values_mf[:, 1] /= np.max(values_mf[:, 1])
+        # values_mf[:, 2] /= np.max(values_mf[:, 2])
+        # values_mf[:, 3] /= np.max(values_mf[:, 3])
+        # values_mf[:, 1] += 0.5
+        # values_mf[:, 2] += 1
+        # values_mf[:, 3] += 1.5
+        diffs = np.zeros((2,) + (values_mf.shape[1],) + (values_mf.shape[2],))
+        diffs[0] = values_mf[1] - values_mf[0]
+        diffs[1] = values_mf[2] - values_mf[0]
+        diffs[:, 0, :] /= np.mean(values_mf[0, 0, :])
+        diffs[:, 1, :] /= np.mean(values_mf[0, 1, :])
+        diffs[:, 2, :] /= np.mean(values_mf[0, 2, :])
+        diffs[:, 3, :] /= np.mean(values_mf[0, 3, :])
+        diffs[:, 1, :] += 0.5
+        diffs[:, 2, :] += 1
+        diffs[:, 3, :] += 1.5
+        fig, ax = plt.subplots(1, 2, layout='constrained')
+        ax[0].hlines(0, 0, 16, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        for i in range(nb_sets):
+            violin_parts = ax[0].violinplot(values_sf[i].swapaxes(0, 1), showmeans=True,
+                                        positions=[i + 1, i + 5, i + 9, i + 13])#,
+                                        #label=labels[i])
+            for partname in ('cbars','cmins','cmaxes','cmeans'):
+                vp = violin_parts[partname]
+                if partname == 'cmedians':
+                    vp.set_edgecolor('grey')
+                else:
+                    vp.set_edgecolor(cmap(cmap_idx[i]))
+            for parts in violin_parts['bodies']:
+                parts.set_facecolor(cmap(cmap_idx[i]))
+                parts.set_edgecolor(cmap(cmap_idx[i]))
+            labels.append((violin_parts['bodies'][0], labels_list[i]))
+        ax[0].set_xticks(ticks=[2, 6, 10, 14], labels=["MTR", "MTsat", "ihMTR", "ihMTsat"])
+        ax[0].set_ylabel(ylabel)
+        #ax[0].set_ylim(max(-100, np.min(values_sf) - 5), min(100, np.max(values_sf) + 5))
+        ax[0].set_ylim(ymin, ymax)
+        ax[0].set_xlim(0, 16)
+        ax[0].legend(*zip(*labels), loc=1, title="Reference")
+        # ax[0].set_title("Single-fiber voxels")
+        ax[1].set_xlim(-1, 32 * 3 + 3)
+        ax[1].hlines(0, -1, 32 * 3 + 3, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        ax[1].hlines(0.5, -1, 32 * 3 + 3, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        ax[1].hlines(1, -1, 32 * 3 + 3, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        ax[1].hlines(1.5, -1, 32 * 3 + 3, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        # for i in range(nb_sets):
+        #     for j in range(values_mf[i].shape[-1]):
+        #         ax[1].scatter([4*j + i, 4*j + i, 4*j + i, 4*j + i], values_mf[i, :, j], color=cmap(cmap_idx[j]), marker=symbols[i])
+        # ax[1].set_yticks(ticks=[1, 1.5, 2, 2.5], labels=["MTR", "MTsat", "ihMTR", "ihMTsat"])
+        # ax[1].set_xticks(ticks=np.arange(0, 33, 1) * 4 + 1, labels=["AF_L", "AF_R", "CC_1", "CC_2a", "CC_2b", "CC_3", "CC_4",
+        #                                                     "CC_5", "CC_6", "CC_7", "CG_L", "CG_R", "CR_L", "CR_R",
+        #                                                     "CST_L", "CST_R", "ICP_L", "ICP_R", "IFOF_L", "IFOF_R",
+        #                                                     "ILF_L", "ILF_R", "OR_L", "OR_R", "SLF_1_L", "SLF_1_R",
+        #                                                     "SLF_2_L", "SLF_2_R", "SLF_3_L", "SLF_3_R", "UR_L",
+        #                                                     "UR_R", "MCP"], rotation='vertical', fontsize=6)
+        for i in range(nb_sets - 1):
+            for j in range(values_mf[i].shape[-1]):
+                ax[1].scatter([3*j + i, 3*j + i, 3*j + i, 3*j + i], diffs[i, :, j], color=cmap(cmap_idx[j]), marker=symbols[i])
+        ax[1].set_yticks(ticks=[0, 0.5, 1, 1.5], labels=["MTR", "MTsat", "ihMTR", "ihMTsat"])
+        ax[1].set_xticks(ticks=np.arange(0, 33, 1) * 3 + 1, labels=["AF_L", "AF_R", "CC_1", "CC_2a", "CC_2b", "CC_3", "CC_4",
+                                                            "CC_5", "CC_6", "CC_7", "CG_L", "CG_R", "CR_L", "CR_R",
+                                                            "CST_L", "CST_R", "ICP_L", "ICP_R", "IFOF_L", "IFOF_R",
+                                                            "ILF_L", "ILF_R", "OR_L", "OR_R", "SLF_1_L", "SLF_1_R",
+                                                            "SLF_2_L", "SLF_2_R", "SLF_3_L", "SLF_3_R", "UR_L",
+                                                            "UR_R", "MCP"], rotation='vertical', fontsize=6)
+        # ax[1].set_xlim(0, 16)
         # plt.show()
         plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
         plt.close()

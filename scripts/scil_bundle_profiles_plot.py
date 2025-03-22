@@ -284,6 +284,8 @@ def main():
     markers = ['o', 's', '^']
     colorbars = np.empty((nb_subjects), dtype=object)
     v = np.zeros((nb_measures, nb_bundles_to_plot))
+    m_u = np.zeros((nb_measures, nb_bundles_to_plot))
+    m_c = np.zeros((nb_measures, nb_bundles_to_plot))
     for i in range(nb_subjects):
         for j in range(nb_bundles_to_plot):
             if split_columns:  # for nb_measures <= args.max_nb_measures / 2
@@ -400,6 +402,8 @@ def main():
                         text = r"$\Delta$V: " + str(np.round(curr_v, decimals=1)) + "%"
                         if bundles_order[j] != "WM":
                             v[k, j] = curr_v
+                            m_u[k, j] = mean1
+                            m_c[k, j] = mean2
                         # Trick to make the text start at the far right
                         xpos = 1.0 - (len(text) - 7) / 26.5
                         ax[row, col + k].text(xpos, yprint,
@@ -473,6 +477,14 @@ def main():
             logging.info('{} V: {} ± {}'.format(nm_measures[i], np.round(mean_v[i], decimals=3), np.round(std_v[i], decimals=3)))
 
         np.savetxt(Path(args.out_filename).stem + "_v_values.txt", v,
+                header="{} {}".format(nm_measures[0], nm_measures[1]),
+                comments="")
+
+        np.savetxt(Path(args.out_filename).stem + "_means_uncorrected.txt", m_u,
+                header="{} {}".format(nm_measures[0], nm_measures[1]),
+                comments="")
+
+        np.savetxt(Path(args.out_filename).stem + "_means_corrected.txt", m_c,
                 header="{} {}".format(nm_measures[0], nm_measures[1]),
                 comments="")
 
