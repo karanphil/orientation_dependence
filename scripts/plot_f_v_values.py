@@ -269,9 +269,10 @@ def main():
                         markerfacecolor=cmap(cmap_idx[0]), linestyle='')
         point2 = Line2D([0], [0], label='mean', marker='s', markersize=3, markeredgecolor=cmap(cmap_idx[0]),
                         markerfacecolor=cmap(cmap_idx[0]), linestyle='')
-        ax[1].legend(handles=[point1, point2], title="Reference", loc=(0.6, 0.1))
+        ax[1].legend(handles=[point1, point2], title="Reference", loc=(0.6, 0.1), handletextpad=0.1)
         # ax[1].set_xlim(0, 16)
         # plt.show()
+        # plt.subplots_adjust(wspace=2)
         plt.savefig(args.out_filename, dpi=500, bbox_inches='tight')
         plt.close()
     else:
