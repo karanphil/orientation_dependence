@@ -236,11 +236,11 @@ def main():
         ax[0].set_xlim(0, 16)
         ax[0].legend(*zip(*labels), loc=1, title="Reference")
         # ax[0].set_title("Track-profiles variability")
-        ax[1].set_xlim(-1, 32 * 3 + 3)
-        ax[1].hlines(0, -1, 32 * 3 + 3, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
-        ax[1].hlines(0.5, -1, 32 * 3 + 3, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
-        ax[1].hlines(1, -1, 32 * 3 + 3, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
-        ax[1].hlines(1.5, -1, 32 * 3 + 3, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        ax[1].set_xlim(-1, 32 * 3 + 1)
+        ax[1].hlines(0, -1, 32 * 3 + 1, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        ax[1].hlines(0.5, -1, 32 * 3 + 1, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        ax[1].hlines(1, -1, 32 * 3 + 1, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
+        ax[1].hlines(1.5, -1, 32 * 3 + 1, linestyles="dashed", colors="grey", alpha=0.5, linewidth=1)
 
         # for i in range(nb_sets):
         #     for j in range(values_mf[i].shape[-1]):
@@ -254,11 +254,11 @@ def main():
         #                                                     "UR_R", "MCP"], rotation='vertical', fontsize=6)
         for i in range(nb_sets - 1):
             for j in range(values_mf[i].shape[-1]):
-                ax[1].scatter([3*j + i, 3*j + i, 3*j + i, 3*j + i], diffs[i, :, j], color=cmap(cmap_idx[j]), marker=symbols[i])
+                ax[1].scatter([3*j, 3*j, 3*j, 3*j], diffs[i, :, j], color=cmap(cmap_idx[j]), marker=symbols[i])
         ax[1].set_ylabel("Relative mean measures change")
         ax[1].yaxis.tick_right()
         ax[1].set_yticks(ticks=[0, 0.5, 1, 1.5], labels=["MTR", "MTsat", "ihMTR", "ihMTsat"], rotation='vertical', va='center')
-        ax[1].set_xticks(ticks=np.arange(0, 33, 1) * 3 + 1, labels=["AF_L", "AF_R", "CC_1", "CC_2a", "CC_2b", "CC_3", "CC_4",
+        ax[1].set_xticks(ticks=np.arange(0, 33, 1) * 3, labels=["AF_L", "AF_R", "CC_1", "CC_2a", "CC_2b", "CC_3", "CC_4",
                                                             "CC_5", "CC_6", "CC_7", "CG_L", "CG_R", "CR_L", "CR_R",
                                                             "CST_L", "CST_R", "ICP_L", "ICP_R", "IFOF_L", "IFOF_R",
                                                             "ILF_L", "ILF_R", "OR_L", "OR_R", "SLF_1_L", "SLF_1_R",
