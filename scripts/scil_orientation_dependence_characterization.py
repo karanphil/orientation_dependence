@@ -7,12 +7,11 @@ from pathlib import Path
 
 from scilpy.io.utils import add_verbose_arg
 
-from modules.io import (save_results_as_npz, extract_measures,
-                        save_polyfits_as_npz)
+from modules.io import (extract_measures, save_polyfits_as_npz,
+                        save_results_as_npz)
 from modules.orientation_dependence import (compute_single_fiber_means_new,
                                             fit_single_fiber_results_new,
-                                            where_to_patch,
-                                            patch_measures)
+                                            patch_measures, where_to_patch)
 
 
 def _build_arg_parser():
@@ -22,24 +21,25 @@ def _build_arg_parser():
                    help='Path of the fODF peaks. The peaks are expected to be '
                         'given as unit directions.')
     p.add_argument('in_fa',
-                   help='Path of the FA.')
+                   help='Path of the FA map.')
     p.add_argument('in_nufo',
-                   help='Path to the NuFO.')
+                   help='Path to the NuFO map.')
     p.add_argument('in_wm_mask',
                    help='Path of the WM mask.')
     p.add_argument('out_folder',
-                   help='Path of the output folder for txt, png, masks and '
-                        'measures.')
+                   help='Path of the output folder for npz files.')
     
     p.add_argument('--measures', nargs='+', default=[], required=True,
                    help='List of measures to characterize.')
     p.add_argument('--measures_names', nargs='+', default=[],
-                   help='List of names for the measures to characterize.')
+                   help='List of names for the measures to characterize. If '
+                        'not given, takes the name of the files.')
 
     p.add_argument('--bundles', nargs='+', default=[], required=True,
                    help='Path to the bundles masks for where to analyze.')
     p.add_argument('--bundles_names', nargs='+', default=[],
-                   help='List of names for the bundles.')
+                   help='List of names for the bundles. If not given, takes '
+                        'the name of the files.')
 
     g = p.add_argument_group(title='Characterization parameters')
     g.add_argument('--fa_thr', default=0.5,
@@ -47,9 +47,6 @@ def _build_arg_parser():
     g.add_argument('--bin_width_sf', default=1, type=int,
                    help='Value of the bin width for the single-fiber '
                         'characterization [%(default)s].')
-    g.add_argument('--min_frac_thr', default=0.1,
-                   help='Value of the minimal fraction threshold for '
-                        'selecting peaks to correct [%(default)s].')
     g.add_argument('--min_nb_voxels', default=1, type=int,
                    help='Value of the minimal number of voxels per bin '
                         '[%(default)s].')
@@ -73,7 +70,7 @@ def _build_arg_parser():
     
     g2 = p.add_argument_group(title='Polyfit parameters')
     g2.add_argument('--save_polyfit', action='store_true',
-                    help='If set, will save the polyfit.')
+                    help='If set, will save the polyfit as a npz file.')
     g2.add_argument('--use_weighted_polyfit', action='store_true',
                    help='If set, use weights when performing the polyfit. '
                         '[%(default)s].')
@@ -194,9 +191,6 @@ def main():
                         logging.info("Number of points to patch: {}".format(int(np.sum(to_patch))))
                         logging.info("Number of points patched: {}".format(np.sum(patchable_pts)))
                         common_pts = is_measures[j] * is_measures[bundle_idx]
-                        # Old method, does not take voxel count into account.
-                        # curr_bundle_mean = np.mean(measure_means[j, ..., i][common_pts])
-                        # other_bundle_mean = np.mean(measure_means[bundle_idx, ..., i][common_pts])
                         curr_bundle_mean = np.average(measure_means[j, ..., i][common_pts],
                                                       weights=nb_voxels[j, ..., i][common_pts])
                         other_bundle_mean = np.average(measure_means[bundle_idx, ..., i][common_pts],
@@ -219,8 +213,6 @@ def main():
     if args.save_polyfit:
         for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
             logging.info("Fitting the results of bundle {}.".format(bundle_name))
-            # Taking the average of the mean points instead of all the points
-            # averages[i] = np.nanmean(measure_means[i], axis=0)
             measures_fit, measures_max = fit_single_fiber_results_new(bins,
                                                         measure_means[i],
                                                         is_measures=new_is_measures[i],

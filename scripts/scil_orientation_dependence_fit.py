@@ -65,7 +65,6 @@ def main():
     logging.getLogger().setLevel(logging.getLevelName(args.verbose))
 
     # Load all results
-    # nb_measures = (len(list(np.load(args.in_bundles[0]).keys())) - 2) / 4
     nm_measures = []
     for name in ['MTR', 'ihMTR', 'MTsat', 'ihMTsat']:
         if name in list(np.load(args.in_bundles[0]).keys()):

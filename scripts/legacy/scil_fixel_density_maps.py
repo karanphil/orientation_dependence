@@ -8,7 +8,7 @@ from dipy.io.streamline import load_tractogram
 from scilpy.io.utils import (add_overwrite_arg, add_processes_arg,
                              add_reference_arg)
 
-from orientation_dependence.scripts.legacy.fixel_analysis import compute_fixel_density
+from orientation_dependence.modules.legacy.fixel_analysis import compute_fixel_density
 
 
 def _build_arg_parser():
