@@ -9,8 +9,8 @@ from scilpy.io.utils import add_verbose_arg
 
 from modules.io import (extract_measures, save_polyfits_as_npz,
                         save_results_as_npz)
-from modules.orientation_dependence import (compute_single_fiber_means_new,
-                                            fit_single_fiber_results_new,
+from modules.orientation_dependence import (compute_single_fiber_means,
+                                            fit_single_fiber_results,
                                             patch_measures, where_to_patch)
 
 
@@ -61,6 +61,9 @@ def _build_arg_parser():
     g1.add_argument('--patch', action='store_true',
                     help='If set, will performing patching of the orientation '
                          'dependence points in order to fill the holes.')
+    g1.add_argument('--max_gap_frac', default=0.15, type=float,
+                    help='Value of the fraction of the number of bins used to '
+                         'compute the maximal gap size [%(default)s].')
     g1.add_argument('--min_corr', default=0.3, type=float,
                     help='Value of the minimal correlation to be eligible for '
                          'patching [%(default)s].')
@@ -140,14 +143,10 @@ def main():
     for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
         logging.info("Computing single-fiber means of bundle {}.".format(bundle_name))
         bins, measure_means[i], measure_stds[i], nb_voxels[i] =\
-            compute_single_fiber_means_new(peaks, fa,
-                                           wm_mask,
-                                           affine,
-                                           measures,
-                                           nufo=nufo,
-                                           mask=bundle,
-                                           bin_width=args.bin_width_sf,
-                                           fa_thr=args.fa_thr)
+            compute_single_fiber_means(peaks, fa, wm_mask, affine, measures,
+                                       nufo=nufo, mask=bundle,
+                                       bin_width=args.bin_width_sf,
+                                       fa_thr=args.fa_thr)
 
         is_measures[i] = nb_voxels[i, :, 0] >= min_nb_voxels
         pts_origin[i, is_measures[i]] = bundle_name
@@ -175,7 +174,7 @@ def main():
 
             for j in range(nb_bundles):
                 logging.info("Processing bundle {}".format(bundles_names[j]))
-                to_patch = where_to_patch(is_measures[j])
+                to_patch = where_to_patch(is_measures[j], args.max_gap_frac)
                 if np.sum(to_patch) != 0:
                     logging.info("Patching bundle {}".format(bundles_names[j]))
                     bundle_idx, patchable_pts = patch_measures(to_patch,
@@ -213,12 +212,12 @@ def main():
     if args.save_polyfit:
         for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
             logging.info("Fitting the results of bundle {}.".format(bundle_name))
-            measures_fit, measures_max = fit_single_fiber_results_new(bins,
-                                                        measure_means[i],
-                                                        is_measures=new_is_measures[i],
-                                                        nb_voxels=nb_voxels[i],
-                                                        stop_crit=args.stop_crit,
-                                                        use_weighted_polyfit=args.use_weighted_polyfit)
+            measures_fit, measures_max = fit_single_fiber_results(bins,
+                                                                  measure_means[i],
+                                                                  is_measures=new_is_measures[i],
+                                                                  nb_voxels=nb_voxels[i],
+                                                                  stop_crit=args.stop_crit,
+                                                                  use_weighted_polyfit=args.use_weighted_polyfit)
             out_path = out_folder / (bundles_names[i] + '/1f_polyfits')
             if args.reference == "mean":
                 save_polyfits_as_npz(measures_fit, averages[i],

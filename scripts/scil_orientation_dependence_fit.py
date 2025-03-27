@@ -8,7 +8,7 @@ from pathlib import Path
 from scilpy.io.utils import add_verbose_arg
 
 from modules.io import save_polyfits_as_npz
-from modules.orientation_dependence import fit_single_fiber_results_new
+from modules.orientation_dependence import fit_single_fiber_results
 
 
 def _build_arg_parser():
@@ -113,12 +113,12 @@ def main():
     # For every bundle, fit the polynome
     for i, bundle_name in enumerate(bundles_names):
         logging.info("Fitting the results of bundle {}.".format(bundle_name))
-        measures_fit, measures_max = fit_single_fiber_results_new(bins,
-                                                    measures[i],
-                                                    is_measures=is_measures[i],
-                                                    nb_voxels=nb_voxels[i],
-                                                    stop_crit=args.stop_crit,
-                                                    use_weighted_polyfit=args.use_weighted_polyfit)
+        measures_fit, measures_max = fit_single_fiber_results(bins,
+                                                              measures[i],
+                                                              is_measures=is_measures[i],
+                                                              nb_voxels=nb_voxels[i],
+                                                              stop_crit=args.stop_crit,
+                                                              use_weighted_polyfit=args.use_weighted_polyfit)
         out_path = Path(args.out_folder) / (bundles_names[i] + '/1f_polyfits')
         if args.reference == "mean":
             save_polyfits_as_npz(measures_fit, averages[i],
