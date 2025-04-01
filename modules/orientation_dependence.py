@@ -156,7 +156,7 @@ def compute_fiber_means_from_mask(peaks, mask, affine, measures, bin_width=1):
 
 
 def fit_single_fiber_results(bins, means, is_measures=None, nb_voxels=None,
-                                 stop_crit=0.08, use_weighted_polyfit=True):
+                             stop_crit=0.08, use_weighted_polyfit=True):
     if is_measures is None:
         is_measures = np.ones(means.shape[0])
 

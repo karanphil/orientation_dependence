@@ -75,6 +75,7 @@ def main():
     bins = np.concatenate((angles_min, [angles_max[-1]]))
     nb_bins = len(bins) - 1
     nb_bundles = len(args.in_bundles)
+
     bundles_names = np.empty((nb_bundles), dtype=object)
     measures = np.empty((nb_bundles, nb_bins, nb_measures))
     averages = np.zeros((nb_bundles, nb_measures))
@@ -83,7 +84,6 @@ def main():
     is_measures = np.empty((nb_bundles, nb_bins, nb_measures), dtype=bool)
     origins = np.empty((nb_bundles, nb_bins, nb_measures), dtype=object)
     for i, bundle in enumerate(args.in_bundles):
-        # Verify that all subjects have the same number of bundles
         logging.info("Loading: {}".format(bundle))
         file = dict(np.load(bundle))
         if args.in_bundles_names:
@@ -103,7 +103,6 @@ def main():
             is_measures[i, :, j] = nb_voxels[i, :, j] >= args.min_nb_voxels
             if args.check_nb_voxels_std:
                 is_measures[i, :, j] = is_measures[i, :, j] & (nb_voxels_std[i, :, j] < nb_voxels[i, :, j]) & (nb_voxels_std[i, :, j] != 0)
-            # Add check for empty is_measures!! If empty, maximum makes no sense.
             origins[i, :, j] = file['Origin_' + nm_measure]
             is_original = origins[i, :, j] == bundles_names[i]
             averages[i, j] = np.ma.average(np.ma.MaskedArray(measures[i, :, j][is_original],
@@ -112,6 +111,12 @@ def main():
 
     # For every bundle, fit the polynome
     for i, bundle_name in enumerate(bundles_names):
+        if np.sum(is_measures[i, ..., 0]) == 0:
+            msg = """Bundle {} has no bin with at least {} voxel(s).
+                     Decrease the minimal voxel count with --min_nb_voxels or
+                     remove this bundle from the analysis.""".format(bundle_name,
+                                                                     args.min_nb_voxels)
+            raise ValueError(msg)
         logging.info("Fitting the results of bundle {}.".format(bundle_name))
         measures_fit, measures_max = fit_single_fiber_results(bins,
                                                               measures[i],

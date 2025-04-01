@@ -206,15 +206,21 @@ def main():
         save_results_as_npz(bins, measure_means[i], measure_stds[i], nb_voxels[i],
                             pts_origin[i], measures_name, out_path)
 
-    new_is_measures = nb_voxels >= min_nb_voxels
+    is_measures = nb_voxels >= min_nb_voxels
 
     # For every bundle, fit the polynome
     if args.save_polyfit:
         for i, (bundle, bundle_name) in enumerate(zip(bundles, bundles_names)):
+            if np.sum(is_measures[i, ..., 0]) == 0:
+                msg = """Bundle {} has no bin with at least {} voxel(s).
+                        Decrease the minimal voxel count with --min_nb_voxels or
+                        remove this bundle from the analysis.""".format(bundle_name,
+                                                                        args.min_nb_voxels)
+                raise ValueError(msg)
             logging.info("Fitting the results of bundle {}.".format(bundle_name))
             measures_fit, measures_max = fit_single_fiber_results(bins,
                                                                   measure_means[i],
-                                                                  is_measures=new_is_measures[i],
+                                                                  is_measures=is_measures[i],
                                                                   nb_voxels=nb_voxels[i],
                                                                   stop_crit=args.stop_crit,
                                                                   use_weighted_polyfit=args.use_weighted_polyfit)
