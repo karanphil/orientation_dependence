@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Pro tip: There is no more --whole_wm argument. Simply pass the whole WM
-characterization (and polyfit) as a bundle with name WM and put WM last in
---bundles_order.
-"""
 
 import argparse
 import numpy as np
 import logging
 from pathlib import Path
 
-from modules.io import (save_results_as_npz_mean, save_polyfits_as_npz_mean)
+from modules.io import save_results_as_npz_mean
 
-from scilpy.io.utils import (add_verbose_arg, assert_inputs_exist,
+from scilpy.io.utils import (add_verbose_arg,
                              assert_outputs_exist, add_overwrite_arg)
 
 
@@ -44,19 +39,6 @@ def _build_arg_parser():
                         'the script assumes that the name of the bundle \nis '
                         'the name of the parent folder.')
 
-    p.add_argument('--in_polyfits', nargs='+', action='append',
-                   help='Polyfits results for all bundles. \nShould '
-                        'be the output of '
-                        'scil_orientation_dependence_characterization.py. '
-                        '\nIf multiple sets were given for --in_bundles, '
-                        'there should be an equal number of sets for this '
-                        'argument too. \nFor instance with an '
-                        'original and a corrected dataset: \n--in_polyfits '
-                        'original/*/polyfits.npz --in_polyfits '
-                        'corrected/*/polyfits.npz '
-                        '\nMake sure that each set has the same number of '
-                        'bundles.')
-
     p.add_argument('--outdir', default='./',
                    help='Path to the output directory.')
     
@@ -80,9 +62,6 @@ def main():
 
     out_folder = Path(args.outdir)
 
-    # This does not work since the inputs are lists of lists.
-    # I would have to adjust assert_inputs_exist in scilpy
-    # assert_inputs_exist(parser, args.in_bundles, args.in_polyfits)
     assert_outputs_exist(parser, args, args.outdir)
 
     # Load all results
@@ -136,34 +115,12 @@ def main():
                     parser.error("The number of bins for a given bundle and "
                                  "measure must be the same for all subjects.")
 
-    # Load all polyfits
-    if args.in_polyfits:
-        polyfits = np.empty((nb_measures, nb_subjects, nb_bundles),
-                            dtype=object)
-        # Verify that polyfits and bundles have same number of sets
-        if len(args.in_polyfits) != nb_subjects:
-            parser.error("--in_polyfits must contain the same number of "
-                         "sets as --in_bundles.")
-        for i, sub in enumerate(args.in_polyfits):
-            # Verify that number of polyfits equals number of bundles
-            if len(sub) != nb_bundles:
-                parser.error("--in_polyfits must contain the same number of "
-                             "elements as in each set of --in_bundles.")
-            for j, bundle in enumerate(sub):
-                logging.info("Loading: {}".format(bundle))
-                file = dict(np.load(bundle))
-                for k, nm_measure in enumerate(nm_measures):
-                    polyfits[k, i, j] = file[nm_measure + "_polyfit"]
-
     mean_measures = np.empty((nb_measures, nb_bundles), dtype=object)
     mean_measures_std = np.empty((nb_measures, nb_bundles),
                                     dtype=object)
     mean_nb_voxels = np.empty((nb_measures, nb_bundles), dtype=object)
     mean_nb_voxels_std = np.empty((nb_measures, nb_bundles), dtype=object)
     mean_origins = np.empty((nb_measures, nb_bundles), dtype=object)
-    mean_polyfits = np.empty((nb_measures, nb_bundles), dtype=object)
-    polyfits = np.empty((nb_measures, nb_bundles), dtype=object)
-    mean_reference = np.empty((nb_measures, nb_bundles))
     for j, bundle_name in enumerate(bundles_names):
         for k in range(nb_measures):
             nb_bins = len(measures[k, 0, j])
@@ -177,27 +134,13 @@ def main():
             mean_nb_voxels[k, j] = np.nanmean(nb_voxel, axis=0)
             mean_nb_voxels_std[k, j] = np.nanstd(nb_voxel, axis=0)
             mean_origins[k, j] = np.repeat(bundle_name, nb_bins)
-            if args.in_polyfits:
-                polyfit = np.array(list(polyfits[k, :, j]))
-                mean_polyfits[k, j] = np.mean(polyfit, axis=0)
-                if args.reference == "mean":
-                    mean_reference[k, j] = np.ma.average(np.ma.MaskedArray(mean_measures[k, j],
-                                                         mask=np.isnan(mean_measures[k, j])),
-                                                         weights=mean_nb_voxels[k, j])
-                elif args.reference == "maximum":
-                    mean_reference[k, j] = np.nanmax(mean_measures[k, j])
 
     for j, bundle_name in enumerate(bundles_names):
         out_path = out_folder / (bundle_name + "/" + file_name)
         save_results_as_npz_mean(bins[j], mean_measures[:, j],
-                            mean_measures_std[:, j], mean_nb_voxels[:, j],
-                            mean_nb_voxels_std[:, j],
-                            mean_origins[:, j], nm_measures, out_path)
-        if args.in_polyfits:
-            out_path = out_folder / (bundle_name + '/1f_polyfits')
-            save_polyfits_as_npz_mean(mean_polyfits[:, j], mean_reference[:, j],
-                                      nm_measures, out_path)
-
+                                 mean_measures_std[:, j], mean_nb_voxels[:, j],
+                                 mean_nb_voxels_std[:, j],
+                                 mean_origins[:, j], nm_measures, out_path)
 
 if __name__ == "__main__":
     main()
