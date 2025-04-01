@@ -3,12 +3,10 @@ import nibabel as nib
 import numpy as np
 from pathlib import Path
 
-from modules.io import (extract_measures_as_list)
-from modules.orientation_dependence import (correct_measure,
-                                            compute_fixel_measures)
+from modules.io import extract_measures_as_list
+from modules.orientation_dependence import correct_measure
 
 from scilpy.io.utils import (add_overwrite_arg)
-
 
 # We suggest running scil_characterize_orientation_dependence.py again with
 # the corrected data to make sure everything is in order.
