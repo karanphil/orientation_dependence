@@ -52,8 +52,6 @@ def main():
     maps_corrected, _ = extract_measures(args.maps_corrected, data_shape)
     maps_corrected = np.ma.masked_where(maps_corrected == 0, maps_corrected)
 
-    maps = (maps_corrected - maps_original) / maps_original * 100
-
     if args.wm_mask:
         mask = nib.load(args.wm_mask).get_fdata()
         mask = (mask >= 0.9)
@@ -65,8 +63,7 @@ def main():
     z_index = int(args.slices[2]) # 53 (53)
 
     # vmax = np.array([90, 90, 90, 1, 1])
-    vmax = [100, 100, 100, 100]
-    # vmax = [np.max(maps[..., 0]), np.max(maps[..., 1]), np.max(maps[..., 2]), np.max(maps[..., 3])]
+    vmax = np.array([26.3, 5.4, 12.2, 1.6])
 
     plot_init(dims=(10, 15), font_size=20)
 
@@ -77,34 +74,38 @@ def main():
     mpl.rcParams['ytick.color'] = COLOR
 
     if args.combine_colorbar:
-        fig, ax = plt.subplots(maps.shape[-1], 3,
-                               gridspec_kw={"width_ratios":[1.0, 1.1, 0.8]},
+        fig, ax = plt.subplots(maps_original.shape[-1], 6,
+                               gridspec_kw={"width_ratios":[1.0, 1.1, 0.8, 1.0, 1.1, 0.8]},
                                layout='constrained')
     else:
-        fig, ax = plt.subplots(maps.shape[-1], 4,
-                               gridspec_kw={"width_ratios":[1.1, 1.3, 1.0, 0.05]},
+        fig, ax = plt.subplots(maps_original.shape[-1], 7,
+                               gridspec_kw={"width_ratios":[1.1, 1.3, 1.0, 1.1, 1.3, 1.0, 0.4]},
                                layout='constrained')
 
     # for i in range(maps.shape[-1]):
-    for i in range(maps.shape[-1]):
-        # x_image = np.flip(np.rot90(ref[x_index, :, :]), axis=1)
-        # y_image = np.rot90(ref[:, y_index, :])
-        # z_image = np.rot90(ref[:, :, z_index])
+    for i in range(maps_original.shape[-1]):
 
-        # colorbar = ax[i , 0].imshow(y_image, cmap="gray", vmin=0, vmax=1, interpolation='none')
-        # ax[i, 1].imshow(x_image, cmap="gray", vmin=0, vmax=1, interpolation='none')
-        # ax[i, 2].imshow(z_image, cmap="gray", vmin=0, vmax=1, interpolation='none')
+        map1 = maps_original[..., i] * mask
+        map1 = np.ma.masked_where(map1 == 0, map1)
 
-        map = maps[..., i] * mask
-        map = np.ma.masked_where(map == 0, map)
-
-        x_mask = np.flip(np.rot90(map[x_index, :, :]), axis=1)
-        y_mask = np.rot90(map[:, y_index, :])
-        z_mask = np.rot90(map[:, :, z_index])
+        x_mask = np.flip(np.rot90(map1[x_index, :, :]), axis=1)
+        y_mask = np.rot90(map1[:, y_index, :])
+        z_mask = np.rot90(map1[:, :, z_index])
 
         colorbar = ax[i, 0].imshow(y_mask, cmap=cm.navia, vmin=0, vmax=vmax[i], interpolation='none')
         ax[i, 1].imshow(x_mask, cmap=cm.navia, vmin=0, vmax=vmax[i], interpolation='none')
         ax[i, 2].imshow(z_mask, cmap=cm.navia, vmin=0, vmax=vmax[i], interpolation='none')
+
+        map2 = maps_corrected[..., i] * mask
+        map2 = np.ma.masked_where(map2 == 0, map2)
+
+        x_mask = np.flip(np.rot90(map2[x_index, :, :]), axis=1)
+        y_mask = np.rot90(map2[:, y_index, :])
+        z_mask = np.rot90(map2[:, :, z_index])
+
+        colorbar = ax[i, 3].imshow(y_mask, cmap=cm.navia, vmin=0, vmax=vmax[i], interpolation='none')
+        ax[i, 4].imshow(x_mask, cmap=cm.navia, vmin=0, vmax=vmax[i], interpolation='none')
+        ax[i, 5].imshow(z_mask, cmap=cm.navia, vmin=0, vmax=vmax[i], interpolation='none')
 
         if args.combine_colorbar:
             if i == 1:
@@ -114,7 +115,7 @@ def main():
             #     cb = fig.colorbar(colorbar, ax=ax[3:, 2], location='right', aspect=33, pad=0.1)
             #     cb.outline.set_color('white')
         else:
-            cb = fig.colorbar(colorbar, ax=ax[i, 3])
+            cb = fig.colorbar(colorbar, ax=ax[i, 6], location='right', aspect=20, pad=0.1)
             cb.outline.set_color('white')
 
     for i in range(ax.shape[0]):
