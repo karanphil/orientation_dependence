@@ -242,8 +242,8 @@ def main():
         #                                                     "CC_5", "CC_6", "CC_7", "CG_L", "CG_R", "CR_L", "CR_R",
         #                                                     "CST_L", "CST_R", "ICP_L", "ICP_R", "IFOF_L", "IFOF_R",
         #                                                     "ILF_L", "ILF_R", "OR_L", "OR_R", "SLF_1_L", "SLF_1_R",
-        #                                                     "SLF_2_L", "SLF_2_R", "SLF_3_L", "SLF_3_R", "UR_L",
-        #                                                     "UR_R", "MCP"], rotation='vertical', fontsize=6)
+        #                                                     "SLF_2_L", "SLF_2_R", "SLF_3_L", "SLF_3_R", "UF_L",
+        #                                                     "UF_R", "MCP"], rotation='vertical', fontsize=6)
         for i in range(nb_sets - 1):
             for j in range(values_mf[i].shape[-1]):
                 ax[1].scatter([3*j, 3*j, 3*j, 3*j], diffs[i, :, j], color=cmap(cmap_idx[j]), marker=symbols[i])
@@ -254,8 +254,8 @@ def main():
                                                             "CC_5", "CC_6", "CC_7", "CG_L", "CG_R", "CR_L", "CR_R",
                                                             "CST_L", "CST_R", "ICP_L", "ICP_R", "IFOF_L", "IFOF_R",
                                                             "ILF_L", "ILF_R", "OR_L", "OR_R", "SLF_1_L", "SLF_1_R",
-                                                            "SLF_2_L", "SLF_2_R", "SLF_3_L", "SLF_3_R", "UR_L",
-                                                            "UR_R", "MCP"], rotation='vertical', fontsize=6)
+                                                            "SLF_2_L", "SLF_2_R", "SLF_3_L", "SLF_3_R", "UF_L",
+                                                            "UF_R", "MCP"], rotation='vertical', fontsize=6)
         from matplotlib.lines import Line2D
         point1 = Line2D([0], [0], label='max-mean', marker='o', markersize=3, markeredgecolor=cmap(cmap_idx[0]),
                         markerfacecolor=cmap(cmap_idx[0]), linestyle='')
