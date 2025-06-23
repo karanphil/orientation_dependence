@@ -379,7 +379,7 @@ def main():
         cmap_idx = np.arange(0, 100, 1)
     else:
         cmap = cm.naviaS
-        cmap_idx = np.arange(2, 1000, 1)
+        cmap_idx = np.arange(4, 1000, 1)
 
     initialize_plot(args)
     fig, ax = plt.subplots(nb_rows, nb_columns, layout='constrained')
